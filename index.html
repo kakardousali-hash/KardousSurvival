@@ -2,489 +2,414 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Kardous Survival</title>
+
+<script src="/socket.io/socket.io.js"></script>
 
 <style>
 *{box-sizing:border-box}
 body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:#101820;
-  color:white;
+ margin:0;
+ background:#101820;
+ color:white;
+ font-family:Arial;
 }
-button{
-  border:0;
-  border-radius:10px;
-  padding:12px 16px;
-  margin:4px;
-  font-weight:bold;
-  cursor:pointer;
+header{
+ background:#17242e;
+ padding:10px;
+ position:sticky;
+ top:0;
+ z-index:10;
 }
-.header{
-  background:#182531;
-  padding:10px;
-  position:sticky;
-  top:0;
-  z-index:20;
-}
-.title{
-  text-align:center;
-  font-size:22px;
-  font-weight:bold;
-  margin-bottom:8px;
-}
+h1,h2,h3{margin:6px}
 .resources{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:5px;
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:5px;
 }
 .resource{
-  background:#263542;
-  padding:8px 3px;
-  border-radius:8px;
-  text-align:center;
-  font-size:13px;
+ background:#263845;
+ padding:8px 2px;
+ border-radius:8px;
+ text-align:center;
+ font-size:13px;
 }
-.screen{
-  padding:12px;
-  padding-bottom:80px;
+.page{
+ padding:10px;
+ padding-bottom:70px;
 }
 .panel{
-  background:#1b2935;
-  border-radius:14px;
-  padding:14px;
-  margin-bottom:12px;
-  box-shadow:0 3px 12px #0005;
+ background:#1b2b36;
+ padding:12px;
+ margin-bottom:10px;
+ border-radius:14px;
 }
-.castle{
-  height:300px;
-  border-radius:18px;
-  background:linear-gradient(#496273,#263943);
-  border:5px solid #667b87;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  position:relative;
-  overflow:hidden;
-}
-.castleEmoji{
-  font-size:115px;
-  animation:float 2s infinite ease-in-out;
-}
-@keyframes float{
-  50%{transform:translateY(-8px)}
-}
-.castleInfo{text-align:center;margin:10px}
 button{
-  background:#c58a32;
-  color:white;
-}
-button:active{transform:scale(.96)}
-.grid{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:8px;
-}
-.card{
-  background:#263744;
-  border-radius:12px;
-  padding:12px;
-  text-align:center;
-}
-.map{
-  height:480px;
-  border-radius:15px;
-  position:relative;
-  overflow:hidden;
-  background:
-    radial-gradient(circle at 20% 20%,#718b52 0 12%,transparent 13%),
-    radial-gradient(circle at 75% 70%,#587346 0 15%,transparent 16%),
-    linear-gradient(135deg,#52734b,#38583f);
-  border:4px solid #718b64;
-}
-.location{
-  position:absolute;
-  font-size:35px;
-  cursor:pointer;
-  animation:pulse 2s infinite;
-}
-@keyframes pulse{
-  50%{transform:scale(1.12)}
-}
-.playerCastle{top:45%;right:42%}
-.fort{top:15%;left:18%}
-.zombie{top:65%;left:20%}
-.zombie2{top:30%;right:15%}
-.resourceNode{bottom:15%;right:20%}
-.march{
-  position:absolute;
-  font-size:28px;
-  animation:marchMove 6s linear infinite;
-}
-@keyframes marchMove{
-  0%{right:8%;bottom:8%}
-  50%{right:45%;bottom:45%}
-  100%{right:85%;bottom:80%}
-}
-.nav{
-  position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  background:#111a21;
-  display:grid;
-  grid-template-columns:repeat(5,1fr);
-  padding:6px;
-  z-index:30;
-}
-.nav button{
-  background:#263744;
-  padding:9px 2px;
-  font-size:12px;
+ background:#c78a2c;
+ color:white;
+ border:0;
+ border-radius:9px;
+ padding:11px;
+ margin:4px;
+ font-weight:bold;
 }
 .hidden{display:none}
-.status{
-  text-align:center;
-  padding:8px;
-  border-radius:8px;
-  background:#213b2d;
+
+#map{
+ position:relative;
+ height:520px;
+ overflow:hidden;
+ border:4px solid #687b54;
+ border-radius:15px;
+ background:
+ radial-gradient(circle at 20% 30%,#78935c 0 9%,transparent 10%),
+ radial-gradient(circle at 70% 75%,#607c4d 0 12%,transparent 13%),
+ linear-gradient(135deg,#456c45,#294d38);
+}
+
+.player{
+ position:absolute;
+ transform:translate(-50%,-50%);
+ text-align:center;
+ font-size:27px;
+ transition:left .6s linear,top .6s linear;
+ cursor:pointer;
+}
+.playerName{
+ font-size:11px;
+ background:#111b;
+ padding:2px 5px;
+ border-radius:5px;
+ white-space:nowrap;
+}
+
+.march{
+ position:absolute;
+ font-size:27px;
+ pointer-events:none;
+ transition:left 1s linear,top 1s linear;
+}
+
+.controls{
+ display:flex;
+ flex-wrap:wrap;
+ justify-content:center;
+}
+
+.log{
+ background:#101820;
+ padding:8px;
+ border-radius:8px;
+ min-height:35px;
+ font-size:13px;
 }
 </style>
 </head>
 
 <body>
 
-<header class="header">
-  <div class="title">🏰 Kardous Survival</div>
+<header>
+<h1>🏰 Kardous Survival</h1>
 
-  <div class="resources">
-    <div class="resource">🍎<br><span id="food">0</span></div>
-    <div class="resource">🪵<br><span id="wood">0</span></div>
-    <div class="resource">⛓️<br><span id="iron">0</span></div>
-    <div class="resource">🪙<br><span id="gold">0</span></div>
-  </div>
+<div class="resources">
+<div class="resource">🍎 <span id="food">0</span></div>
+<div class="resource">🪵 <span id="wood">0</span></div>
+<div class="resource">⛓️ <span id="iron">0</span></div>
+<div class="resource">🪙 <span id="gold">0</span></div>
+</div>
 </header>
 
-<main class="screen">
+<div class="page">
 
 <section id="home">
 
-  <div class="panel">
-    <div class="status" id="status">
-      🟢 المملكة #1 متصلة
-    </div>
-  </div>
+<div class="panel">
+<h2>🏰 قلعة Kardous</h2>
+<p>المستوى: <b id="castle">1</b></p>
+<p>⚡ القوة: <b id="power">0</b></p>
 
-  <div class="panel castle">
-    <div class="castleEmoji">🏰</div>
-  </div>
+<div class="controls">
+<button onclick="collect()">🌾 جمع</button>
+<button onclick="train()">⚔️ تدريب</button>
+<button onclick="upgrade()">⬆️ ترقية</button>
+</div>
+</div>
 
-  <div class="panel castleInfo">
-    <h2>🏰 قلعة Kardous</h2>
-    <div id="castleLevel">المستوى 1</div>
-    <div>⚡ القوة: <span id="power">0</span></div>
+<div class="panel">
+<h3>👑 القائد Kardous</h3>
+<p>المستوى: <span id="commander">1</span></p>
+<p>الخبرة: <span id="xp">0</span></p>
+</div>
 
-    <button onclick="upgradeCastle()">⬆️ ترقية القلعة</button>
-    <button onclick="collectResources()">🌾 جمع الموارد</button>
-  </div>
+<div class="panel">
+<h3>⚔️ الجيش</h3>
+<p>الجنود: <span id="troops">0</span></p>
+</div>
 
-  <div class="panel">
-    <h3>👑 القائد Kardous</h3>
-    <div>المستوى: <span id="commanderLevel">1</span></div>
-    <div>⭐ الخبرة: <span id="experience">0</span></div>
-    <div>🎯 نقاط المواهب: <span id="talents">0</span></div>
-  </div>
-
-  <div class="panel">
-    <h3>⚔️ الجيش</h3>
-    <div class="card">
-      👥 الجنود: <span id="troops">0</span>
-    </div>
-    <button onclick="trainTroops()">⚔️ تدريب 100 جندي</button>
-  </div>
-
-  <div class="panel">
-    <h3>🦸 الأبطال</h3>
-    <div id="heroes"></div>
-    <button onclick="addHero()">➕ الحصول على بطل</button>
-  </div>
-
-  <div class="panel">
-    <h3>🐲 Behemioth</h3>
-
-    <div class="grid">
-      <div class="card">🦖<br>T-Rex<br>المستوى 1</div>
-      <div class="card">🦅<br>العصفور<br>المستوى 1</div>
-      <div class="card">🐒<br>القرد<br>المستوى 1</div>
-      <div class="card">🦁<br>الأسد<br>المستوى 1</div>
-    </div>
-  </div>
+<div class="panel">
+<h3>🦸 الأبطال</h3>
+<div id="heroes">جاري التحميل...</div>
+</div>
 
 </section>
-
 
 <section id="world" class="hidden">
 
-  <div class="panel">
-    <h2>🌍 المملكة #1</h2>
-    <p>الخريطة العالمية</p>
-  </div>
+<div class="panel">
+<h2>🌍 المملكة #1</h2>
+<p>اللاعبون المتصلون يظهرون على الخريطة.</p>
+</div>
 
-  <div class="panel map">
+<div class="panel">
 
-    <div class="location playerCastle">🏰</div>
+<div id="map">
 
-    <div class="location fort">🏯</div>
+<div id="march" class="march">⚔️</div>
 
-    <div class="location zombie">🧟</div>
+</div>
 
-    <div class="location zombie2">🧟</div>
+</div>
 
-    <div class="location resourceNode">🌲</div>
-
-    <div class="march">⚔️</div>
-
-  </div>
-
-  <div class="panel">
-    <h3>⚔️ المسيرة</h3>
-    <p>الجيش يتحرك على الخريطة.</p>
-  </div>
+<div class="panel">
+<h3>🚶 مسيرة الجيش</h3>
+<button onclick="sendMarch()">إرسال مسيرة</button>
+<div class="log" id="log">جاهز.</div>
+</div>
 
 </section>
 
+</div>
 
-<section id="rankings" class="hidden">
-
-  <div class="panel">
-    <h2>🏆 ترتيب المملكة #1</h2>
-
-    <div class="card">🥇 Kardous — قوة 5,000</div>
-    <div class="card">🥈 Player 2 — قوة 4,500</div>
-    <div class="card">🥉 Player 3 — قوة 4,000</div>
-  </div>
-
-  <div class="panel">
-    <h3>🏰 ترتيب القلاع</h3>
-    <p>1# Kardous — المستوى 1</p>
-  </div>
-
-  <div class="panel">
-    <h3>⚔️ ترتيب الحرب</h3>
-    <p>1# Kardous</p>
-  </div>
-
-  <div class="panel">
-    <h3>🤝 ترتيب التحالفات</h3>
-    <p>1# Kardous Alliance</p>
-  </div>
-
-</section>
-
-
-<section id="research" class="hidden">
-
-  <div class="panel">
-    <h2>🔬 الأبحاث</h2>
-
-    <div class="grid">
-      <div class="card">
-        ⚔️ الهجوم<br>
-        المستوى 1<br>
-        <button>بحث</button>
-      </div>
-
-      <div class="card">
-        🛡️ الدفاع<br>
-        المستوى 1<br>
-        <button>بحث</button>
-      </div>
-
-      <div class="card">
-        🚶 سرعة المسيرة<br>
-        المستوى 1<br>
-        <button>بحث</button>
-      </div>
-
-      <div class="card">
-        🌾 الإنتاج<br>
-        المستوى 1<br>
-        <button>بحث</button>
-      </div>
-    </div>
-  </div>
-
-</section>
-
-
-<section id="events" class="hidden">
-
-  <div class="panel">
-    <h2>🎉 الأحداث</h2>
-
-    <div class="card">
-      🧟 غزو الزومبي
-      <br>
-      <button>دخول الحدث</button>
-    </div>
-
-    <div class="card">
-      ⚔️ حرب المملكة
-      <br>
-      <button>دخول الحدث</button>
-    </div>
-
-    <div class="card">
-      🐲 وحش العالم
-      <br>
-      <button>الهجوم</button>
-    </div>
-  </div>
-
-</section>
-
-</main>
-
-
-<nav class="nav">
-  <button onclick="show('home')">🏰<br>القلعة</button>
-  <button onclick="show('world')">🌍<br>الخريطة</button>
-  <button onclick="show('rankings')">🏆<br>الترتيب</button>
-  <button onclick="show('research')">🔬<br>الأبحاث</button>
-  <button onclick="show('events')">🎉<br>الأحداث</button>
-</nav>
-
+<div style="
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+background:#111a21;
+display:grid;
+grid-template-columns:1fr 1fr;
+padding:6px;
+z-index:20;
+">
+<button onclick="show('home')">🏰 القلعة</button>
+<button onclick="show('world')">🌍 الخريطة</button>
+</div>
 
 <script>
 
-let playerId = 1;
+const playerId = 1;
+
+const socket = io();
+
+const map = document.getElementById("map");
+
+let myPlayer = null;
+let march = {
+ x:50,
+ y:50
+};
+
+function show(id){
+
+ document.querySelectorAll("section")
+ .forEach(x=>x.classList.add("hidden"));
+
+ document.getElementById(id)
+ .classList.remove("hidden");
+}
 
 async function loadPlayer(){
 
-  try{
+ const response =
+ await fetch(`/api/player/${playerId}`);
 
-    const response =
-      await fetch(`/api/player/${playerId}`);
+ if(!response.ok){
+   return;
+ }
 
-    if(!response.ok) throw new Error();
+ const p = await response.json();
 
-    const p = await response.json();
+ myPlayer = p;
 
-    document.getElementById("food").textContent = p.food;
-    document.getElementById("wood").textContent = p.wood;
-    document.getElementById("iron").textContent = p.iron;
-    document.getElementById("gold").textContent = p.gold;
+ document.getElementById("food").textContent=p.food;
+ document.getElementById("wood").textContent=p.wood;
+ document.getElementById("iron").textContent=p.iron;
+ document.getElementById("gold").textContent=p.gold;
 
-    document.getElementById("power").textContent = p.power;
-    document.getElementById("castleLevel").textContent =
-      "المستوى " + p.castle;
+ document.getElementById("castle").textContent=p.castle;
+ document.getElementById("power").textContent=p.power;
 
-    document.getElementById("troops").textContent =
-      p.troops;
+ document.getElementById("troops").textContent=p.troops;
 
-    document.getElementById("commanderLevel").textContent =
-      p.commander.level;
+ document.getElementById("commander").textContent=
+ p.commander.level;
 
-    document.getElementById("experience").textContent =
-      p.commander.experience;
+ document.getElementById("xp").textContent=
+ p.commander.experience;
 
-    document.getElementById("talents").textContent =
-      p.commander.talentPoints;
-
-    document.getElementById("heroes").innerHTML =
-      p.heroes.map(h =>
-        `<div class="card">
-          🦸 ${h.name}<br>
-          المستوى ${h.level}<br>
-          ⚡ ${h.power} قوة
-        </div>`
-      ).join("");
-
-  }catch(error){
-
-    document.getElementById("status").textContent =
-      "🔴 تعذر الاتصال بالخادم";
-
-  }
+ document.getElementById("heroes").innerHTML=
+ p.heroes ?
+ p.heroes.map(h=>
+ `<div class="panel">
+ 🦸 ${h.name}<br>
+ المستوى ${h.level}<br>
+ ⚡ القوة ${h.power}
+ </div>`
+ ).join("")
+ :
+ "لا يوجد أبطال";
 
 }
 
+async function action(url){
 
-async function upgradeCastle(){
+ const response =
+ await fetch(url,{method:"POST"});
 
-  const response =
-    await fetch(
-      `/api/player/${playerId}/upgrade-castle`,
-      {method:"POST"}
-    );
+ const data =
+ await response.json();
 
-  const data = await response.json();
+ alert(data.message || data.error);
 
-  alert(data.message || data.error);
-
-  loadPlayer();
+ loadPlayer();
 }
 
-
-async function trainTroops(){
-
-  const response =
-    await fetch(
-      `/api/player/${playerId}/train`,
-      {method:"POST"}
-    );
-
-  const data = await response.json();
-
-  alert(data.message || data.error);
-
-  loadPlayer();
+function collect(){
+ action(`/api/player/${playerId}/collect`);
 }
 
-
-async function collectResources(){
-
-  const response =
-    await fetch(
-      `/api/player/${playerId}/collect`,
-      {method:"POST"}
-    );
-
-  const data = await response.json();
-
-  alert(data.message || data.error);
-
-  loadPlayer();
+function train(){
+ action(`/api/player/${playerId}/train`);
 }
 
-
-async function addHero(){
-
-  const response =
-    await fetch(
-      `/api/player/${playerId}/hero`,
-      {method:"POST"}
-    );
-
-  const data = await response.json();
-
-  alert(data.message || data.error);
-
-  loadPlayer();
+function upgrade(){
+ action(`/api/player/${playerId}/upgrade-castle`);
 }
 
+/* =====================
+   WORLD
+===================== */
 
-function show(section){
+function createPlayer(p){
 
-  document.querySelectorAll("main section")
-    .forEach(s => s.classList.add("hidden"));
+ let element =
+ document.getElementById("player-"+p.id);
 
-  document.getElementById(section)
-    .classList.remove("hidden");
+ if(!element){
+
+   element =
+   document.createElement("div");
+
+   element.id="player-"+p.id;
+   element.className="player";
+
+   element.innerHTML=
+   `🏰<div class="playerName">${p.name}</div>`;
+
+   map.appendChild(element);
+ }
+
+ element.style.left=p.x+"%";
+ element.style.top=p.y+"%";
+}
+
+function renderWorld(players){
+
+ players.forEach(createPlayer);
 
 }
 
+socket.on("world",data=>{
+
+ renderWorld(data.players || []);
+
+});
+
+socket.on("playerMoved",data=>{
+
+ const player =
+ document.getElementById("player-"+data.id);
+
+ if(player){
+
+   player.style.left=data.x+"%";
+   player.style.top=data.y+"%";
+
+ }
+
+});
+
+/* =====================
+   MOVE
+===================== */
+
+map.addEventListener("click",async event=>{
+
+ if(!myPlayer)return;
+
+ const rect =
+ map.getBoundingClientRect();
+
+ const x =
+ ((event.clientX-rect.left)/rect.width)*100;
+
+ const y =
+ ((event.clientY-rect.top)/rect.height)*100;
+
+ await fetch(
+ `/api/player/${playerId}/move`,
+ {
+   method:"POST",
+   headers:{
+     "Content-Type":"application/json"
+   },
+   body:JSON.stringify({x,y})
+ }
+ );
+
+});
+
+/* =====================
+   MARCH
+===================== */
+
+function sendMarch(){
+
+ if(!myPlayer){
+   return;
+ }
+
+ const startX=myPlayer.x;
+ const startY=myPlayer.y;
+
+ const targetX=75;
+ const targetY=25;
+
+ const element =
+ document.getElementById("march");
+
+ element.style.left=startX+"%";
+ element.style.top=startY+"%";
+
+ document.getElementById("log").textContent=
+ "⚔️ المسيرة انطلقت...";
+
+ setTimeout(()=>{
+
+   element.style.left=targetX+"%";
+   element.style.top=targetY+"%";
+
+ },100);
+
+ setTimeout(()=>{
+
+   document.getElementById("log").textContent=
+   "🏰 وصلت المسيرة إلى الهدف.";
+
+ },6100);
+
+}
 
 loadPlayer();
 
