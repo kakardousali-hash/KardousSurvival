@@ -80,11 +80,7 @@ CREATE TABLE IF NOT EXISTS players (
    MIGRATIONS
 ========================= */
 
-function addColumnIfMissing(
-    table,
-    column,
-    definition
-) {
+function addColumnIfMissing(table, column, definition) {
 
     try {
 
@@ -96,14 +92,12 @@ function addColumnIfMissing(
 
         db.exec(`
             ALTER TABLE ${table}
-            ADD COLUMN ${column}
-            ${definition}
+            ADD COLUMN ${column} ${definition}
         `);
 
     }
 
 }
-
 
 addColumnIfMissing(
     "players",
@@ -269,7 +263,6 @@ const playerCount =
         "SELECT COUNT(*) AS count FROM players"
     ).get().count;
 
-
 if (playerCount === 0) {
 
     db.prepare(`
@@ -314,7 +307,6 @@ const zombieCount =
         "SELECT COUNT(*) AS count FROM zombies"
     ).get().count;
 
-
 if (zombieCount === 0) {
 
     const insertZombie =
@@ -322,23 +314,16 @@ if (zombieCount === 0) {
             INSERT INTO zombies
             (name, x, y, level, power)
 
-            VALUES
-            (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?)
         `);
-
 
     for (let i = 1; i <= 20; i++) {
 
         const x =
-            Math.floor(
-                Math.random() * 1800
-            ) - 900;
+            Math.floor(Math.random() * 1800) - 900;
 
         const y =
-            Math.floor(
-                Math.random() * 1800
-            ) - 900;
-
+            Math.floor(Math.random() * 1800) - 900;
 
         insertZombie.run(
             `Zombie ${i}`,
@@ -362,7 +347,6 @@ const fortCount =
         "SELECT COUNT(*) AS count FROM forts"
     ).get().count;
 
-
 if (fortCount === 0) {
 
     const insertFort =
@@ -370,23 +354,16 @@ if (fortCount === 0) {
             INSERT INTO forts
             (name, x, y, level, power)
 
-            VALUES
-            (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?)
         `);
-
 
     for (let i = 1; i <= 5; i++) {
 
         const x =
-            Math.floor(
-                Math.random() * 1600
-            ) - 800;
+            Math.floor(Math.random() * 1600) - 800;
 
         const y =
-            Math.floor(
-                Math.random() * 1600
-            ) - 800;
-
+            Math.floor(Math.random() * 1600) - 800;
 
         insertFort.run(
             `حصن ${i}`,
@@ -423,8 +400,7 @@ function getPlayer(id) {
 function getCastleUpgradeTime(level) {
 
     return (
-        60 +
-        ((level - 1) * 30)
+        60 + ((level - 1) * 30)
     ) * 1000;
 
 }
@@ -434,17 +410,13 @@ function getCastleCost(level) {
 
     return {
 
-        wood:
-            level * 1000,
+        wood: level * 1000,
 
-        iron:
-            level * 600,
+        iron: level * 600,
 
-        gold:
-            level * 250,
+        gold: level * 250,
 
-        food:
-            level * 500
+        food: level * 500
 
     };
 
@@ -453,16 +425,13 @@ function getCastleCost(level) {
 
 function getUpgradeInfo(level) {
 
-    const cost =
-        getCastleCost(level);
-
-
     return {
 
         duration:
             getCastleUpgradeTime(level),
 
-        cost: cost,
+        cost:
+            getCastleCost(level + 1),
 
         max:
             level >= 30
@@ -478,10 +447,6 @@ function getUpgradeInfo(level) {
 
 function getTrainingTime(amount) {
 
-    /*
-       100 جندي = 30 ثانية
-    */
-
     return 30000;
 
 }
@@ -492,10 +457,6 @@ function getTrainingTime(amount) {
 ========================= */
 
 function getResearchTime() {
-
-    /*
-       أول بحث = دقيقة
-    */
 
     return 60000;
 
@@ -529,57 +490,40 @@ function publicPlayer(player) {
         return null;
     }
 
-
     const upgradeInfo =
-        getUpgradeInfo(
-            player.castle
-        );
-
+        getUpgradeInfo(player.castle);
 
     return {
 
-        id:
-            player.id,
+        id: player.id,
 
-        name:
-            player.name,
+        name: player.name,
 
-        kingdom:
-            player.kingdom,
+        kingdom: player.kingdom,
 
-        x:
-            player.x,
+        x: player.x,
 
-        y:
-            player.y,
+        y: player.y,
 
-        castle:
-            player.castle,
+        castle: player.castle,
 
-        power:
-            player.power,
+        power: player.power,
 
-        food:
-            player.food,
+        food: player.food,
 
-        wood:
-            player.wood,
+        wood: player.wood,
 
-        iron:
-            player.iron,
+        iron: player.iron,
 
-        gold:
-            player.gold,
+        gold: player.gold,
 
-        troops:
-            player.troops,
+        troops: player.troops,
 
         commander_level:
             player.commander_level,
 
         commander_xp:
             player.commander_xp,
-
 
         castleUpgrade: {
 
@@ -593,11 +537,8 @@ function publicPlayer(player) {
             remaining:
                 player.castle_upgrade_end >
                 Date.now()
-                ?
-                player.castle_upgrade_end -
-                Date.now()
-                :
-                0,
+                    ? player.castle_upgrade_end - Date.now()
+                    : 0,
 
             duration:
                 upgradeInfo.duration,
@@ -609,7 +550,6 @@ function publicPlayer(player) {
                 upgradeInfo.max
 
         },
-
 
         training: {
 
@@ -623,17 +563,13 @@ function publicPlayer(player) {
             remaining:
                 player.training_end >
                 Date.now()
-                ?
-                player.training_end -
-                Date.now()
-                :
-                0,
+                    ? player.training_end - Date.now()
+                    : 0,
 
             amount:
                 player.training_amount || 0
 
         },
-
 
         speedups: {
 
@@ -647,7 +583,6 @@ function publicPlayer(player) {
                 player.research_speedups || 0
 
         },
-
 
         research: {
 
@@ -664,11 +599,8 @@ function publicPlayer(player) {
             remaining:
                 player.research_end >
                 Date.now()
-                ?
-                player.research_end -
-                Date.now()
-                :
-                0
+                    ? player.research_end - Date.now()
+                    : 0
 
         }
 
@@ -686,34 +618,23 @@ app.post(
     (req, res) => {
 
         const name =
-            String(
-                req.body.name || ""
-            ).trim();
-
+            String(req.body.name || "").trim();
 
         if (!name) {
 
             return res.status(400).json({
-
-                error:
-                    "اكتب اسم اللاعب."
-
+                error: "اكتب اسم اللاعب."
             });
 
         }
-
 
         if (name.length > 20) {
 
             return res.status(400).json({
-
-                error:
-                    "اسم اللاعب طويل جدًا."
-
+                error: "اسم اللاعب طويل جدًا."
             });
 
         }
-
 
         let player =
             db.prepare(`
@@ -722,7 +643,6 @@ app.post(
                 WHERE name = ?
                 LIMIT 1
             `).get(name);
-
 
         if (!player) {
 
@@ -735,30 +655,17 @@ app.post(
                         y
                     )
 
-                    VALUES (
-                        ?,
-                        1,
-                        ?,
-                        ?
-                    )
+                    VALUES (?, 1, ?, ?)
                 `).run(
                     name,
-                    Math.floor(
-                        Math.random() * 1800
-                    ) - 900,
-                    Math.floor(
-                        Math.random() * 1800
-                    ) - 900
+                    Math.floor(Math.random() * 1800) - 900,
+                    Math.floor(Math.random() * 1800) - 900
                 );
-
 
             player =
-                getPlayer(
-                    result.lastInsertRowid
-                );
+                getPlayer(result.lastInsertRowid);
 
         }
-
 
         res.json({
 
@@ -782,22 +689,15 @@ app.get(
     (req, res) => {
 
         const player =
-            getPlayer(
-                req.params.id
-            );
-
+            getPlayer(req.params.id);
 
         if (!player) {
 
             return res.status(404).json({
-
-                error:
-                    "اللاعب غير موجود."
-
+                error: "اللاعب غير موجود."
             });
 
         }
-
 
         res.json(
             publicPlayer(player)
@@ -816,22 +716,15 @@ app.post(
     (req, res) => {
 
         const player =
-            getPlayer(
-                req.params.id
-            );
-
+            getPlayer(req.params.id);
 
         if (!player) {
 
             return res.status(404).json({
-
-                error:
-                    "اللاعب غير موجود."
-
+                error: "اللاعب غير موجود."
             });
 
         }
-
 
         db.prepare(`
             UPDATE players
@@ -845,16 +738,13 @@ app.post(
             WHERE id = ?
         `).run(player.id);
 
-
         const updated =
             getPlayer(player.id);
-
 
         io.emit(
             "playerUpdated",
             publicPlayer(updated)
         );
-
 
         res.json({
 
@@ -878,22 +768,15 @@ app.post(
     (req, res) => {
 
         let player =
-            getPlayer(
-                req.params.id
-            );
-
+            getPlayer(req.params.id);
 
         if (!player) {
 
             return res.status(404).json({
-
-                error:
-                    "اللاعب غير موجود."
-
+                error: "اللاعب غير موجود."
             });
 
         }
-
 
         if (
             player.training_end >
@@ -906,8 +789,7 @@ app.post(
                     "⚔️ يوجد تدريب جارٍ بالفعل.",
 
                 remaining:
-                    player.training_end -
-                    Date.now(),
+                    player.training_end - Date.now(),
 
                 player:
                     publicPlayer(player)
@@ -915,7 +797,6 @@ app.post(
             });
 
         }
-
 
         if (
             player.training_end > 0 &&
@@ -929,16 +810,11 @@ app.post(
 
         }
 
-
         const amount = 100;
 
         const foodCost = 500;
 
-
-        if (
-            player.food <
-            foodCost
-        ) {
+        if (player.food < foodCost) {
 
             return res.status(400).json({
 
@@ -952,20 +828,16 @@ app.post(
 
         }
 
-
-        /*
-           إذا كان لدى اللاعب
-           تسريع تدريب نستخدم واحدًا
-           وننقص 10 ثوانٍ.
-        */
-
         let duration =
             getTrainingTime(amount);
 
+        /*
+           استخدام تسريع تلقائي
+           فقط إذا كان لدى اللاعب تسريع
+        */
 
         if (
-            player.training_speedups >
-            0
+            player.training_speedups > 0
         ) {
 
             duration =
@@ -986,11 +858,8 @@ app.post(
 
         }
 
-
         const endTime =
-            Date.now() +
-            duration;
-
+            Date.now() + duration;
 
         db.prepare(`
             UPDATE players
@@ -1002,27 +871,19 @@ app.post(
 
             WHERE id = ?
         `).run(
-
             foodCost,
-
             endTime,
-
             amount,
-
             player.id
-
         );
-
 
         const updated =
             getPlayer(player.id);
-
 
         io.emit(
             "playerUpdated",
             publicPlayer(updated)
         );
-
 
         res.json({
 
@@ -1031,9 +892,7 @@ app.post(
             message:
                 "⚔️ بدأ تدريب 100 جندي.",
 
-            duration:
-
-                duration,
+            duration,
 
             player:
                 publicPlayer(updated)
@@ -1054,30 +913,22 @@ function completeTraining(player) {
         return;
     }
 
-
     if (
         !player.training_end ||
         player.training_end <= 0
     ) {
-
         return;
-
     }
-
 
     if (
         player.training_end >
         Date.now()
     ) {
-
         return;
-
     }
-
 
     const amount =
         player.training_amount || 0;
-
 
     if (amount <= 0) {
 
@@ -1095,22 +946,16 @@ function completeTraining(player) {
 
     }
 
-
     const powerGain =
-        Math.floor(
-            amount * 1.3
-        );
-
+        Math.floor(amount * 1.3);
 
     db.prepare(`
         UPDATE players
 
         SET
-            troops =
-                troops + ?,
+            troops = troops + ?,
 
-            power =
-                power + ?,
+            power = power + ?,
 
             training_end = 0,
 
@@ -1121,35 +966,22 @@ function completeTraining(player) {
 
         WHERE id = ?
     `).run(
-
         amount,
-
         powerGain,
-
         amount,
-
         player.id
-
     );
-
 
     const updated =
         getPlayer(player.id);
 
-
     io.emit(
         "trainingFinished",
         {
-
-            playerId:
-                player.id,
-
-            amount:
-                amount
-
+            playerId: player.id,
+            amount
         }
     );
-
 
     io.emit(
         "playerUpdated",
@@ -1168,22 +1000,15 @@ app.post(
     (req, res) => {
 
         let player =
-            getPlayer(
-                req.params.id
-            );
-
+            getPlayer(req.params.id);
 
         if (!player) {
 
             return res.status(404).json({
-
-                error:
-                    "اللاعب غير موجود."
-
+                error: "اللاعب غير موجود."
             });
 
         }
-
 
         if (
             player.training_end <=
@@ -1191,35 +1016,38 @@ app.post(
         ) {
 
             return res.status(400).json({
+                error: "لا يوجد تدريب جارٍ."
+            });
+
+        }
+
+        /*
+           التصحيح:
+           لا يمكن استعمال التسريع
+           إذا كان المخزون صفرًا
+        */
+
+        if (
+            player.training_speedups <= 0
+        ) {
+
+            return res.status(400).json({
 
                 error:
-                    "لا يوجد تدريب جارٍ."
+                    "⚡ لا يوجد لديك تسريع تدريب."
 
             });
 
         }
 
-
         const remaining =
-            player.training_end -
-            Date.now();
-
-
-        /*
-           تسريع واحد = إزالة 10 ثوانٍ
-        */
+            player.training_end - Date.now();
 
         const reduction =
-            Math.min(
-                10000,
-                remaining
-            );
-
+            Math.min(10000, remaining);
 
         const newEnd =
-            player.training_end -
-            reduction;
-
+            player.training_end - reduction;
 
         db.prepare(`
             UPDATE players
@@ -1228,31 +1056,21 @@ app.post(
                 training_end = ?,
 
                 training_speedups =
-                    CASE
-                        WHEN training_speedups > 0
-                        THEN training_speedups - 1
-                        ELSE 0
-                    END
+                    training_speedups - 1
 
             WHERE id = ?
         `).run(
-
             newEnd,
-
             player.id
-
         );
-
 
         const updated =
             getPlayer(player.id);
-
 
         io.emit(
             "playerUpdated",
             publicPlayer(updated)
         );
-
 
         res.json({
 
@@ -1279,22 +1097,15 @@ app.post(
     (req, res) => {
 
         let player =
-            getPlayer(
-                req.params.id
-            );
-
+            getPlayer(req.params.id);
 
         if (!player) {
 
             return res.status(404).json({
-
-                error:
-                    "اللاعب غير موجود."
-
+                error: "اللاعب غير موجود."
             });
 
         }
-
 
         if (
             player.castle_upgrade_end >
@@ -1313,7 +1124,6 @@ app.post(
 
         }
 
-
         if (
             player.castle_upgrade_end > 0 &&
             player.castle_upgrade_end <= Date.now()
@@ -1326,10 +1136,7 @@ app.post(
 
         }
 
-
-        if (
-            player.castle >= 30
-        ) {
+        if (player.castle >= 30) {
 
             return res.status(400).json({
 
@@ -1343,16 +1150,11 @@ app.post(
 
         }
 
-
         const nextLevel =
             player.castle + 1;
 
-
         const cost =
-            getCastleCost(
-                nextLevel
-            );
-
+            getCastleCost(nextLevel);
 
         if (
             player.food < cost.food ||
@@ -1366,8 +1168,7 @@ app.post(
                 error:
                     "❌ الموارد غير كافية.",
 
-                cost:
-                    cost,
+                cost,
 
                 player:
                     publicPlayer(player)
@@ -1376,20 +1177,18 @@ app.post(
 
         }
 
-
         let duration =
             getCastleUpgradeTime(
                 player.castle
             );
 
-
         /*
-           تسريع البناء
+           استخدام تسريع البناء
+           فقط إذا كان موجودًا
         */
 
         if (
-            player.building_speedups >
-            0
+            player.building_speedups > 0
         ) {
 
             duration =
@@ -1410,54 +1209,40 @@ app.post(
 
         }
 
-
         const endTime =
-            Date.now() +
-            duration;
-
+            Date.now() + duration;
 
         db.prepare(`
             UPDATE players
 
             SET
-                food =
-                    food - ?,
+                food = food - ?,
 
-                wood =
-                    wood - ?,
+                wood = wood - ?,
 
-                iron =
-                    iron - ?,
+                iron = iron - ?,
 
-                gold =
-                    gold - ?,
+                gold = gold - ?,
 
                 castle_upgrade_end = ?
 
             WHERE id = ?
         `).run(
-
             cost.food,
             cost.wood,
             cost.iron,
             cost.gold,
-
             endTime,
-
             player.id
-
         );
-
 
         const updated =
             getPlayer(player.id);
-
 
         io.emit(
             "playerUpdated",
             publicPlayer(updated)
         );
-
 
         res.json({
 
@@ -1466,8 +1251,7 @@ app.post(
             message:
                 "🏗️ بدأت ترقية القلعة.",
 
-            duration:
-                duration,
+            duration,
 
             player:
                 publicPlayer(updated)
@@ -1488,29 +1272,20 @@ function completeCastleUpgrade(player) {
         return;
     }
 
-
     if (
         !player.castle_upgrade_end
     ) {
-
         return;
-
     }
-
 
     if (
         player.castle_upgrade_end >
         Date.now()
     ) {
-
         return;
-
     }
 
-
-    if (
-        player.castle >= 30
-    ) {
+    if (player.castle >= 30) {
 
         db.prepare(`
             UPDATE players
@@ -1525,16 +1300,13 @@ function completeCastleUpgrade(player) {
 
     }
 
-
     db.prepare(`
         UPDATE players
 
         SET
-            castle =
-                castle + 1,
+            castle = castle + 1,
 
-            power =
-                power + 1000,
+            power = power + 1000,
 
             commander_xp =
                 commander_xp + 100,
@@ -1544,16 +1316,13 @@ function completeCastleUpgrade(player) {
         WHERE id = ?
     `).run(player.id);
 
-
     const updated =
         getPlayer(player.id);
-
 
     io.emit(
         "castleUpgradeFinished",
         publicPlayer(updated)
     );
-
 
     io.emit(
         "playerUpdated",
@@ -1572,22 +1341,15 @@ app.post(
     (req, res) => {
 
         let player =
-            getPlayer(
-                req.params.id
-            );
-
+            getPlayer(req.params.id);
 
         if (!player) {
 
             return res.status(404).json({
-
-                error:
-                    "اللاعب غير موجود."
-
+                error: "اللاعب غير موجود."
             });
 
         }
-
 
         if (
             player.castle_upgrade_end <=
@@ -1595,31 +1357,39 @@ app.post(
         ) {
 
             return res.status(400).json({
+                error: "لا توجد ترقية بناء جارية."
+            });
+
+        }
+
+        /*
+           التصحيح:
+           يجب امتلاك تسريع
+        */
+
+        if (
+            player.building_speedups <= 0
+        ) {
+
+            return res.status(400).json({
 
                 error:
-                    "لا توجد ترقية بناء جارية."
+                    "⚡ لا يوجد لديك تسريع بناء."
 
             });
 
         }
 
-
         const remaining =
             player.castle_upgrade_end -
             Date.now();
 
-
         const reduction =
-            Math.min(
-                10000,
-                remaining
-            );
-
+            Math.min(10000, remaining);
 
         const newEnd =
             player.castle_upgrade_end -
             reduction;
-
 
         db.prepare(`
             UPDATE players
@@ -1628,31 +1398,21 @@ app.post(
                 castle_upgrade_end = ?,
 
                 building_speedups =
-                    CASE
-                        WHEN building_speedups > 0
-                        THEN building_speedups - 1
-                        ELSE 0
-                    END
+                    building_speedups - 1
 
             WHERE id = ?
         `).run(
-
             newEnd,
-
             player.id
-
         );
-
 
         const updated =
             getPlayer(player.id);
-
 
         io.emit(
             "playerUpdated",
             publicPlayer(updated)
         );
-
 
         res.json({
 
@@ -1679,22 +1439,15 @@ app.post(
     (req, res) => {
 
         let player =
-            getPlayer(
-                req.params.id
-            );
-
+            getPlayer(req.params.id);
 
         if (!player) {
 
             return res.status(404).json({
-
-                error:
-                    "اللاعب غير موجود."
-
+                error: "اللاعب غير موجود."
             });
 
         }
-
 
         if (
             player.research_end >
@@ -1713,7 +1466,6 @@ app.post(
 
         }
 
-
         if (
             player.research_end > 0 &&
             player.research_end <= Date.now()
@@ -1726,17 +1478,14 @@ app.post(
 
         }
 
-
         const researchName =
             String(
                 req.body.name ||
                 "تكنولوجيا البداية"
-            );
-
+            ).trim().slice(0, 50);
 
         const cost =
             getResearchCost();
-
 
         if (
             player.food < cost.food ||
@@ -1750,8 +1499,7 @@ app.post(
                 error:
                     "❌ موارد البحث غير كافية.",
 
-                cost:
-                    cost,
+                cost,
 
                 player:
                     publicPlayer(player)
@@ -1760,18 +1508,16 @@ app.post(
 
         }
 
-
         let duration =
             getResearchTime();
 
-
         /*
-           تسريع البحث
+           استخدام تسريع البحث
+           فقط إذا كان موجودًا
         */
 
         if (
-            player.research_speedups >
-            0
+            player.research_speedups > 0
         ) {
 
             duration =
@@ -1792,27 +1538,20 @@ app.post(
 
         }
 
-
         const endTime =
-            Date.now() +
-            duration;
-
+            Date.now() + duration;
 
         db.prepare(`
             UPDATE players
 
             SET
-                food =
-                    food - ?,
+                food = food - ?,
 
-                wood =
-                    wood - ?,
+                wood = wood - ?,
 
-                iron =
-                    iron - ?,
+                iron = iron - ?,
 
-                gold =
-                    gold - ?,
+                gold = gold - ?,
 
                 research_name = ?,
 
@@ -1820,30 +1559,22 @@ app.post(
 
             WHERE id = ?
         `).run(
-
             cost.food,
             cost.wood,
             cost.iron,
             cost.gold,
-
             researchName,
-
             endTime,
-
             player.id
-
         );
-
 
         const updated =
             getPlayer(player.id);
-
 
         io.emit(
             "playerUpdated",
             publicPlayer(updated)
         );
-
 
         res.json({
 
@@ -1852,8 +1583,7 @@ app.post(
             message:
                 "🔬 بدأ البحث.",
 
-            duration:
-                duration,
+            duration,
 
             player:
                 publicPlayer(updated)
@@ -1874,30 +1604,20 @@ function completeResearch(player) {
         return;
     }
 
-
-    if (
-        !player.research_end
-    ) {
-
+    if (!player.research_end) {
         return;
-
     }
-
 
     if (
         player.research_end >
         Date.now()
     ) {
-
         return;
-
     }
-
 
     const name =
         player.research_name ||
         "بحث";
-
 
     db.prepare(`
         UPDATE players
@@ -1907,8 +1627,7 @@ function completeResearch(player) {
 
             research_name = '',
 
-            power =
-                power + 500,
+            power = power + 500,
 
             commander_xp =
                 commander_xp + 50
@@ -1916,24 +1635,16 @@ function completeResearch(player) {
         WHERE id = ?
     `).run(player.id);
 
-
     const updated =
         getPlayer(player.id);
-
 
     io.emit(
         "researchFinished",
         {
-
-            playerId:
-                player.id,
-
-            name:
-                name
-
+            playerId: player.id,
+            name
         }
     );
-
 
     io.emit(
         "playerUpdated",
@@ -1952,22 +1663,15 @@ app.post(
     (req, res) => {
 
         let player =
-            getPlayer(
-                req.params.id
-            );
-
+            getPlayer(req.params.id);
 
         if (!player) {
 
             return res.status(404).json({
-
-                error:
-                    "اللاعب غير موجود."
-
+                error: "اللاعب غير موجود."
             });
 
         }
-
 
         if (
             player.research_end <=
@@ -1975,31 +1679,39 @@ app.post(
         ) {
 
             return res.status(400).json({
+                error: "لا يوجد بحث جارٍ."
+            });
+
+        }
+
+        /*
+           التصحيح:
+           يجب امتلاك تسريع بحث
+        */
+
+        if (
+            player.research_speedups <= 0
+        ) {
+
+            return res.status(400).json({
 
                 error:
-                    "لا يوجد بحث جارٍ."
+                    "⚡ لا يوجد لديك تسريع بحث."
 
             });
 
         }
 
-
         const remaining =
             player.research_end -
             Date.now();
 
-
         const reduction =
-            Math.min(
-                10000,
-                remaining
-            );
-
+            Math.min(10000, remaining);
 
         const newEnd =
             player.research_end -
             reduction;
-
 
         db.prepare(`
             UPDATE players
@@ -2008,31 +1720,21 @@ app.post(
                 research_end = ?,
 
                 research_speedups =
-                    CASE
-                        WHEN research_speedups > 0
-                        THEN research_speedups - 1
-                        ELSE 0
-                    END
+                    research_speedups - 1
 
             WHERE id = ?
         `).run(
-
             newEnd,
-
             player.id
-
         );
-
 
         const updated =
             getPlayer(player.id);
-
 
         io.emit(
             "playerUpdated",
             publicPlayer(updated)
         );
-
 
         res.json({
 
@@ -2059,31 +1761,35 @@ app.post(
     (req, res) => {
 
         const player =
-            getPlayer(
-                req.params.id
-            );
-
+            getPlayer(req.params.id);
 
         if (!player) {
 
             return res.status(404).json({
-
-                error:
-                    "اللاعب غير موجود."
-
+                error: "اللاعب غير موجود."
             });
 
         }
 
+        let amount =
+            Number(req.body.amount || 1);
 
-        const amount =
-            Math.max(
-                1,
-                Number(
-                    req.body.amount || 1
-                )
-            );
+        if (
+            !Number.isFinite(amount) ||
+            amount < 1
+        ) {
+            amount = 1;
+        }
 
+        amount =
+            Math.floor(amount);
+
+        /*
+           حماية من أرقام ضخمة
+        */
+
+        amount =
+            Math.min(amount, 100000);
 
         db.prepare(`
             UPDATE players
@@ -2100,25 +1806,19 @@ app.post(
 
             WHERE id = ?
         `).run(
-
             amount,
             amount,
             amount,
-
             player.id
-
         );
-
 
         const updated =
             getPlayer(player.id);
-
 
         io.emit(
             "playerUpdated",
             publicPlayer(updated)
         );
-
 
         res.json({
 
@@ -2144,60 +1844,9 @@ app.get(
     "/api/world",
     (req, res) => {
 
-        const players =
-            db.prepare(`
-                SELECT
-                    id,
-                    name,
-                    kingdom,
-                    x,
-                    y,
-                    castle,
-                    power
-                FROM players
-            `).all();
-
-
-        const zombies =
-            db.prepare(`
-                SELECT *
-                FROM zombies
-            `).all();
-
-
-        const forts =
-            db.prepare(`
-                SELECT *
-                FROM forts
-            `).all();
-
-
-        const marches =
-            db.prepare(`
-                SELECT *
-                FROM marches
-
-                WHERE status = 'marching'
-
-                ORDER BY id DESC
-            `).all();
-
-
-        res.json({
-
-            players:
-                players,
-
-            zombies:
-                zombies,
-
-            forts:
-                forts,
-
-            marches:
-                marches
-
-        });
+        res.json(
+            getWorldData()
+        );
 
     }
 );
@@ -2228,7 +1877,6 @@ app.get(
                 LIMIT 100
             `).all();
 
-
         res.json({
             players
         });
@@ -2246,30 +1894,21 @@ app.post(
     (req, res) => {
 
         const player =
-            getPlayer(
-                req.params.id
-            );
-
+            getPlayer(req.params.id);
 
         if (!player) {
 
             return res.status(404).json({
-
-                error:
-                    "اللاعب غير موجود."
-
+                error: "اللاعب غير موجود."
             });
 
         }
 
-
         const x =
             Number(req.body.x);
 
-
         const y =
             Number(req.body.y);
-
 
         if (
             !Number.isFinite(x) ||
@@ -2277,14 +1916,20 @@ app.post(
         ) {
 
             return res.status(400).json({
-
-                error:
-                    "إحداثيات غير صحيحة."
-
+                error: "إحداثيات غير صحيحة."
             });
 
         }
 
+        /*
+           حدود الخريطة
+        */
+
+        const safeX =
+            Math.max(-1000, Math.min(1000, x));
+
+        const safeY =
+            Math.max(-1000, Math.min(1000, y));
 
         db.prepare(`
             UPDATE players
@@ -2295,23 +1940,23 @@ app.post(
 
             WHERE id = ?
         `).run(
-
-            x,
-            y,
+            safeX,
+            safeY,
             player.id
-
         );
-
 
         const updated =
             getPlayer(player.id);
-
 
         io.emit(
             "playerUpdated",
             publicPlayer(updated)
         );
 
+        io.emit(
+            "worldUpdated",
+            getWorldData()
+        );
 
         res.json({
 
@@ -2335,40 +1980,26 @@ app.post(
     (req, res) => {
 
         const player =
-            getPlayer(
-                req.params.id
-            );
-
+            getPlayer(req.params.id);
 
         if (!player) {
 
             return res.status(404).json({
-
-                error:
-                    "اللاعب غير موجود."
-
+                error: "اللاعب غير موجود."
             });
 
         }
-
 
         const targetType =
             String(
                 req.body.targetType || ""
             );
 
-
         const targetId =
-            Number(
-                req.body.targetId
-            );
-
+            Number(req.body.targetId);
 
         let troops =
-            Number(
-                req.body.troops
-            );
-
+            Number(req.body.troops);
 
         if (
             targetType !== "zombie" &&
@@ -2376,28 +2007,20 @@ app.post(
         ) {
 
             return res.status(400).json({
-
-                error:
-                    "الهدف غير مدعوم."
-
+                error: "الهدف غير مدعوم."
             });
 
         }
-
 
         if (
             !Number.isInteger(targetId)
         ) {
 
             return res.status(400).json({
-
-                error:
-                    "الهدف غير صحيح."
-
+                error: "الهدف غير صحيح."
             });
 
         }
-
 
         if (
             !Number.isInteger(troops) ||
@@ -2405,14 +2028,18 @@ app.post(
         ) {
 
             return res.status(400).json({
-
-                error:
-                    "عدد الجنود غير صحيح."
-
+                error: "عدد الجنود غير صحيح."
             });
 
         }
 
+        if (player.troops <= 0) {
+
+            return res.status(400).json({
+                error: "ليس لديك جنود."
+            });
+
+        }
 
         if (
             troops > player.troops
@@ -2423,9 +2050,7 @@ app.post(
 
         }
 
-
         let target;
-
 
         if (
             targetType === "zombie"
@@ -2449,75 +2074,49 @@ app.post(
 
         }
 
-
         if (!target) {
 
             return res.status(404).json({
-
-                error:
-                    "الهدف غير موجود."
-
+                error: "الهدف غير موجود."
             });
 
         }
 
-
         const distance =
             Math.sqrt(
-
                 Math.pow(
                     target.x - player.x,
                     2
-                )
-
-                +
-
+                ) +
                 Math.pow(
                     target.y - player.y,
                     2
                 )
-
             );
-
-
-        /*
-           سرعة الجيش
-        */
 
         const travelTime =
             Math.max(
                 5000,
-                Math.floor(
-                    distance * 50
-                )
+                Math.floor(distance * 50)
             );
-
 
         const now =
             Date.now();
 
-
         const arrival =
-            now +
-            travelTime;
-
+            now + travelTime;
 
         db.prepare(`
             UPDATE players
 
             SET
-                troops =
-                    troops - ?
+                troops = troops - ?
 
             WHERE id = ?
         `).run(
-
             troops,
-
             player.id
-
         );
-
 
         db.prepare(`
             INSERT INTO marches (
@@ -2552,36 +2151,30 @@ app.post(
                 ?, ?, 'marching'
             )
         `).run(
-
             player.id,
-
             targetType,
-
             targetId,
-
             troops,
-
             player.x,
             player.y,
-
             target.x,
             target.y,
-
             now,
             arrival
-
         );
-
 
         const updated =
             getPlayer(player.id);
-
 
         io.emit(
             "playerUpdated",
             publicPlayer(updated)
         );
 
+        io.emit(
+            "worldUpdated",
+            getWorldData()
+        );
 
         res.json({
 
@@ -2611,7 +2204,6 @@ function processMarches() {
     const now =
         Date.now();
 
-
     const marches =
         db.prepare(`
             SELECT *
@@ -2622,14 +2214,11 @@ function processMarches() {
             AND arrival_time <= ?
         `).all(now);
 
-
     for (
         const march of marches
     ) {
 
-        processBattle(
-            march
-        );
+        processBattle(march);
 
     }
 
@@ -2639,10 +2228,7 @@ function processMarches() {
 function processBattle(march) {
 
     const player =
-        getPlayer(
-            march.player_id
-        );
-
+        getPlayer(march.player_id);
 
     if (!player) {
 
@@ -2659,9 +2245,7 @@ function processBattle(march) {
 
     }
 
-
     let target;
-
 
     if (
         march.target_type ===
@@ -2690,10 +2274,8 @@ function processBattle(march) {
 
     }
 
-
     let result =
         "⚔️ فوز";
-
 
     if (!target) {
 
@@ -2704,7 +2286,6 @@ function processBattle(march) {
 
         const armyPower =
             march.troops * 10;
-
 
         if (
             armyPower >=
@@ -2726,17 +2307,10 @@ function processBattle(march) {
 
                 WHERE id = ?
             `).run(
-
                 target.power,
-
-                Math.floor(
-                    target.power / 10
-                ),
-
+                Math.floor(target.power / 10),
                 player.id
-
             );
-
 
             if (
                 march.target_type ===
@@ -2770,7 +2344,6 @@ function processBattle(march) {
 
     }
 
-
     db.prepare(`
         INSERT INTO battle_reports (
 
@@ -2788,25 +2361,15 @@ function processBattle(march) {
 
         )
 
-        VALUES (
-            ?, ?, ?, ?, ?, ?
-        )
+        VALUES (?, ?, ?, ?, ?, ?)
     `).run(
-
         player.id,
-
         march.target_type,
-
         march.target_id,
-
         march.troops,
-
         result,
-
         Date.now()
-
     );
-
 
     db.prepare(`
         UPDATE marches
@@ -2819,33 +2382,22 @@ function processBattle(march) {
         march.id
     );
 
-
     const updated =
         getPlayer(player.id);
-
 
     io.emit(
         "battleFinished",
         {
-
-            playerId:
-                player.id,
-
-            result:
-                result,
-
-            marchId:
-                march.id
-
+            playerId: player.id,
+            result: result,
+            marchId: march.id
         }
     );
-
 
     io.emit(
         "playerUpdated",
         publicPlayer(updated)
     );
-
 
     io.emit(
         "worldUpdated",
@@ -2892,6 +2444,7 @@ function getWorldData() {
             db.prepare(`
                 SELECT *
                 FROM marches
+
                 WHERE status = 'marching'
             `).all()
 
@@ -2922,7 +2475,6 @@ app.get(
                 req.params.playerId
             );
 
-
         res.json(
             reports
         );
@@ -2941,37 +2493,28 @@ app.get(
 
         res.json({
 
-            online:
-                true,
+            online: true,
 
-            version:
-                "10.0",
+            version: "10.1",
 
             game:
                 "Kardous Survival",
 
             systems: {
 
-                training:
-                    true,
+                training: true,
 
-                buildingSpeedup:
-                    true,
+                buildingSpeedup: true,
 
-                trainingSpeedup:
-                    true,
+                trainingSpeedup: true,
 
-                research:
-                    true,
+                research: true,
 
-                researchSpeedup:
-                    true,
+                researchSpeedup: true,
 
-                multiplayer:
-                    true,
+                multiplayer: true,
 
-                battles:
-                    true
+                battles: true
 
             }
 
@@ -2994,12 +2537,10 @@ io.on(
             socket.id
         );
 
-
         socket.emit(
             "worldUpdated",
             getWorldData()
         );
-
 
         socket.on(
             "disconnect",
@@ -3026,7 +2567,6 @@ function processTraining() {
     const now =
         Date.now();
 
-
     const players =
         db.prepare(`
             SELECT *
@@ -3037,14 +2577,11 @@ function processTraining() {
             AND training_end <= ?
         `).all(now);
 
-
     for (
         const player of players
     ) {
 
-        completeTraining(
-            player
-        );
+        completeTraining(player);
 
     }
 
@@ -3060,7 +2597,6 @@ function processCastleUpgrades() {
     const now =
         Date.now();
 
-
     const players =
         db.prepare(`
             SELECT *
@@ -3071,14 +2607,11 @@ function processCastleUpgrades() {
             AND castle_upgrade_end <= ?
         `).all(now);
 
-
     for (
         const player of players
     ) {
 
-        completeCastleUpgrade(
-            player
-        );
+        completeCastleUpgrade(player);
 
     }
 
@@ -3094,7 +2627,6 @@ function processResearch() {
     const now =
         Date.now();
 
-
     const players =
         db.prepare(`
             SELECT *
@@ -3105,14 +2637,11 @@ function processResearch() {
             AND research_end <= ?
         `).all(now);
 
-
     for (
         const player of players
     ) {
 
-        completeResearch(
-            player
-        );
+        completeResearch(player);
 
     }
 
@@ -3140,6 +2669,29 @@ setInterval(
 
 
 /* =========================
+   ERROR HANDLING
+========================= */
+
+app.use(
+    (err, req, res, next) => {
+
+        console.error(
+            "Server error:",
+            err
+        );
+
+        res.status(500).json({
+
+            error:
+                "حدث خطأ في الخادم."
+
+        });
+
+    }
+);
+
+
+/* =========================
    START SERVER
 ========================= */
 
@@ -3148,7 +2700,7 @@ server.listen(
     () => {
 
         console.log(
-            `🏰 Kardous Survival v10.0`
+            "🏰 Kardous Survival v10.1"
         );
 
         console.log(
