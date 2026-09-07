@@ -2,7 +2,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Kardous Survival</title><script src="/socket.io/socket.io.js"></script><style>
-*{box-sizing:border-box}
+
+*{
+box-sizing:border-box;
+}
 
 body{
 margin:0;
@@ -19,7 +22,9 @@ top:0;
 z-index:10;
 }
 
-h1,h2,h3{margin:6px}
+h1,h2,h3{
+margin:6px;
+}
 
 .resources{
 display:grid;
@@ -55,9 +60,46 @@ border-radius:9px;
 padding:11px;
 margin:4px;
 font-weight:bold;
+cursor:pointer;
 }
 
-.hidden{display:none}
+input{
+width:100%;
+padding:12px;
+border:0;
+border-radius:9px;
+margin:6px 0;
+font-size:16px;
+}
+
+.hidden{
+display:none;
+}
+
+#registerScreen{
+position:fixed;
+inset:0;
+background:#101820;
+z-index:100;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:20px;
+}
+
+.registerBox{
+width:100%;
+max-width:420px;
+background:#1b2b36;
+padding:20px;
+border-radius:18px;
+text-align:center;
+}
+
+.registerError{
+color:#ff7777;
+min-height:25px;
+}
 
 #map{
 position:relative;
@@ -67,9 +109,23 @@ border:4px solid #687b54;
 border-radius:15px;
 
 background:
-radial-gradient(circle at 20% 30%,#78935c 0 9%,transparent 10%),
-radial-gradient(circle at 70% 75%,#607c4d 0 12%,transparent 13%),
-linear-gradient(135deg,#456c45,#294d38);
+radial-gradient(
+circle at 20% 30%,
+#78935c 0 9%,
+transparent 10%
+),
+
+radial-gradient(
+circle at 70% 75%,
+#607c4d 0 12%,
+transparent 13%
+),
+
+linear-gradient(
+135deg,
+#456c45,
+#294d38
+);
 }
 
 .player{
@@ -182,7 +238,29 @@ font-size:12px;
 opacity:.8;
 }
 
-</style></head><body><header><h1>🏰 Kardous Survival</h1><div class="resources"><div class="resource">
+</style></head><body><!-- =========================
+REGISTER SCREEN
+========================= --><div id="registerScreen"><div class="registerBox"><h1>🏰 Kardous Survival</h1><h2>👤 إنشاء لاعب</h2><p>
+اختر اسم لاعبك لدخول المملكة #1
+</p><input
+id="playerName"
+type="text"
+maxlength="20"
+placeholder="اكتب اسم اللاعب"
+/>
+
+<div
+id="registerError"
+class="registerError"
+></div><button
+onclick="registerPlayer()"
+
+«»
+
+🚀 دخول المملكة
+</button>
+
+</div></div><header><h1>🏰 Kardous Survival</h1><div class="resources"><div class="resource">
 🍎 <span id="food">0</span>
 </div><div class="resource">
 🪵 <span id="wood">0</span>
@@ -192,7 +270,13 @@ opacity:.8;
 🪙 <span id="gold">0</span>
 </div></div></header><div class="page"><!-- =====================
 HOME
-===================== --><section id="home"><div class="panel"><h2>🏰 قلعة Kardous</h2><p>
+===================== --><section id="home"><div class="panel"><h2>🏰 قلعة <span id="playerNameDisplay">Kardous</span></h2><p>
+🆔 ID:
+<b id="playerIdDisplay">-</b>
+</p><p>
+المملكة:
+<b id="kingdom">1</b>
+</p><p>
 المستوى:
 <b id="castle">1</b>
 </p><p>
@@ -204,7 +288,7 @@ HOME
 ⚔️ تدريب
 </button><button onclick="upgrade()">
 ⬆️ ترقية
-</button></div></div><div class="panel"><h3>👑 القائد Kardous</h3><p>
+</button></div></div><div class="panel"><h3>👑 القائد</h3><p>
 المستوى:
 <span id="commander">1</span>
 </p><p>
@@ -217,19 +301,40 @@ HOME
 جاري التحميل...
 </div></div></section><!-- =====================
 WORLD
-===================== --><section id="world" class="hidden"><div class="panel"><h2>🌍 المملكة #1</h2><p>
+===================== --><section
+id="world"
+class="hidden"
+><div class="panel"><h2>🌍 المملكة #1</h2><p>
 اللاعبون والزومبي والحصون يظهرون على الخريطة.
-</p></div><div class="panel"><div id="map"></div></div><div class="panel"><h3>🎯 الهدف المحدد</h3><div id="target" class="target">
+</p></div><div class="panel"><div id="map"></div></div><div class="panel"><h3>🎯 الهدف المحدد</h3><div
+id="target"
+class="target"
+>
 لم تحدد هدفًا
-</div><button onclick="attackTarget()">
+</div><button
+onclick="attackTarget()"
+
+«»
+
 ⚔️ إرسال الجيش
-</button></div><div class="panel"><h3>🚶 المسيرات</h3><div id="marches" class="log">
+</button>
+
+</div><div class="panel"><h3>🚶 المسيرات</h3><div
+id="marches"
+class="log"
+>
 لا توجد مسيرات.
-</div></div><div class="panel"><h3>📜 الأحداث</h3><div id="log" class="log">
+</div></div><div class="panel"><h3>📜 الأحداث</h3><div
+id="log"
+class="log"
+>
 الخريطة جاهزة.
 </div></div></section><!-- =====================
 REPORTS
-===================== --><section id="reports" class="hidden"><div class="panel"><h2>📜 تقارير المعارك</h2><p>
+===================== --><section
+id="reports"
+class="hidden"
+><div class="panel"><h2>📜 تقارير المعارك</h2><p>
 جميع معاركك محفوظة على السيرفر.
 </p><button onclick="loadReports()">
 🔄 تحديث التقارير
@@ -252,15 +357,26 @@ z-index:20;
 🏰 القلعة
 </button><button onclick="show('world')">
 🌍 الخريطة
-</button><button onclick="show('reports');loadReports()">
+</button><button
+onclick="show('reports');loadReports()"
+
+«»
+
 📜 التقارير
-</button></div><script>
+</button>
+
+</div><script>
 
 /* =========================
-PLAYER
+PLAYER ID
 ========================= */
 
-const playerId = 1;
+let playerId =
+Number(
+localStorage.getItem(
+"kardousPlayerId"
+)
+) || null;
 
 const socket = io();
 
@@ -270,6 +386,144 @@ document.getElementById("map");
 let myPlayer = null;
 
 let selectedTarget = null;
+
+
+/* =========================
+REGISTER
+========================= */
+
+async function registerPlayer(){
+
+const input =
+document.getElementById(
+"playerName"
+);
+
+const error =
+document.getElementById(
+"registerError"
+);
+
+const name =
+input.value.trim();
+
+error.textContent = "";
+
+if(name.length < 3){
+
+error.textContent =
+"❌ الاسم يجب أن يكون 3 أحرف على الأقل.";
+
+return;
+
+}
+
+try{
+
+const response =
+await fetch(
+"/api/register",
+{
+method:"POST",
+
+headers:{
+"Content-Type":
+"application/json"
+},
+
+body:JSON.stringify({
+name:name
+})
+
+}
+);
+
+const data =
+await response.json();
+
+if(!response.ok){
+
+error.textContent =
+"❌ " +
+(data.error ||
+"تعذر إنشاء اللاعب");
+
+return;
+
+}
+
+playerId =
+data.player.id;
+
+localStorage.setItem(
+"kardousPlayerId",
+playerId
+);
+
+document
+.getElementById(
+"registerScreen"
+)
+.classList.add("hidden");
+
+loadPlayer();
+
+}catch(error){
+
+console.log(error);
+
+document
+.getElementById(
+"registerError"
+)
+.textContent =
+"❌ تعذر الاتصال بالسيرفر.";
+
+}
+
+}
+
+
+/* =========================
+CHECK PLAYER
+========================= */
+
+async function checkPlayer(){
+
+if(!playerId){
+
+return false;
+
+}
+
+try{
+
+const response =
+await fetch(
+`/api/player/${playerId}`
+);
+
+if(!response.ok){
+
+localStorage.removeItem(
+"kardousPlayerId"
+);
+
+playerId = null;
+
+return false;
+
+}
+
+return true;
+
+}catch(error){
+
+return false;
+
+}
+
+}
 
 
 /* =========================
@@ -297,6 +551,12 @@ LOAD PLAYER
 
 async function loadPlayer(){
 
+if(!playerId){
+
+return;
+
+}
+
 try{
 
 const response =
@@ -305,7 +565,21 @@ await fetch(
 );
 
 if(!response.ok){
+
+localStorage.removeItem(
+"kardousPlayerId"
+);
+
+playerId = null;
+
+document
+.getElementById(
+"registerScreen"
+)
+.classList.remove("hidden");
+
 return;
+
 }
 
 const p =
@@ -314,32 +588,54 @@ await response.json();
 myPlayer = p;
 
 document
+.getElementById("playerNameDisplay")
+.textContent =
+p.name;
+
+document
+.getElementById("playerIdDisplay")
+.textContent =
+p.id;
+
+document
+.getElementById("kingdom")
+.textContent =
+p.kingdom;
+
+document
 .getElementById("food")
-.textContent = p.food;
+.textContent =
+p.food;
 
 document
 .getElementById("wood")
-.textContent = p.wood;
+.textContent =
+p.wood;
 
 document
 .getElementById("iron")
-.textContent = p.iron;
+.textContent =
+p.iron;
 
 document
 .getElementById("gold")
-.textContent = p.gold;
+.textContent =
+p.gold;
 
 document
 .getElementById("castle")
-.textContent = p.castle;
+.textContent =
+p.castle;
 
 document
 .getElementById("power")
-.textContent = p.power;
+.textContent =
+p.power;
 
 document
 .getElementById("troops")
-.textContent = p.troops;
+.textContent =
+p.troops;
 
 document
 .getElementById("commander")
@@ -389,6 +685,8 @@ loadPlayer();
 
 function collect(){
 
+if(!playerId)return;
+
 action(
 `/api/player/${playerId}/collect`
 );
@@ -398,6 +696,8 @@ action(
 
 function train(){
 
+if(!playerId)return;
+
 action(
 `/api/player/${playerId}/train`
 );
@@ -406,6 +706,8 @@ action(
 
 
 function upgrade(){
+
+if(!playerId)return;
 
 action(
 `/api/player/${playerId}/upgrade-castle`
@@ -580,19 +882,13 @@ WORLD
 function renderWorld(data){
 
 (data.players || [])
-.forEach(
-createPlayer
-);
+.forEach(createPlayer);
 
 (data.zombies || [])
-.forEach(
-createZombie
-);
+.forEach(createZombie);
 
 (data.forts || [])
-.forEach(
-createFort
-);
+.forEach(createFort);
 
 renderMarches(
 data.marches || []
@@ -624,12 +920,23 @@ socket.on(
 player => {
 
 if(
+!playerId ||
 player.id !== playerId
 ){
 return;
 }
 
 myPlayer = player;
+
+document
+.getElementById("playerNameDisplay")
+.textContent =
+player.name;
+
+document
+.getElementById("playerIdDisplay")
+.textContent =
+player.id;
 
 document
 .getElementById("food")
@@ -681,33 +988,6 @@ player.commander.experience;
 
 
 /* =========================
-PLAYER MOVE
-========================= */
-
-socket.on(
-"playerMoved",
-data => {
-
-const player =
-document.getElementById(
-"player-" + data.id
-);
-
-if(player){
-
-player.style.left =
-data.x + "%";
-
-player.style.top =
-data.y + "%";
-
-}
-
-}
-);
-
-
-/* =========================
 MARCH CREATED
 ========================= */
 
@@ -727,7 +1007,7 @@ document
 
 
 /* =========================
-BATTLE FINISHED
+BATTLE
 ========================= */
 
 socket.on(
@@ -990,66 +1270,16 @@ box.appendChild(item);
 
 
 /* =========================
-MAP CLICK
+LOAD REPORTS
 ========================= */
 
-map.addEventListener(
-"click",
-async event => {
+async function loadReports(){
 
-if(!myPlayer){
+if(!playerId){
 
 return;
 
 }
-
-const rect =
-map.getBoundingClientRect();
-
-const x =
-(
-(event.clientX -
-rect.left)
-/
-rect.width
-) * 100;
-
-const y =
-(
-(event.clientY -
-rect.top)
-/
-rect.height
-) * 100;
-
-await fetch(
-`/api/player/${playerId}/move`,
-{
-method:"POST",
-
-headers:{
-"Content-Type":
-"application/json"
-},
-
-body:
-JSON.stringify({
-x,
-y
-})
-
-}
-);
-
-}
-);
-
-
-/* =========================
-LOAD BATTLE REPORTS
-========================= */
-
-async function loadReports(){
 
 const box =
 document.getElementById(
@@ -1174,10 +1404,83 @@ box.innerHTML =
 
 
 /* =========================
+MAP CLICK
+========================= */
+
+map.addEventListener(
+"click",
+async event => {
+
+if(!myPlayer){
+
+return;
+
+}
+
+const rect =
+map.getBoundingClientRect();
+
+const x =
+(
+(event.clientX -
+rect.left)
+/
+rect.width
+) * 100;
+
+const y =
+(
+(event.clientY -
+rect.top)
+/
+rect.height
+) * 100;
+
+await fetch(
+`/api/player/${playerId}/move`,
+{
+method:"POST",
+
+headers:{
+"Content-Type":
+"application/json"
+},
+
+body:
+JSON.stringify({
+x,
+y
+})
+
+}
+);
+
+}
+);
+
+
+/* =========================
 START
 ========================= */
 
+(async function(){
+
+const exists =
+await checkPlayer();
+
+if(exists){
+
+document
+.getElementById(
+"registerScreen"
+)
+.classList.add("hidden");
+
 loadPlayer();
+
+}
+
+})();
 
 </script></body>
 </html>
