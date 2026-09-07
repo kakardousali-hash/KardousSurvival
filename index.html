@@ -1,1486 +1,1859 @@
-<!DOCTYPE html><html lang="ar" dir="rtl">
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>Kardous Survival</title><script src="/socket.io/socket.io.js"></script><style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kardous Survival</title>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<style>
 
 *{
-box-sizing:border-box;
+    box-sizing:border-box;
 }
 
 body{
-margin:0;
-background:#101820;
-color:white;
-font-family:Arial;
+    margin:0;
+    background:#101820;
+    color:white;
+    font-family:Arial,sans-serif;
 }
 
 header{
-background:#17242e;
-padding:10px;
-position:sticky;
-top:0;
-z-index:10;
+    background:#17242e;
+    padding:10px;
+    position:sticky;
+    top:0;
+    z-index:10;
 }
 
 h1,h2,h3{
-margin:6px;
+    margin:6px;
 }
 
 .resources{
-display:grid;
-grid-template-columns:repeat(4,1fr);
-gap:5px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:5px;
 }
 
 .resource{
-background:#263845;
-padding:8px 2px;
-border-radius:8px;
-text-align:center;
-font-size:13px;
+    background:#263845;
+    padding:8px 2px;
+    border-radius:8px;
+    text-align:center;
+    font-size:13px;
 }
 
 .page{
-padding:10px;
-padding-bottom:80px;
+    padding:10px;
+    padding-bottom:80px;
 }
 
 .panel{
-background:#1b2b36;
-padding:12px;
-margin-bottom:10px;
-border-radius:14px;
+    background:#1b2b36;
+    padding:12px;
+    margin-bottom:10px;
+    border-radius:14px;
 }
 
 button{
-background:#c78a2c;
-color:white;
-border:0;
-border-radius:9px;
-padding:11px;
-margin:4px;
-font-weight:bold;
-cursor:pointer;
+    background:#c78a2c;
+    color:white;
+    border:0;
+    border-radius:9px;
+    padding:11px;
+    margin:4px;
+    font-weight:bold;
+    cursor:pointer;
 }
 
 input{
-width:100%;
-padding:12px;
-border:0;
-border-radius:9px;
-margin:6px 0;
-font-size:16px;
+    width:100%;
+    padding:12px;
+    border:0;
+    border-radius:9px;
+    margin:6px 0;
+    font-size:16px;
 }
 
 .hidden{
-display:none;
+    display:none !important;
 }
 
 #registerScreen{
-position:fixed;
-inset:0;
-background:#101820;
-z-index:100;
-display:flex;
-align-items:center;
-justify-content:center;
-padding:20px;
+    position:fixed;
+    inset:0;
+    background:#101820;
+    z-index:100;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
 }
 
 .registerBox{
-width:100%;
-max-width:420px;
-background:#1b2b36;
-padding:20px;
-border-radius:18px;
-text-align:center;
+    width:100%;
+    max-width:420px;
+    background:#1b2b36;
+    padding:20px;
+    border-radius:18px;
+    text-align:center;
 }
 
 .registerError{
-color:#ff7777;
-min-height:25px;
+    color:#ff7777;
+    min-height:25px;
 }
 
 #map{
-position:relative;
-height:520px;
-overflow:hidden;
-border:4px solid #687b54;
-border-radius:15px;
+    position:relative;
+    height:520px;
+    overflow:hidden;
+    border:4px solid #687b54;
+    border-radius:15px;
 
-background:
-radial-gradient(
-circle at 20% 30%,
-#78935c 0 9%,
-transparent 10%
-),
+    background:
+    radial-gradient(
+        circle at 20% 30%,
+        #78935c 0 9%,
+        transparent 10%
+    ),
 
-radial-gradient(
-circle at 70% 75%,
-#607c4d 0 12%,
-transparent 13%
-),
+    radial-gradient(
+        circle at 70% 75%,
+        #607c4d 0 12%,
+        transparent 13%
+    ),
 
-linear-gradient(
-135deg,
-#456c45,
-#294d38
-);
+    linear-gradient(
+        135deg,
+        #456c45,
+        #294d38
+    );
 }
 
 .player{
-position:absolute;
-transform:translate(-50%,-50%);
-text-align:center;
-font-size:27px;
-transition:left .6s linear,top .6s linear;
-cursor:pointer;
-z-index:5;
+    position:absolute;
+    transform:translate(-50%,-50%);
+    text-align:center;
+    font-size:27px;
+    transition:left .6s linear,top .6s linear;
+    cursor:pointer;
+    z-index:5;
 }
 
 .playerName{
-font-size:11px;
-background:#111b;
-padding:2px 5px;
-border-radius:5px;
-white-space:nowrap;
+    font-size:11px;
+    background:#111b;
+    padding:2px 5px;
+    border-radius:5px;
+    white-space:nowrap;
 }
 
 .zombie{
-position:absolute;
-transform:translate(-50%,-50%);
-font-size:25px;
-cursor:pointer;
-z-index:3;
-transition:left 2s linear,top 2s linear;
+    position:absolute;
+    transform:translate(-50%,-50%);
+    font-size:25px;
+    cursor:pointer;
+    z-index:3;
+    transition:left 2s linear,top 2s linear;
 }
 
 .zombieName{
-font-size:9px;
-background:#111c;
-padding:2px 4px;
-border-radius:4px;
+    font-size:9px;
+    background:#111c;
+    padding:2px 4px;
+    border-radius:4px;
 }
 
 .fort{
-position:absolute;
-transform:translate(-50%,-50%);
-font-size:30px;
-cursor:pointer;
-z-index:2;
+    position:absolute;
+    transform:translate(-50%,-50%);
+    font-size:30px;
+    cursor:pointer;
+    z-index:2;
 }
 
 .fortName{
-font-size:10px;
-background:#111c;
-padding:2px 4px;
-border-radius:4px;
+    font-size:10px;
+    background:#111c;
+    padding:2px 4px;
+    border-radius:4px;
 }
 
 .march{
-position:absolute;
-font-size:25px;
-pointer-events:none;
-z-index:8;
-transition:left 1s linear,top 1s linear;
+    position:absolute;
+    font-size:25px;
+    pointer-events:none;
+    z-index:8;
+    transition:left 1s linear,top 1s linear;
 }
 
 .controls{
-display:flex;
-flex-wrap:wrap;
-justify-content:center;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
 }
 
 .log{
-background:#101820;
-padding:8px;
-border-radius:8px;
-min-height:35px;
-font-size:13px;
+    background:#101820;
+    padding:8px;
+    border-radius:8px;
+    min-height:35px;
+    font-size:13px;
 }
 
 .target{
-background:#263845;
-padding:8px;
-border-radius:8px;
-margin-top:8px;
+    background:#263845;
+    padding:8px;
+    border-radius:8px;
+    margin-top:8px;
 }
 
 .report{
-background:#263845;
-padding:12px;
-border-radius:10px;
-margin-bottom:8px;
-border-right:4px solid #c78a2c;
+    background:#263845;
+    padding:12px;
+    border-radius:10px;
+    margin-bottom:8px;
+    border-right:4px solid #c78a2c;
 }
 
 .reportVictory{
-border-right-color:#4caf50;
+    border-right-color:#4caf50;
 }
 
 .reportDefeat{
-border-right-color:#d9534f;
+    border-right-color:#d9534f;
 }
 
 .reportTitle{
-font-size:17px;
-font-weight:bold;
-margin-bottom:8px;
+    font-size:17px;
+    font-weight:bold;
+    margin-bottom:8px;
 }
 
 .reportRow{
-padding:4px 0;
-border-bottom:1px solid #ffffff18;
+    padding:4px 0;
+    border-bottom:1px solid #ffffff18;
 }
 
 .small{
-font-size:12px;
-opacity:.8;
+    font-size:12px;
+    opacity:.8;
 }
 
-</style></head><body><!-- =========================
-REGISTER SCREEN
-========================= --><div id="registerScreen"><div class="registerBox"><h1>🏰 Kardous Survival</h1><h2>👤 إنشاء لاعب</h2><p>
-اختر اسم لاعبك لدخول المملكة #1
-</p><input
-id="playerName"
-type="text"
-maxlength="20"
-placeholder="اكتب اسم اللاعب"
-/>
+.bottomNav{
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    background:#111a21;
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    padding:6px;
+    z-index:20;
+}
 
-<div
-id="registerError"
-class="registerError"
-></div><button
-onclick="registerPlayer()"
+.status{
+    text-align:center;
+    font-size:13px;
+    opacity:.8;
+    margin-top:8px;
+}
 
-«»
+</style>
+</head>
 
-🚀 دخول المملكة
-</button>
+<body>
 
-</div></div><header><h1>🏰 Kardous Survival</h1><div class="resources"><div class="resource">
-🍎 <span id="food">0</span>
-</div><div class="resource">
-🪵 <span id="wood">0</span>
-</div><div class="resource">
-⛓️ <span id="iron">0</span>
-</div><div class="resource">
-🪙 <span id="gold">0</span>
-</div></div></header><div class="page"><!-- =====================
-HOME
-===================== --><section id="home"><div class="panel"><h2>🏰 قلعة <span id="playerNameDisplay">Kardous</span></h2><p>
-🆔 ID:
-<b id="playerIdDisplay">-</b>
-</p><p>
-المملكة:
-<b id="kingdom">1</b>
-</p><p>
-المستوى:
-<b id="castle">1</b>
-</p><p>
-⚡ القوة:
-<b id="power">0</b>
-</p><div class="controls"><button onclick="collect()">
-🌾 جمع
-</button><button onclick="train()">
-⚔️ تدريب
-</button><button onclick="upgrade()">
-⬆️ ترقية
-</button></div></div><div class="panel"><h3>👑 القائد</h3><p>
-المستوى:
-<span id="commander">1</span>
-</p><p>
-الخبرة:
-<span id="xp">0</span>
-</p></div><div class="panel"><h3>⚔️ الجيش</h3><p>
-الجنود:
-<span id="troops">0</span>
-</p></div><div class="panel"><h3>🦸 الأبطال</h3><div id="heroes">
-جاري التحميل...
-</div></div></section><!-- =====================
-WORLD
-===================== --><section
-id="world"
-class="hidden"
-><div class="panel"><h2>🌍 المملكة #1</h2><p>
-اللاعبون والزومبي والحصون يظهرون على الخريطة.
-</p></div><div class="panel"><div id="map"></div></div><div class="panel"><h3>🎯 الهدف المحدد</h3><div
-id="target"
-class="target"
+<!-- =========================
+     REGISTER / LOGIN
+========================= -->
+
+<div id="registerScreen">
+
+    <div class="registerBox">
+
+        <h1>🏰 Kardous Survival</h1>
+
+        <h2>👤 إنشاء / دخول لاعب</h2>
+
+        <p>
+            اكتب اسم لاعبك لدخول المملكة #1
+        </p>
+
+        <input
+            id="playerName"
+            type="text"
+            maxlength="20"
+            placeholder="اكتب اسم اللاعب"
+            autocomplete="off"
+        >
+
+        <div
+            id="registerError"
+            class="registerError"
+        ></div>
+
+        <button
+            type="button"
+            onclick="registerPlayer()"
+        >
+            🚀 دخول المملكة
+        </button>
+
+        <div class="status">
+            🌍 المملكة #1
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     HEADER
+========================= -->
+
+<header>
+
+    <h1>🏰 Kardous Survival</h1>
+
+    <div class="resources">
+
+        <div class="resource">
+            🍎 <span id="food">0</span>
+        </div>
+
+        <div class="resource">
+            🪵 <span id="wood">0</span>
+        </div>
+
+        <div class="resource">
+            ⛓️ <span id="iron">0</span>
+        </div>
+
+        <div class="resource">
+            🪙 <span id="gold">0</span>
+        </div>
+
+    </div>
+
+</header>
+
+
+<div class="page">
+
+<!-- =========================
+     HOME
+========================= -->
+
+<section id="home">
+
+    <div class="panel">
+
+        <h2>
+            🏰 قلعة
+            <span id="playerNameDisplay">Kardous</span>
+        </h2>
+
+        <p>
+            🆔 ID:
+            <b id="playerIdDisplay">-</b>
+        </p>
+
+        <p>
+            🌍 المملكة:
+            <b id="kingdom">1</b>
+        </p>
+
+        <p>
+            🏰 المستوى:
+            <b id="castle">1</b>
+        </p>
+
+        <p>
+            ⚡ القوة:
+            <b id="power">0</b>
+        </p>
+
+        <div class="controls">
+
+            <button
+                type="button"
+                onclick="collect()"
+            >
+                🌾 جمع
+            </button>
+
+            <button
+                type="button"
+                onclick="train()"
+            >
+                ⚔️ تدريب
+            </button>
+
+            <button
+                type="button"
+                onclick="upgrade()"
+            >
+                ⬆️ ترقية
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <div class="panel">
+
+        <h3>👑 القائد</h3>
+
+        <p>
+            المستوى:
+            <span id="commander">1</span>
+        </p>
+
+        <p>
+            الخبرة:
+            <span id="xp">0</span>
+        </p>
+
+    </div>
+
+
+    <div class="panel">
+
+        <h3>⚔️ الجيش</h3>
+
+        <p>
+            الجنود:
+            <span id="troops">0</span>
+        </p>
+
+    </div>
+
+
+    <div class="panel">
+
+        <h3>🦸 الأبطال</h3>
+
+        <div id="heroes">
+            🦸 نظام الأبطال قادم...
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================
+     WORLD
+========================= -->
+
+<section
+    id="world"
+    class="hidden"
 >
-لم تحدد هدفًا
-</div><button
-onclick="attackTarget()"
 
-«»
+    <div class="panel">
 
-⚔️ إرسال الجيش
-</button>
+        <h2>🌍 المملكة #1</h2>
 
-</div><div class="panel"><h3>🚶 المسيرات</h3><div
-id="marches"
-class="log"
+        <p>
+            اللاعبون والزومبي والحصون يظهرون على الخريطة.
+        </p>
+
+    </div>
+
+
+    <div class="panel">
+
+        <div id="map"></div>
+
+    </div>
+
+
+    <div class="panel">
+
+        <h3>🎯 الهدف المحدد</h3>
+
+        <div
+            id="target"
+            class="target"
+        >
+            لم تحدد هدفًا
+        </div>
+
+        <button
+            type="button"
+            onclick="attackTarget()"
+        >
+            ⚔️ إرسال الجيش
+        </button>
+
+    </div>
+
+
+    <div class="panel">
+
+        <h3>🚶 المسيرات</h3>
+
+        <div
+            id="marches"
+            class="log"
+        >
+            لا توجد مسيرات.
+        </div>
+
+    </div>
+
+
+    <div class="panel">
+
+        <h3>📜 الأحداث</h3>
+
+        <div
+            id="log"
+            class="log"
+        >
+            الخريطة جاهزة.
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================
+     REPORTS
+========================= -->
+
+<section
+    id="reports"
+    class="hidden"
 >
-لا توجد مسيرات.
-</div></div><div class="panel"><h3>📜 الأحداث</h3><div
-id="log"
-class="log"
->
-الخريطة جاهزة.
-</div></div></section><!-- =====================
-REPORTS
-===================== --><section
-id="reports"
-class="hidden"
-><div class="panel"><h2>📜 تقارير المعارك</h2><p>
-جميع معاركك محفوظة على السيرفر.
-</p><button onclick="loadReports()">
-🔄 تحديث التقارير
-</button><div id="reportsList">
-جاري تحميل التقارير...
-</div></div></section></div><!-- =====================
-BOTTOM NAVIGATION
-===================== --><div
-style="
-position:fixed;
-bottom:0;
-left:0;
-right:0;
-background:#111a21;
-display:grid;
-grid-template-columns:1fr 1fr 1fr;
-padding:6px;
-z-index:20;
-"><button onclick="show('home')">
-🏰 القلعة
-</button><button onclick="show('world')">
-🌍 الخريطة
-</button><button
-onclick="show('reports');loadReports()"
 
-«»
+    <div class="panel">
 
-📜 التقارير
-</button>
+        <h2>📜 تقارير المعارك</h2>
 
-</div><script>
+        <p>
+            جميع معاركك محفوظة على السيرفر.
+        </p>
+
+        <button
+            type="button"
+            onclick="loadReports()"
+        >
+            🔄 تحديث التقارير
+        </button>
+
+        <div id="reportsList">
+            جاري تحميل التقارير...
+        </div>
+
+    </div>
+
+</section>
+
+</div>
+
+
+<!-- =========================
+     BOTTOM NAVIGATION
+========================= -->
+
+<div class="bottomNav">
+
+    <button
+        type="button"
+        onclick="show('home')"
+    >
+        🏰 القلعة
+    </button>
+
+    <button
+        type="button"
+        onclick="show('world')"
+    >
+        🌍 الخريطة
+    </button>
+
+    <button
+        type="button"
+        onclick="show('reports'); loadReports()"
+    >
+        📜 التقارير
+    </button>
+
+</div>
+
+
+<script>
 
 /* =========================
-PLAYER ID
+   PLAYER
 ========================= */
 
 let playerId =
-Number(
-localStorage.getItem(
-"kardousPlayerId"
-)
-) || null;
-
-const socket = io();
-
-const map =
-document.getElementById("map");
+    Number(
+        localStorage.getItem(
+            "kardousPlayerId"
+        )
+    ) || null;
 
 let myPlayer = null;
-
 let selectedTarget = null;
 
 
 /* =========================
-REGISTER
+   SOCKET
+========================= */
+
+let socket = null;
+
+try {
+
+    socket = io();
+
+} catch(error) {
+
+    console.log(
+        "Socket connection error:",
+        error
+    );
+
+}
+
+
+/* =========================
+   ELEMENTS
+========================= */
+
+const map =
+    document.getElementById("map");
+
+
+/* =========================
+   REGISTER / LOGIN
 ========================= */
 
 async function registerPlayer(){
 
-const input =
-document.getElementById(
-"playerName"
-);
+    const input =
+        document.getElementById(
+            "playerName"
+        );
 
-const error =
-document.getElementById(
-"registerError"
-);
+    const errorBox =
+        document.getElementById(
+            "registerError"
+        );
 
-const name =
-input.value.trim();
+    const name =
+        input.value.trim();
 
-error.textContent = "";
+    errorBox.textContent = "";
 
-if(name.length < 3){
+    if(name.length < 3){
 
-error.textContent =
-"❌ الاسم يجب أن يكون 3 أحرف على الأقل.";
+        errorBox.textContent =
+            "❌ الاسم يجب أن يكون 3 أحرف على الأقل.";
 
-return;
+        return;
+    }
 
-}
+    if(name.length > 20){
 
-try{
+        errorBox.textContent =
+            "❌ الاسم طويل جدًا.";
 
-const response =
-await fetch(
-"/api/register",
-{
-method:"POST",
+        return;
+    }
 
-headers:{
-"Content-Type":
-"application/json"
-},
+    try{
 
-body:JSON.stringify({
-name:name
-})
+        const response =
+            await fetch(
+                "/api/register",
+                {
+                    method:"POST",
 
-}
-);
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
 
-const data =
-await response.json();
+                    body:
+                        JSON.stringify({
+                            name:name
+                        })
+                }
+            );
 
-if(!response.ok){
+        const data =
+            await response.json();
 
-error.textContent =
-"❌ " +
-(data.error ||
-"تعذر إنشاء اللاعب");
+        if(!response.ok){
 
-return;
+            errorBox.textContent =
+                "❌ " +
+                (
+                    data.error ||
+                    "حدث خطأ أثناء الدخول"
+                );
 
-}
+            return;
+        }
 
-playerId =
-data.player.id;
+        if(
+            !data.player ||
+            !data.player.id
+        ){
 
-localStorage.setItem(
-"kardousPlayerId",
-playerId
-);
+            errorBox.textContent =
+                "❌ السيرفر لم يعطِ ID للاعب.";
 
-document
-.getElementById(
-"registerScreen"
-)
-.classList.add("hidden");
+            return;
+        }
 
-loadPlayer();
+        playerId =
+            Number(data.player.id);
 
-}catch(error){
+        localStorage.setItem(
+            "kardousPlayerId",
+            playerId
+        );
 
-console.log(error);
+        myPlayer =
+            data.player;
 
-document
-.getElementById(
-"registerError"
-)
-.textContent =
-"❌ تعذر الاتصال بالسيرفر.";
+        document
+            .getElementById(
+                "registerScreen"
+            )
+            .classList.add("hidden");
 
-}
+        updatePlayerUI(
+            data.player
+        );
 
+        loadPlayer();
+
+        show("home");
+
+    }catch(error){
+
+        console.log(error);
+
+        errorBox.textContent =
+            "❌ تعذر الاتصال بالسيرفر.";
+    }
 }
 
 
 /* =========================
-CHECK PLAYER
+   CHECK PLAYER
 ========================= */
 
 async function checkPlayer(){
 
-if(!playerId){
+    if(!playerId){
 
-return false;
+        return false;
+    }
 
-}
+    try{
 
-try{
+        const response =
+            await fetch(
+                `/api/player/${playerId}`
+            );
 
-const response =
-await fetch(
-`/api/player/${playerId}`
-);
+        if(!response.ok){
 
-if(!response.ok){
+            localStorage.removeItem(
+                "kardousPlayerId"
+            );
 
-localStorage.removeItem(
-"kardousPlayerId"
-);
+            playerId = null;
 
-playerId = null;
+            return false;
+        }
 
-return false;
+        return true;
 
-}
+    }catch(error){
 
-return true;
+        console.log(error);
 
-}catch(error){
-
-return false;
-
-}
-
+        return false;
+    }
 }
 
 
 /* =========================
-SHOW PAGE
+   SHOW PAGE
 ========================= */
 
 function show(id){
 
-document
-.querySelectorAll("section")
-.forEach(
-x => x.classList.add("hidden")
-);
+    document
+        .querySelectorAll("section")
+        .forEach(
+            section =>
+                section.classList.add(
+                    "hidden"
+                )
+        );
 
-document
-.getElementById(id)
-.classList.remove("hidden");
+    const section =
+        document.getElementById(id);
 
+    if(section){
+
+        section.classList.remove(
+            "hidden"
+        );
+    }
 }
 
 
 /* =========================
-LOAD PLAYER
+   UPDATE PLAYER UI
+========================= */
+
+function updatePlayerUI(player){
+
+    if(!player){
+        return;
+    }
+
+    myPlayer = player;
+
+    document
+        .getElementById(
+            "playerNameDisplay"
+        )
+        .textContent =
+            player.name;
+
+    document
+        .getElementById(
+            "playerIdDisplay"
+        )
+        .textContent =
+            player.id;
+
+    document
+        .getElementById(
+            "kingdom"
+        )
+        .textContent =
+            player.kingdom;
+
+    document
+        .getElementById(
+            "food"
+        )
+        .textContent =
+            player.food;
+
+    document
+        .getElementById(
+            "wood"
+        )
+        .textContent =
+            player.wood;
+
+    document
+        .getElementById(
+            "iron"
+        )
+        .textContent =
+            player.iron;
+
+    document
+        .getElementById(
+            "gold"
+        )
+        .textContent =
+            player.gold;
+
+    document
+        .getElementById(
+            "castle"
+        )
+        .textContent =
+            player.castle;
+
+    document
+        .getElementById(
+            "power"
+        )
+        .textContent =
+            player.power;
+
+    document
+        .getElementById(
+            "troops"
+        )
+        .textContent =
+            player.troops;
+
+    if(player.commander){
+
+        document
+            .getElementById(
+                "commander"
+            )
+            .textContent =
+                player.commander.level;
+
+        document
+            .getElementById(
+                "xp"
+            )
+            .textContent =
+                player.commander.experience;
+    }
+}
+
+
+/* =========================
+   LOAD PLAYER
 ========================= */
 
 async function loadPlayer(){
 
-if(!playerId){
+    if(!playerId){
 
-return;
+        return;
+    }
 
-}
+    try{
 
-try{
+        const response =
+            await fetch(
+                `/api/player/${playerId}`
+            );
 
-const response =
-await fetch(
-`/api/player/${playerId}`
-);
+        if(!response.ok){
 
-if(!response.ok){
+            localStorage.removeItem(
+                "kardousPlayerId"
+            );
 
-localStorage.removeItem(
-"kardousPlayerId"
-);
+            playerId = null;
 
-playerId = null;
+            document
+                .getElementById(
+                    "registerScreen"
+                )
+                .classList.remove(
+                    "hidden"
+                );
 
-document
-.getElementById(
-"registerScreen"
-)
-.classList.remove("hidden");
+            return;
+        }
 
-return;
+        const player =
+            await response.json();
 
-}
+        updatePlayerUI(player);
 
-const p =
-await response.json();
+    }catch(error){
 
-myPlayer = p;
-
-document
-.getElementById("playerNameDisplay")
-.textContent =
-p.name;
-
-document
-.getElementById("playerIdDisplay")
-.textContent =
-p.id;
-
-document
-.getElementById("kingdom")
-.textContent =
-p.kingdom;
-
-document
-.getElementById("food")
-.textContent =
-p.food;
-
-document
-.getElementById("wood")
-.textContent =
-p.wood;
-
-document
-.getElementById("iron")
-.textContent =
-p.iron;
-
-document
-.getElementById("gold")
-.textContent =
-p.gold;
-
-document
-.getElementById("castle")
-.textContent =
-p.castle;
-
-document
-.getElementById("power")
-.textContent =
-p.power;
-
-document
-.getElementById("troops")
-.textContent =
-p.troops;
-
-document
-.getElementById("commander")
-.textContent =
-p.commander.level;
-
-document
-.getElementById("xp")
-.textContent =
-p.commander.experience;
-
-}catch(error){
-
-console.log(error);
-
-}
-
+        console.log(error);
+    }
 }
 
 
 /* =========================
-ACTIONS
+   ACTION
 ========================= */
 
 async function action(url){
 
-const response =
-await fetch(
-url,
-{
-method:"POST"
+    try{
+
+        const response =
+            await fetch(
+                url,
+                {
+                    method:"POST"
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if(!response.ok){
+
+            alert(
+                data.error ||
+                "حدث خطأ"
+            );
+
+            return;
+        }
+
+        alert(
+            data.message ||
+            "تم التنفيذ"
+        );
+
+        if(data.player){
+
+            updatePlayerUI(
+                data.player
+            );
+
+        }else{
+
+            loadPlayer();
+        }
+
+    }catch(error){
+
+        console.log(error);
+
+        alert(
+            "❌ تعذر الاتصال بالسيرفر."
+        );
+    }
 }
-);
 
-const data =
-await response.json();
 
-alert(
-data.message ||
-data.error
-);
-
-loadPlayer();
-
-}
-
+/* =========================
+   COLLECT
+========================= */
 
 function collect(){
 
-if(!playerId)return;
+    if(!playerId){
+        return;
+    }
 
-action(
-`/api/player/${playerId}/collect`
-);
-
+    action(
+        `/api/player/${playerId}/collect`
+    );
 }
 
+
+/* =========================
+   TRAIN
+========================= */
 
 function train(){
 
-if(!playerId)return;
+    if(!playerId){
+        return;
+    }
 
-action(
-`/api/player/${playerId}/train`
-);
-
+    action(
+        `/api/player/${playerId}/train`
+    );
 }
 
+
+/* =========================
+   UPGRADE
+========================= */
 
 function upgrade(){
 
-if(!playerId)return;
+    if(!playerId){
+        return;
+    }
 
-action(
-`/api/player/${playerId}/upgrade-castle`
-);
-
+    action(
+        `/api/player/${playerId}/upgrade-castle`
+    );
 }
 
 
 /* =========================
-CREATE PLAYER
+   CREATE PLAYER ON MAP
 ========================= */
 
-function createPlayer(p){
+function createPlayer(player){
 
-let element =
-document.getElementById(
-"player-" + p.id
-);
+    let element =
+        document.getElementById(
+            "player-" + player.id
+        );
 
-if(!element){
+    if(!element){
 
-element =
-document.createElement("div");
+        element =
+            document.createElement(
+                "div"
+            );
 
-element.id =
-"player-" + p.id;
+        element.id =
+            "player-" + player.id;
 
-element.className =
-"player";
+        element.className =
+            "player";
 
-element.innerHTML =
-`
-🏰
-<div class="playerName">
-${p.name}
-</div>
-`;
+        element.innerHTML =
+            `
+            🏰
+            <div class="playerName">
+                ${escapeHTML(player.name)}
+            </div>
+            `;
 
-map.appendChild(element);
+        map.appendChild(
+            element
+        );
+    }
 
-}
+    element.style.left =
+        player.x + "%";
 
-element.style.left =
-p.x + "%";
-
-element.style.top =
-p.y + "%";
-
+    element.style.top =
+        player.y + "%";
 }
 
 
 /* =========================
-CREATE ZOMBIE
+   CREATE ZOMBIE
 ========================= */
 
-function createZombie(z){
+function createZombie(zombie){
 
-let element =
-document.getElementById(
-"zombie-" + z.id
-);
+    let element =
+        document.getElementById(
+            "zombie-" + zombie.id
+        );
 
-if(!element){
+    if(!element){
 
-element =
-document.createElement("div");
+        element =
+            document.createElement(
+                "div"
+            );
 
-element.id =
-"zombie-" + z.id;
+        element.id =
+            "zombie-" + zombie.id;
 
-element.className =
-"zombie";
+        element.className =
+            "zombie";
 
-element.innerHTML =
-`
-🧟
-<div class="zombieName">
-${z.name}
-Lv.${z.level}
-</div>
-`;
+        element.innerHTML =
+            `
+            🧟
+            <div class="zombieName">
+                ${escapeHTML(zombie.name)}
+                Lv.${zombie.level}
+            </div>
+            `;
 
-element.onclick =
-(event) => {
+        element.onclick =
+            function(event){
 
-event.stopPropagation();
+                event.stopPropagation();
 
-selectTarget(
-"zombie",
-z.id,
-z.name,
-z.power
-);
+                selectTarget(
+                    "zombie",
+                    zombie.id,
+                    zombie.name,
+                    zombie.power
+                );
+            };
 
-};
+        map.appendChild(
+            element
+        );
+    }
 
-map.appendChild(element);
+    element.style.left =
+        zombie.x + "%";
 
-}
-
-element.style.left =
-z.x + "%";
-
-element.style.top =
-z.y + "%";
-
+    element.style.top =
+        zombie.y + "%";
 }
 
 
 /* =========================
-CREATE FORT
+   CREATE FORT
 ========================= */
 
-function createFort(f){
+function createFort(fort){
 
-let element =
-document.getElementById(
-"fort-" + f.id
-);
+    let element =
+        document.getElementById(
+            "fort-" + fort.id
+        );
 
-if(!element){
+    if(!element){
 
-element =
-document.createElement("div");
+        element =
+            document.createElement(
+                "div"
+            );
 
-element.id =
-"fort-" + f.id;
+        element.id =
+            "fort-" + fort.id;
 
-element.className =
-"fort";
+        element.className =
+            "fort";
 
-element.innerHTML =
-`
-🏯
-<div class="fortName">
-${f.name}
-Lv.${f.level}
-</div>
-`;
+        element.innerHTML =
+            `
+            🏯
+            <div class="fortName">
+                ${escapeHTML(fort.name)}
+                Lv.${fort.level}
+            </div>
+            `;
 
-element.onclick =
-(event) => {
+        element.onclick =
+            function(event){
 
-event.stopPropagation();
+                event.stopPropagation();
 
-selectTarget(
-"fort",
-f.id,
-f.name,
-f.power
-);
+                selectTarget(
+                    "fort",
+                    fort.id,
+                    fort.name,
+                    fort.power
+                );
+            };
 
-};
+        map.appendChild(
+            element
+        );
+    }
 
-map.appendChild(element);
+    element.style.left =
+        fort.x + "%";
 
-}
-
-element.style.left =
-f.x + "%";
-
-element.style.top =
-f.y + "%";
-
+    element.style.top =
+        fort.y + "%";
 }
 
 
 /* =========================
-WORLD
+   WORLD
 ========================= */
 
 function renderWorld(data){
 
-(data.players || [])
-.forEach(createPlayer);
+    if(!data){
+        return;
+    }
 
-(data.zombies || [])
-.forEach(createZombie);
+    (data.players || [])
+        .forEach(
+            createPlayer
+        );
 
-(data.forts || [])
-.forEach(createFort);
+    (data.zombies || [])
+        .forEach(
+            createZombie
+        );
 
-renderMarches(
-data.marches || []
-);
+    (data.forts || [])
+        .forEach(
+            createFort
+        );
 
+    renderMarches(
+        data.marches || []
+    );
 }
 
 
 /* =========================
-SOCKET WORLD
+   SOCKET WORLD
 ========================= */
 
-socket.on(
-"world",
-data => {
+if(socket){
 
-renderWorld(data);
+    socket.on(
+        "world",
+        function(data){
+
+            renderWorld(data);
+        }
+    );
+
+
+    socket.on(
+        "playerUpdated",
+        function(player){
+
+            if(
+                !playerId ||
+                Number(player.id) !==
+                Number(playerId)
+            ){
+
+                return;
+            }
+
+            updatePlayerUI(
+                player
+            );
+        }
+    );
+
+
+    socket.on(
+        "marchCreated",
+        function(march){
+
+            renderMarch(march);
+
+            document
+                .getElementById(
+                    "log"
+                )
+                .textContent =
+                    "⚔️ مسيرة جديدة انطلقت!";
+        }
+    );
+
+
+    socket.on(
+        "battleFinished",
+        function(data){
+
+            if(
+                Number(data.playerId) !==
+                Number(playerId)
+            ){
+
+                return;
+            }
+
+            let message;
+
+            if(
+                data.result ===
+                "victory"
+            ){
+
+                message =
+                    `🏆 انتصار! خسرت ${data.troopsLost} جندي.`;
+
+            }else{
+
+                message =
+                    `💀 هزيمة! خسرت ${data.troopsLost} جندي.`;
+            }
+
+            document
+                .getElementById(
+                    "log"
+                )
+                .textContent =
+                    message;
+
+            loadPlayer();
+
+            loadReports();
+        }
+    );
 
 }
-);
 
 
 /* =========================
-PLAYER UPDATED
-========================= */
-
-socket.on(
-"playerUpdated",
-player => {
-
-if(
-!playerId ||
-player.id !== playerId
-){
-return;
-}
-
-myPlayer = player;
-
-document
-.getElementById("playerNameDisplay")
-.textContent =
-player.name;
-
-document
-.getElementById("playerIdDisplay")
-.textContent =
-player.id;
-
-document
-.getElementById("food")
-.textContent =
-player.food;
-
-document
-.getElementById("wood")
-.textContent =
-player.wood;
-
-document
-.getElementById("iron")
-.textContent =
-player.iron;
-
-document
-.getElementById("gold")
-.textContent =
-player.gold;
-
-document
-.getElementById("castle")
-.textContent =
-player.castle;
-
-document
-.getElementById("power")
-.textContent =
-player.power;
-
-document
-.getElementById("troops")
-.textContent =
-player.troops;
-
-document
-.getElementById("commander")
-.textContent =
-player.commander.level;
-
-document
-.getElementById("xp")
-.textContent =
-player.commander.experience;
-
-}
-);
-
-
-/* =========================
-MARCH CREATED
-========================= */
-
-socket.on(
-"marchCreated",
-march => {
-
-renderMarch(march);
-
-document
-.getElementById("log")
-.textContent =
-"⚔️ مسيرة جديدة انطلقت!";
-
-}
-);
-
-
-/* =========================
-BATTLE
-========================= */
-
-socket.on(
-"battleFinished",
-data => {
-
-if(
-data.playerId === playerId
-){
-
-let message;
-
-if(
-data.result === "victory"
-){
-
-message =
-`🏆 انتصار! خسرت ${data.troopsLost} جندي.`;
-
-}
-else{
-
-message =
-`💀 هزيمة! خسرت ${data.troopsLost} جندي.`;
-
-}
-
-document
-.getElementById("log")
-.textContent =
-message;
-
-loadPlayer();
-
-loadReports();
-
-}
-
-}
-);
-
-
-/* =========================
-SELECT TARGET
+   SELECT TARGET
 ========================= */
 
 function selectTarget(
-type,
-id,
-name,
-power
+    type,
+    id,
+    name,
+    power
 ){
 
-selectedTarget = {
+    selectedTarget = {
 
-type,
-id,
-name,
-power
+        type:type,
+        id:id,
+        name:name,
+        power:power
 
-};
+    };
 
-document
-.getElementById("target")
-.innerHTML =
-`
-🎯 ${name}
-<br>
-⚡ قوة الهدف: ${power}
-`;
+    document
+        .getElementById(
+            "target"
+        )
+        .innerHTML =
+            `
+            🎯 ${escapeHTML(name)}
+            <br>
+            ⚡ قوة الهدف: ${power}
+            `;
 
-document
-.getElementById("log")
-.textContent =
-`تم اختيار ${name}.`;
-
+    document
+        .getElementById(
+            "log"
+        )
+        .textContent =
+            `تم اختيار ${name}.`;
 }
 
 
 /* =========================
-ATTACK
+   ATTACK TARGET
 ========================= */
 
 async function attackTarget(){
 
-if(!selectedTarget){
+    if(!selectedTarget){
 
-alert(
-"اختر زومبي أو حصنًا أولًا."
-);
+        alert(
+            "اختر زومبي أو حصنًا أولًا."
+        );
 
-return;
+        return;
+    }
 
-}
+    if(!myPlayer){
 
-if(!myPlayer){
+        await loadPlayer();
 
-return;
+        if(!myPlayer){
 
-}
+            return;
+        }
+    }
 
-const troops =
-Math.min(
-100,
-myPlayer.troops
-);
+    if(myPlayer.troops < 100){
 
-if(troops < 100){
+        alert(
+            "تحتاج إلى 100 جندي على الأقل."
+        );
 
-alert(
-"تحتاج إلى 100 جندي على الأقل."
-);
+        return;
+    }
 
-return;
+    try{
 
-}
+        const response =
+            await fetch(
+                `/api/player/${playerId}/march`,
+                {
+                    method:"POST",
 
-const response =
-await fetch(
-`/api/player/${playerId}/march`,
-{
-method:"POST",
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
 
-headers:{
-"Content-Type":
-"application/json"
-},
+                    body:
+                        JSON.stringify({
 
-body:
-JSON.stringify({
+                            targetType:
+                                selectedTarget.type,
 
-targetType:
-selectedTarget.type,
+                            targetId:
+                                selectedTarget.id,
 
-targetId:
-selectedTarget.id,
+                            troops:100
+                        })
+                }
+            );
 
-troops:100
+        const data =
+            await response.json();
 
-})
+        if(!response.ok){
 
-}
-);
+            alert(
+                data.error ||
+                "حدث خطأ"
+            );
 
-const data =
-await response.json();
+            return;
+        }
 
-if(!response.ok){
+        document
+            .getElementById(
+                "log"
+            )
+            .textContent =
+                "⚔️ الجيش في الطريق إلى الهدف!";
 
-alert(
-data.error ||
-"حدث خطأ"
-);
+        loadPlayer();
 
-return;
+    }catch(error){
 
-}
+        console.log(error);
 
-document
-.getElementById("log")
-.textContent =
-"⚔️ الجيش في الطريق إلى الهدف!";
-
-loadPlayer();
-
+        alert(
+            "❌ تعذر الاتصال بالسيرفر."
+        );
+    }
 }
 
 
 /* =========================
-CREATE MARCH
+   CREATE MARCH
 ========================= */
 
-function renderMarch(m){
+function renderMarch(march){
 
-let element =
-document.getElementById(
-"march-" + m.id
-);
+    let element =
+        document.getElementById(
+            "march-" + march.id
+        );
 
-if(!element){
+    if(!element){
 
-element =
-document.createElement("div");
+        element =
+            document.createElement(
+                "div"
+            );
 
-element.id =
-"march-" + m.id;
+        element.id =
+            "march-" + march.id;
 
-element.className =
-"march";
+        element.className =
+            "march";
 
-element.textContent =
-"⚔️";
+        element.textContent =
+            "⚔️";
 
-map.appendChild(element);
+        map.appendChild(
+            element
+        );
+    }
 
-}
+    element.style.left =
+        march.start_x + "%";
 
-element.style.left =
-m.start_x + "%";
+    element.style.top =
+        march.start_y + "%";
 
-element.style.top =
-m.start_y + "%";
+    setTimeout(
+        function(){
 
-setTimeout(
-() => {
+            element.style.left =
+                march.target_x + "%";
 
-element.style.left =
-m.target_x + "%";
+            element.style.top =
+                march.target_y + "%";
 
-element.style.top =
-m.target_y + "%";
-
-},
-100
-);
-
+        },
+        100
+    );
 }
 
 
 /* =========================
-MARCH LIST
+   MARCH LIST
 ========================= */
 
 function renderMarches(marches){
 
-const box =
-document.getElementById(
-"marches"
-);
+    const box =
+        document.getElementById(
+            "marches"
+        );
 
-if(!marches.length){
+    if(!marches.length){
 
-box.textContent =
-"لا توجد مسيرات.";
+        box.textContent =
+            "لا توجد مسيرات.";
 
-return;
+        return;
+    }
 
-}
+    box.innerHTML = "";
 
-box.innerHTML =
-"";
+    marches.forEach(
+        function(march){
 
-marches.forEach(
-m => {
+            renderMarch(
+                march
+            );
 
-renderMarch(m);
+            const item =
+                document.createElement(
+                    "div"
+                );
 
-const item =
-document.createElement("div");
+            item.textContent =
+                `⚔️ مسيرة #${march.id}`;
 
-item.textContent =
-`⚔️ مسيرة #${m.id}`;
-
-box.appendChild(item);
-
-}
-);
-
+            box.appendChild(
+                item
+            );
+        }
+    );
 }
 
 
 /* =========================
-LOAD REPORTS
+   REPORTS
 ========================= */
 
 async function loadReports(){
 
-if(!playerId){
+    if(!playerId){
 
-return;
+        return;
+    }
 
-}
+    const box =
+        document.getElementById(
+            "reportsList"
+        );
 
-const box =
-document.getElementById(
-"reportsList"
-);
+    box.innerHTML =
+        "⏳ جاري تحميل التقارير...";
 
-box.innerHTML =
-"⏳ جاري تحميل التقارير...";
+    try{
 
-try{
+        const response =
+            await fetch(
+                `/api/reports/${playerId}`
+            );
 
-const response =
-await fetch(
-`/api/reports/${playerId}`
-);
+        if(!response.ok){
 
-if(!response.ok){
+            box.innerHTML =
+                "❌ تعذر تحميل التقارير.";
 
-box.innerHTML =
-"❌ تعذر تحميل التقارير.";
+            return;
+        }
 
-return;
+        const reports =
+            await response.json();
 
-}
+        if(!reports.length){
 
-const reports =
-await response.json();
+            box.innerHTML =
+                "📭 لا توجد معارك حتى الآن.";
 
-if(!reports.length){
+            return;
+        }
 
-box.innerHTML =
-"📭 لا توجد معارك حتى الآن.";
+        box.innerHTML = "";
 
-return;
+        reports.forEach(
+            function(report){
 
-}
+                const element =
+                    document.createElement(
+                        "div"
+                    );
 
-box.innerHTML =
-"";
+                element.className =
+                    "report " +
+                    (
+                        report.result ===
+                        "victory"
+                        ?
+                        "reportVictory"
+                        :
+                        "reportDefeat"
+                    );
 
-reports.forEach(
-report => {
+                const date =
+                    new Date(
+                        report.created_at
+                    );
 
-const element =
-document.createElement("div");
+                const resultText =
+                    report.result ===
+                    "victory"
+                    ?
+                    "🏆 انتصار"
+                    :
+                    "💀 هزيمة";
 
-element.className =
-"report " +
-(
-report.result === "victory"
-?
-"reportVictory"
-:
-"reportDefeat"
-);
+                const targetText =
+                    report.target_type ===
+                    "zombie"
+                    ?
+                    "🧟 زومبي"
+                    :
+                    "🏯 حصن";
 
-const date =
-new Date(
-report.created_at
-);
+                element.innerHTML =
+                    `
+                    <div class="reportTitle">
+                        ${resultText} — ${targetText}
+                    </div>
 
-const resultText =
-report.result === "victory"
-?
-"🏆 انتصار"
-:
-"💀 هزيمة";
+                    <div class="reportRow">
+                        ⚔️ الجنود المرسلون:
+                        <b>${report.troops_sent}</b>
+                    </div>
 
-const targetText =
-report.target_type === "zombie"
-?
-"🧟 زومبي"
-:
-"🏯 حصن";
+                    <div class="reportRow">
+                        💥 الجنود الذين خسروا:
+                        <b>${report.troops_lost}</b>
+                    </div>
 
-element.innerHTML =
-`
-<div class="reportTitle">
-${resultText} — ${targetText}
-</div>
+                    <div class="reportRow">
+                        🛡️ الجنود الناجون:
+                        <b>
+                            ${
+                                report.troops_sent -
+                                report.troops_lost
+                            }
+                        </b>
+                    </div>
 
-<div class="reportRow">
-⚔️ الجنود المرسلون:
-<b>${report.troops_sent}</b>
-</div>
+                    <div class="reportRow">
+                        ⚡ قوة العدو:
+                        <b>${report.enemy_power}</b>
+                    </div>
 
-<div class="reportRow">
-💥 الجنود الذين خسروا:
-<b>${report.troops_lost}</b>
-</div>
+                    <div class="small">
+                        🕒
+                        ${date.toLocaleString("ar-TN")}
+                    </div>
+                    `;
 
-<div class="reportRow">
-🛡️ الجنود الناجون:
-<b>${report.troops_sent - report.troops_lost}</b>
-</div>
+                box.appendChild(
+                    element
+                );
+            }
+        );
 
-<div class="reportRow">
-⚡ قوة العدو:
-<b>${report.enemy_power}</b>
-</div>
+    }catch(error){
 
-<div class="small">
-🕒 ${date.toLocaleString("ar-TN")}
-</div>
-`;
+        console.log(error);
 
-box.appendChild(element);
-
-}
-);
-
-}catch(error){
-
-console.log(error);
-
-box.innerHTML =
-"❌ حدث خطأ أثناء تحميل التقارير.";
-
-}
-
+        box.innerHTML =
+            "❌ حدث خطأ أثناء تحميل التقارير.";
+    }
 }
 
 
 /* =========================
-MAP CLICK
+   MAP CLICK
 ========================= */
 
 map.addEventListener(
-"click",
-async event => {
+    "click",
+    async function(event){
 
-if(!myPlayer){
+        if(!myPlayer){
 
-return;
+            return;
+        }
 
-}
+        const rect =
+            map.getBoundingClientRect();
 
-const rect =
-map.getBoundingClientRect();
+        const x =
+            (
+                (event.clientX -
+                rect.left)
+                /
+                rect.width
+            ) * 100;
 
-const x =
-(
-(event.clientX -
-rect.left)
-/
-rect.width
-) * 100;
+        const y =
+            (
+                (event.clientY -
+                rect.top)
+                /
+                rect.height
+            ) * 100;
 
-const y =
-(
-(event.clientY -
-rect.top)
-/
-rect.height
-) * 100;
+        try{
 
-await fetch(
-`/api/player/${playerId}/move`,
-{
-method:"POST",
+            await fetch(
+                `/api/player/${playerId}/move`,
+                {
+                    method:"POST",
 
-headers:{
-"Content-Type":
-"application/json"
-},
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
 
-body:
-JSON.stringify({
-x,
-y
-})
+                    body:
+                        JSON.stringify({
+                            x:x,
+                            y:y
+                        })
+                }
+            );
 
-}
-);
+        }catch(error){
 
-}
+            console.log(error);
+        }
+    }
 );
 
 
 /* =========================
-START
+   ESCAPE HTML
+========================= */
+
+function escapeHTML(value){
+
+    const div =
+        document.createElement(
+            "div"
+        );
+
+    div.textContent =
+        String(value);
+
+    return div.innerHTML;
+}
+
+
+/* =========================
+   START GAME
 ========================= */
 
 (async function(){
 
-const exists =
-await checkPlayer();
+    const exists =
+        await checkPlayer();
 
-if(exists){
+    if(exists){
 
-document
-.getElementById(
-"registerScreen"
-)
-.classList.add("hidden");
+        document
+            .getElementById(
+                "registerScreen"
+            )
+            .classList.add(
+                "hidden"
+            );
 
-loadPlayer();
+        await loadPlayer();
 
-}
+        show("home");
+
+    }else{
+
+        document
+            .getElementById(
+                "registerScreen"
+            )
+            .classList.remove(
+                "hidden"
+            );
+
+        show("home");
+    }
 
 })();
 
-</script></body>
+</script>
+
+</body>
 </html>
