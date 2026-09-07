@@ -18,7 +18,6 @@ app.use(express.static(__dirname));
 ========================= */
 
 const db = new Database("kardous_survival.db");
-
 db.pragma("journal_mode = WAL");
 
 db.exec(`
@@ -38,7 +37,56 @@ CREATE TABLE IF NOT EXISTS players (
     commander_level INTEGER NOT NULL DEFAULT 1,
     commander_xp INTEGER NOT NULL DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS zombies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    x REAL NOT NULL,
+    y REAL NOT NULL,
+    level INTEGER NOT NULL DEFAULT 1,
+    power INTEGER NOT NULL DEFAULT 1000
+);
+
+CREATE TABLE IF NOT EXISTS forts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    x REAL NOT NULL,
+    y REAL NOT NULL,
+    level INTEGER NOT NULL DEFAULT 1,
+    power INTEGER NOT NULL DEFAULT 5000
+);
+
+CREATE TABLE IF NOT EXISTS marches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    player_id INTEGER NOT NULL,
+    target_type TEXT NOT NULL,
+    target_id INTEGER NOT NULL,
+    start_x REAL NOT NULL,
+    start_y REAL NOT NULL,
+    target_x REAL NOT NULL,
+    target_y REAL NOT NULL,
+    troops INTEGER NOT NULL,
+    start_time INTEGER NOT NULL,
+    arrival_time INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'marching'
+);
+
+CREATE TABLE IF NOT EXISTS battle_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    player_id INTEGER NOT NULL,
+    target_type TEXT NOT NULL,
+    target_id INTEGER NOT NULL,
+    result TEXT NOT NULL,
+    troops_sent INTEGER NOT NULL,
+    troops_lost INTEGER NOT NULL,
+    enemy_power INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+);
 `);
+
+/* =========================
+   DEFAULT PLAYER
+========================= */
 
 const countPlayers = db.prepare(
     "SELECT COUNT(*) AS count FROM players"
@@ -50,6 +98,54 @@ if (countPlayers === 0) {
         (name, kingdom, x, y)
         VALUES (?, ?, ?, ?)
     `).run("Kardous", 1, 50, 50);
+}
+
+/* =========================
+   WORLD SEED
+========================= */
+
+const zombieCount = db.prepare(
+    "SELECT COUNT(*) AS count FROM zombies"
+).get().count;
+
+if (zombieCount === 0) {
+    const addZombie = db.prepare(`
+        INSERT INTO zombies
+        (name, x, y, level, power)
+        VALUES (?, ?, ?, ?, ?)
+    `);
+
+    for (let i = 1; i <= 20; i++) {
+        addZombie(
+            "Zombie " + i,
+            Math.random() * 90 + 5,
+            Math.random() * 90 + 5,
+            Math.floor(Math.random() * 10) + 1,
+            Math.floor(Math.random() * 9000) + 1000
+        );
+    }
+}
+
+const fortCount = db.prepare(
+    "SELECT COUNT(*) AS count FROM forts"
+).get().count;
+
+if (fortCount === 0) {
+    const addFort = db.prepare(`
+        INSERT INTO forts
+        (name, x, y, level, power)
+        VALUES (?, ?, ?, ?, ?)
+    `);
+
+    for (let i = 1; i <= 5; i++) {
+        addFort(
+            "حصن " + i,
+            Math.random() * 80 + 10,
+            Math.random() * 80 + 10,
+            i,
+            i * 10000
+        );
+    }
 }
 
 /* =========================
@@ -109,18 +205,41 @@ app.get("/api/player/:id", (req, res) => {
 });
 
 /* =========================
-   WORLD PLAYERS
+   WORLD
 ========================= */
 
 app.get("/api/world/:kingdom", (req, res) => {
+
+    const kingdom = req.params.kingdom;
 
     const players = db.prepare(`
         SELECT id, name, kingdom, x, y, castle, power
         FROM players
         WHERE kingdom = ?
-    `).all(req.params.kingdom);
+    `).all(kingdom);
 
-    res.json(players);
+    const zombies = db.prepare(`
+        SELECT *
+        FROM zombies
+    `).all();
+
+    const forts = db.prepare(`
+        SELECT *
+        FROM forts
+    `).all();
+
+    const marches = db.prepare(`
+        SELECT *
+        FROM marches
+        WHERE status = 'marching'
+    `).all();
+
+    res.json({
+        players,
+        zombies,
+        forts,
+        marches
+    });
 });
 
 /* =========================
@@ -141,7 +260,7 @@ app.get("/api/ranking/:kingdom", (req, res) => {
 });
 
 /* =========================
-   COLLECT RESOURCES
+   COLLECT
 ========================= */
 
 app.post("/api/player/:id/collect", (req, res) => {
@@ -317,18 +436,267 @@ app.post("/api/player/:id/move", (req, res) => {
         WHERE id = ?
     `).run(x, y, player.id);
 
-    const updated = getPlayer(player.id);
-
     io.emit("playerMoved", {
-        id: updated.id,
-        x: updated.x,
-        y: updated.y
+        id: player.id,
+        x,
+        y
     });
 
     res.json({
         success: true,
-        player: publicPlayer(updated)
+        player: publicPlayer(getPlayer(player.id))
     });
+});
+
+/* =========================
+   SEND MARCH
+========================= */
+
+app.post("/api/player/:id/march", (req, res) => {
+
+    const player = getPlayer(req.params.id);
+
+    if (!player) {
+        return res.status(404).json({
+            error: "اللاعب غير موجود"
+        });
+    }
+
+    const targetType = req.body.targetType;
+    const targetId = Number(req.body.targetId);
+
+    let target;
+
+    if (targetType === "zombie") {
+        target = db.prepare(
+            "SELECT * FROM zombies WHERE id = ?"
+        ).get(targetId);
+    }
+
+    if (targetType === "fort") {
+        target = db.prepare(
+            "SELECT * FROM forts WHERE id = ?"
+        ).get(targetId);
+    }
+
+    if (!target) {
+        return res.status(404).json({
+            error: "الهدف غير موجود"
+        });
+    }
+
+    if (player.troops < 100) {
+        return res.status(400).json({
+            error: "لا يوجد عدد كافٍ من الجنود"
+        });
+    }
+
+    const troops = Math.min(
+        Number(req.body.troops) || 100,
+        player.troops
+    );
+
+    const now = Date.now();
+
+    const distance = Math.sqrt(
+        Math.pow(target.x - player.x, 2) +
+        Math.pow(target.y - player.y, 2)
+    );
+
+    const travelTime = Math.max(
+        3000,
+        Math.floor(distance * 1000)
+    );
+
+    const arrival = now + travelTime;
+
+    db.prepare(`
+        UPDATE players
+        SET troops = troops - ?
+        WHERE id = ?
+    `).run(troops, player.id);
+
+    const result = db.prepare(`
+        INSERT INTO marches
+        (
+            player_id,
+            target_type,
+            target_id,
+            start_x,
+            start_y,
+            target_x,
+            target_y,
+            troops,
+            start_time,
+            arrival_time,
+            status
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'marching')
+    `).run(
+        player.id,
+        targetType,
+        targetId,
+        player.x,
+        player.y,
+        target.x,
+        target.y,
+        troops,
+        now,
+        arrival
+    );
+
+    const march = db.prepare(
+        "SELECT * FROM marches WHERE id = ?"
+    ).get(result.lastInsertRowid);
+
+    io.emit("marchCreated", march);
+
+    res.json({
+        success: true,
+        message: "⚔️ المسيرة انطلقت!",
+        march
+    });
+});
+
+/* =========================
+   BATTLE PROCESSOR
+========================= */
+
+function processMarches() {
+
+    const now = Date.now();
+
+    const marches = db.prepare(`
+        SELECT *
+        FROM marches
+        WHERE status = 'marching'
+        AND arrival_time <= ?
+    `).all(now);
+
+    for (const march of marches) {
+
+        let enemy;
+
+        if (march.target_type === "zombie") {
+            enemy = db.prepare(
+                "SELECT * FROM zombies WHERE id = ?"
+            ).get(march.target_id);
+        }
+
+        if (march.target_type === "fort") {
+            enemy = db.prepare(
+                "SELECT * FROM forts WHERE id = ?"
+            ).get(march.target_id);
+        }
+
+        if (!enemy) {
+            db.prepare(`
+                UPDATE marches
+                SET status = 'finished'
+                WHERE id = ?
+            `).run(march.id);
+
+            continue;
+        }
+
+        const playerPower = march.troops * 10;
+        const enemyPower = enemy.power;
+
+        let result;
+        let lost;
+
+        if (playerPower >= enemyPower) {
+            result = "victory";
+            lost = Math.max(
+                1,
+                Math.floor(march.troops * 0.1)
+            );
+        } else {
+            result = "defeat";
+            lost = Math.max(
+                1,
+                Math.floor(march.troops * 0.5)
+            );
+        }
+
+        db.prepare(`
+            UPDATE players
+            SET troops = troops + ?
+            WHERE id = ?
+        `).run(
+            march.troops - lost,
+            march.player_id
+        );
+
+        db.prepare(`
+            INSERT INTO battle_reports
+            (
+                player_id,
+                target_type,
+                target_id,
+                result,
+                troops_sent,
+                troops_lost,
+                enemy_power,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+            march.player_id,
+            march.target_type,
+            march.target_id,
+            result,
+            march.troops,
+            lost,
+            enemyPower,
+            now
+        );
+
+        db.prepare(`
+            UPDATE marches
+            SET status = ?
+            WHERE id = ?
+        `).run(
+            result,
+            march.id
+        );
+
+        io.emit("battleFinished", {
+            marchId: march.id,
+            playerId: march.player_id,
+            targetType: march.target_type,
+            targetId: march.target_id,
+            result,
+            troopsSent: march.troops,
+            troopsLost: lost
+        });
+
+        const updatedPlayer = getPlayer(march.player_id);
+
+        io.emit(
+            "playerUpdated",
+            publicPlayer(updatedPlayer)
+        );
+    }
+}
+
+setInterval(processMarches, 1000);
+
+/* =========================
+   BATTLE REPORTS
+========================= */
+
+app.get("/api/reports/:playerId", (req, res) => {
+
+    const reports = db.prepare(`
+        SELECT *
+        FROM battle_reports
+        WHERE player_id = ?
+        ORDER BY created_at DESC
+        LIMIT 50
+    `).all(req.params.playerId);
+
+    res.json(reports);
 });
 
 /* =========================
@@ -341,10 +709,27 @@ io.on("connection", (socket) => {
 
     socket.emit("world", {
         kingdom: 1,
+
         players: db.prepare(`
             SELECT id, name, x, y, castle, power
             FROM players
             WHERE kingdom = 1
+        `).all(),
+
+        zombies: db.prepare(`
+            SELECT *
+            FROM zombies
+        `).all(),
+
+        forts: db.prepare(`
+            SELECT *
+            FROM forts
+        `).all(),
+
+        marches: db.prepare(`
+            SELECT *
+            FROM marches
+            WHERE status = 'marching'
         `).all()
     });
 
@@ -364,7 +749,13 @@ app.get("/api/status", (req, res) => {
         status: "online",
         kingdom: 1,
         multiplayer: true,
-        version: "7.0"
+        world: true,
+        zombies: true,
+        forts: true,
+        marches: true,
+        battles: true,
+        reports: true,
+        version: "8.0"
     });
 });
 
@@ -378,6 +769,8 @@ server.listen(PORT, "0.0.0.0", () => {
     console.log("KARDOUS SURVIVAL");
     console.log("MULTIPLAYER SERVER ONLINE");
     console.log("KINGDOM #1");
+    console.log("WORLD SYSTEM ONLINE");
+    console.log("BATTLES ONLINE");
     console.log("PORT:", PORT);
     console.log("================================");
 
