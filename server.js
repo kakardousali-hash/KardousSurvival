@@ -94,11 +94,17 @@ const playerCount = db.prepare(
 ).get().count;
 
 if (playerCount === 0) {
+
     db.prepare(`
         INSERT INTO players
         (name, kingdom, x, y)
         VALUES (?, ?, ?, ?)
-    `).run("Kardous", 1, 50, 50);
+    `).run(
+        "Kardous",
+        1,
+        50,
+        50
+    );
 }
 
 /* =========================
@@ -119,10 +125,17 @@ if (zombieCount === 0) {
 
     for (let i = 1; i <= 20; i++) {
 
-        const x = Math.random() * 90 + 5;
-        const y = Math.random() * 90 + 5;
-        const level = Math.floor(Math.random() * 10) + 1;
-        const power = level * 1000;
+        const x =
+            Math.random() * 90 + 5;
+
+        const y =
+            Math.random() * 90 + 5;
+
+        const level =
+            Math.floor(Math.random() * 10) + 1;
+
+        const power =
+            level * 1000;
 
         addZombie.run(
             "Zombie " + i,
@@ -152,10 +165,16 @@ if (fortCount === 0) {
 
     for (let i = 1; i <= 5; i++) {
 
-        const x = Math.random() * 80 + 10;
-        const y = Math.random() * 80 + 10;
+        const x =
+            Math.random() * 80 + 10;
+
+        const y =
+            Math.random() * 80 + 10;
+
         const level = i;
-        const power = level * 10000;
+
+        const power =
+            level * 10000;
 
         addFort.run(
             "Fort " + i,
@@ -173,9 +192,11 @@ if (fortCount === 0) {
 
 function getPlayer(id) {
 
-    return db.prepare(
-        "SELECT * FROM players WHERE id = ?"
-    ).get(id);
+    return db.prepare(`
+        SELECT *
+        FROM players
+        WHERE id = ?
+    `).get(id);
 }
 
 function publicPlayer(player) {
@@ -213,214 +234,277 @@ app.get("/", (req, res) => {
 });
 
 /* =========================
-   PLAYER
-========================= */
-
-/* =========================
-CREATE PLAYER ACCOUNT
+   REGISTER / LOGIN
 ========================= */
 
 app.post("/api/register", (req, res) => {
 
-const name = String(req.body.name || "").trim();
+    const name =
+        String(req.body.name || "").trim();
 
-if (!name) {
-    return res.status(400).json({
-        error: "اكتب اسم اللاعب"
-    });
-}
+    if (!name) {
 
-if (name.length < 3 || name.length > 20) {
-    return res.status(400).json({
-        error: "اسم اللاعب يجب أن يكون بين 3 و20 حرفًا"
-    });
-}
-
-const existing = db.prepare(
-    "SELECT id FROM players WHERE name = ?"
-).get(name);
-
-if (existing) {
-    return res.status(400).json({
-        error: "اسم اللاعب مستخدم بالفعل"
-    });
-}
-
-const result = db.prepare(`
-    INSERT INTO players
-    (name, kingdom, x, y)
-    VALUES (?, 1, 50, 50)
-`).run(name);
-
-const player =
-    getPlayer(result.lastInsertRowid);
-
-res.json({
-    success: true,
-    message: "🎉 تم إنشاء اللاعب!",
-    player: publicPlayer(player)
-});
-
-});
-app.get("/api/player/:id", (req, res) => {
-
-    const player = getPlayer(req.params.id);
-
-    if (!player) {
-
-        return res.status(404).json({
-            error: "اللاعب غير موجود"
+        return res.status(400).json({
+            error: "اكتب اسم اللاعب"
         });
     }
 
-    res.json(
-        publicPlayer(player)
-    );
+    if (
+        name.length < 3 ||
+        name.length > 20
+    ) {
+
+        return res.status(400).json({
+            error:
+                "اسم اللاعب يجب أن يكون بين 3 و20 حرفًا"
+        });
+    }
+
+    /*
+       إذا كان الاسم موجودًا،
+       ندخل إلى اللاعب الموجود.
+    */
+
+    const existing =
+        db.prepare(`
+            SELECT *
+            FROM players
+            WHERE LOWER(name) = LOWER(?)
+        `).get(name);
+
+    if (existing) {
+
+        return res.json({
+            success: true,
+            login: true,
+            message: "👑 مرحبًا بعودتك!",
+            player:
+                publicPlayer(existing)
+        });
+    }
+
+    /*
+       إذا كان الاسم جديدًا،
+       ننشئ لاعبًا جديدًا.
+    */
+
+    const result =
+        db.prepare(`
+            INSERT INTO players
+            (name, kingdom, x, y)
+            VALUES (?, 1, 50, 50)
+        `).run(name);
+
+    const player =
+        getPlayer(result.lastInsertRowid);
+
+    res.json({
+        success: true,
+        login: false,
+        message: "🎉 تم إنشاء اللاعب!",
+        player:
+            publicPlayer(player)
+    });
 });
+
+/* =========================
+   GET PLAYER
+========================= */
+
+app.get(
+    "/api/player/:id",
+    (req, res) => {
+
+        const player =
+            getPlayer(req.params.id);
+
+        if (!player) {
+
+            return res.status(404).json({
+                error: "اللاعب غير موجود"
+            });
+        }
+
+        res.json(
+            publicPlayer(player)
+        );
+    }
+);
 
 /* =========================
    WORLD
 ========================= */
 
-app.get("/api/world/:kingdom", (req, res) => {
+app.get(
+    "/api/world/:kingdom",
+    (req, res) => {
 
-    const kingdom = Number(
-        req.params.kingdom
-    );
+        const kingdom =
+            Number(req.params.kingdom);
 
-    const players = db.prepare(`
-        SELECT id, name, kingdom, x, y, castle, power
-        FROM players
-        WHERE kingdom = ?
-    `).all(kingdom);
+        const players =
+            db.prepare(`
+                SELECT
+                    id,
+                    name,
+                    kingdom,
+                    x,
+                    y,
+                    castle,
+                    power
+                FROM players
+                WHERE kingdom = ?
+            `).all(kingdom);
 
-    const zombies = db.prepare(`
-        SELECT *
-        FROM zombies
-    `).all();
+        const zombies =
+            db.prepare(`
+                SELECT *
+                FROM zombies
+            `).all();
 
-    const forts = db.prepare(`
-        SELECT *
-        FROM forts
-    `).all();
+        const forts =
+            db.prepare(`
+                SELECT *
+                FROM forts
+            `).all();
 
-    const marches = db.prepare(`
-        SELECT *
-        FROM marches
-        WHERE status = 'marching'
-    `).all();
+        const marches =
+            db.prepare(`
+                SELECT *
+                FROM marches
+                WHERE status = 'marching'
+            `).all();
 
-    res.json({
-        players,
-        zombies,
-        forts,
-        marches
-    });
-});
+        res.json({
+            players,
+            zombies,
+            forts,
+            marches
+        });
+    }
+);
 
 /* =========================
    RANKING
 ========================= */
 
-app.get("/api/ranking/:kingdom", (req, res) => {
+app.get(
+    "/api/ranking/:kingdom",
+    (req, res) => {
 
-    const players = db.prepare(`
-        SELECT id, name, castle, power, troops
-        FROM players
-        WHERE kingdom = ?
-        ORDER BY power DESC
-        LIMIT 100
-    `).all(req.params.kingdom);
+        const players =
+            db.prepare(`
+                SELECT
+                    id,
+                    name,
+                    castle,
+                    power,
+                    troops
+                FROM players
+                WHERE kingdom = ?
+                ORDER BY power DESC
+                LIMIT 100
+            `).all(req.params.kingdom);
 
-    res.json(players);
-});
+        res.json(players);
+    }
+);
 
 /* =========================
-   COLLECT
+   COLLECT RESOURCES
 ========================= */
 
-app.post("/api/player/:id/collect", (req, res) => {
+app.post(
+    "/api/player/:id/collect",
+    (req, res) => {
 
-    const player = getPlayer(req.params.id);
+        const player =
+            getPlayer(req.params.id);
 
-    if (!player) {
+        if (!player) {
 
-        return res.status(404).json({
-            error: "اللاعب غير موجود"
+            return res.status(404).json({
+                error: "اللاعب غير موجود"
+            });
+        }
+
+        db.prepare(`
+            UPDATE players
+            SET
+                food = food + 1000,
+                wood = wood + 1000,
+                iron = iron + 500,
+                gold = gold + 200
+            WHERE id = ?
+        `).run(player.id);
+
+        const updated =
+            getPlayer(player.id);
+
+        io.emit(
+            "playerUpdated",
+            publicPlayer(updated)
+        );
+
+        res.json({
+            success: true,
+            message: "تم جمع الموارد!",
+            player:
+                publicPlayer(updated)
         });
     }
-
-    db.prepare(`
-        UPDATE players
-        SET
-            food = food + 1000,
-            wood = wood + 1000,
-            iron = iron + 500,
-            gold = gold + 200
-        WHERE id = ?
-    `).run(player.id);
-
-    const updated =
-        getPlayer(player.id);
-
-    io.emit(
-        "playerUpdated",
-        publicPlayer(updated)
-    );
-
-    res.json({
-        success: true,
-        message: "تم جمع الموارد!",
-        player: publicPlayer(updated)
-    });
-});
+);
 
 /* =========================
-   TRAIN
+   TRAIN TROOPS
 ========================= */
 
-app.post("/api/player/:id/train", (req, res) => {
+app.post(
+    "/api/player/:id/train",
+    (req, res) => {
 
-    const player =
-        getPlayer(req.params.id);
+        const player =
+            getPlayer(req.params.id);
 
-    if (!player) {
+        if (!player) {
 
-        return res.status(404).json({
-            error: "اللاعب غير موجود"
+            return res.status(404).json({
+                error: "اللاعب غير موجود"
+            });
+        }
+
+        if (player.food < 500) {
+
+            return res.status(400).json({
+                error: "الطعام غير كافٍ"
+            });
+        }
+
+        db.prepare(`
+            UPDATE players
+            SET
+                food = food - 500,
+                troops = troops + 100,
+                power = power + 130
+            WHERE id = ?
+        `).run(player.id);
+
+        const updated =
+            getPlayer(player.id);
+
+        io.emit(
+            "playerUpdated",
+            publicPlayer(updated)
+        );
+
+        res.json({
+            success: true,
+            message: "تم تدريب 100 جندي!",
+            player:
+                publicPlayer(updated)
         });
     }
-
-    if (player.food < 500) {
-
-        return res.status(400).json({
-            error: "الطعام غير كافٍ"
-        });
-    }
-
-    db.prepare(`
-        UPDATE players
-        SET
-            food = food - 500,
-            troops = troops + 100,
-            power = power + 130
-        WHERE id = ?
-    `).run(player.id);
-
-    const updated =
-        getPlayer(player.id);
-
-    io.emit(
-        "playerUpdated",
-        publicPlayer(updated)
-    );
-
-    res.json({
-        success: true,
-        message: "تم تدريب 100 جندي!",
-        player: publicPlayer(updated)
-    });
-});
+);
 
 /* =========================
    CASTLE UPGRADE
@@ -443,7 +527,8 @@ app.post(
         if (player.castle >= 30) {
 
             return res.status(400).json({
-                error: "القلعة وصلت إلى المستوى 30"
+                error:
+                    "القلعة وصلت إلى المستوى 30"
             });
         }
 
@@ -506,13 +591,14 @@ app.post(
         res.json({
             success: true,
             message: "تم تطوير القلعة!",
-            player: publicPlayer(updated)
+            player:
+                publicPlayer(updated)
         });
     }
 );
 
 /* =========================
-   MOVE
+   MOVE PLAYER
 ========================= */
 
 app.post(
@@ -559,7 +645,9 @@ app.post(
 
         db.prepare(`
             UPDATE players
-            SET x = ?, y = ?
+            SET
+                x = ?,
+                y = ?
             WHERE id = ?
         `).run(
             x,
@@ -587,7 +675,7 @@ app.post(
 );
 
 /* =========================
-   MARCH
+   SEND MARCH
 ========================= */
 
 app.post(
@@ -612,20 +700,28 @@ app.post(
 
         let target = null;
 
-        if (targetType === "zombie") {
+        if (
+            targetType === "zombie"
+        ) {
 
             target =
-                db.prepare(
-                    "SELECT * FROM zombies WHERE id = ?"
-                ).get(targetId);
+                db.prepare(`
+                    SELECT *
+                    FROM zombies
+                    WHERE id = ?
+                `).get(targetId);
         }
 
-        if (targetType === "fort") {
+        if (
+            targetType === "fort"
+        ) {
 
             target =
-                db.prepare(
-                    "SELECT * FROM forts WHERE id = ?"
-                ).get(targetId);
+                db.prepare(`
+                    SELECT *
+                    FROM forts
+                    WHERE id = ?
+                `).get(targetId);
         }
 
         if (!target) {
@@ -638,7 +734,8 @@ app.post(
         if (player.troops < 100) {
 
             return res.status(400).json({
-                error: "لا يوجد عدد كافٍ من الجنود"
+                error:
+                    "لا يوجد عدد كافٍ من الجنود"
             });
         }
 
@@ -649,6 +746,7 @@ app.post(
             !Number.isFinite(troops) ||
             troops <= 0
         ) {
+
             troops = 100;
         }
 
@@ -727,9 +825,11 @@ app.post(
             );
 
         const march =
-            db.prepare(
-                "SELECT * FROM marches WHERE id = ?"
-            ).get(
+            db.prepare(`
+                SELECT *
+                FROM marches
+                WHERE id = ?
+            `).get(
                 result.lastInsertRowid
             );
 
@@ -740,7 +840,8 @@ app.post(
 
         res.json({
             success: true,
-            message: "⚔️ المسيرة انطلقت!",
+            message:
+                "⚔️ المسيرة انطلقت!",
             march
         });
     }
@@ -772,9 +873,11 @@ function processMarches() {
         ) {
 
             enemy =
-                db.prepare(
-                    "SELECT * FROM zombies WHERE id = ?"
-                ).get(
+                db.prepare(`
+                    SELECT *
+                    FROM zombies
+                    WHERE id = ?
+                `).get(
                     march.target_id
                 );
         }
@@ -784,9 +887,11 @@ function processMarches() {
         ) {
 
             enemy =
-                db.prepare(
-                    "SELECT * FROM forts WHERE id = ?"
-                ).get(
+                db.prepare(`
+                    SELECT *
+                    FROM forts
+                    WHERE id = ?
+                `).get(
                     march.target_id
                 );
         }
@@ -896,11 +1001,15 @@ function processMarches() {
             {
                 marchId: march.id,
                 playerId: march.player_id,
-                targetType: march.target_type,
-                targetId: march.target_id,
+                targetType:
+                    march.target_type,
+                targetId:
+                    march.target_id,
                 result,
-                troopsSent: march.troops,
-                troopsLost: lost
+                troopsSent:
+                    march.troops,
+                troopsLost:
+                    lost
             }
         );
 
@@ -924,7 +1033,7 @@ setInterval(
 );
 
 /* =========================
-   REPORTS
+   BATTLE REPORTS
 ========================= */
 
 app.get(
@@ -1021,17 +1130,38 @@ app.get(
     (req, res) => {
 
         res.json({
-            game: "Kardous Survival",
-            status: "online",
-            kingdom: 1,
-            multiplayer: true,
-            world: true,
-            zombies: true,
-            forts: true,
-            marches: true,
-            battles: true,
-            reports: true,
-            version: "8.1"
+            game:
+                "Kardous Survival",
+
+            status:
+                "online",
+
+            kingdom:
+                1,
+
+            multiplayer:
+                true,
+
+            world:
+                true,
+
+            zombies:
+                true,
+
+            forts:
+                true,
+
+            marches:
+                true,
+
+            battles:
+                true,
+
+            reports:
+                true,
+
+            version:
+                "8.2"
         });
     }
 );
@@ -1070,8 +1200,16 @@ server.listen(
         );
 
         console.log(
+            "LOGIN SYSTEM ONLINE"
+        );
+
+        console.log(
             "PORT:",
             PORT
+        );
+
+        console.log(
+            "VERSION: 8.2"
         );
 
         console.log(
