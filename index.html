@@ -1,18 +1,8 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<!DOCTYPE html><html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-
-<title>Kardous Survival</title>
-
-<script src="/socket.io/socket.io.js"></script>
-
-<style>
-
-*{
-box-sizing:border-box;
-}
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Kardous Survival</title><script src="/socket.io/socket.io.js"></script><style>
+*{box-sizing:border-box}
 
 body{
 margin:0;
@@ -29,9 +19,7 @@ top:0;
 z-index:10;
 }
 
-h1,h2,h3{
-margin:6px;
-}
+h1,h2,h3{margin:6px}
 
 .resources{
 display:grid;
@@ -49,7 +37,7 @@ font-size:13px;
 
 .page{
 padding:10px;
-padding-bottom:70px;
+padding-bottom:80px;
 }
 
 .panel{
@@ -69,402 +57,187 @@ margin:4px;
 font-weight:bold;
 }
 
-.hidden{
-display:none;
-}
-
-/* =========================
-MAP
-========================= */
+.hidden{display:none}
 
 #map{
-
 position:relative;
-
 height:520px;
-
 overflow:hidden;
-
 border:4px solid #687b54;
-
 border-radius:15px;
 
 background:
-
-radial-gradient(
-circle at 20% 30%,
-#78935c 0 9%,
-transparent 10%
-),
-
-radial-gradient(
-circle at 70% 75%,
-#607c4d 0 12%,
-transparent 13%
-),
-
-linear-gradient(
-135deg,
-#456c45,
-#294d38
-);
-
+radial-gradient(circle at 20% 30%,#78935c 0 9%,transparent 10%),
+radial-gradient(circle at 70% 75%,#607c4d 0 12%,transparent 13%),
+linear-gradient(135deg,#456c45,#294d38);
 }
 
-/* =========================
-PLAYER
-========================= */
-
 .player{
-
 position:absolute;
-
 transform:translate(-50%,-50%);
-
 text-align:center;
-
 font-size:27px;
-
-transition:
-left .6s linear,
-top .6s linear;
-
+transition:left .6s linear,top .6s linear;
 cursor:pointer;
-
 z-index:5;
-
 }
 
 .playerName{
-
 font-size:11px;
-
 background:#111b;
-
 padding:2px 5px;
-
 border-radius:5px;
-
 white-space:nowrap;
-
 }
 
-/* =========================
-ZOMBIE
-========================= */
-
 .zombie{
-
 position:absolute;
-
 transform:translate(-50%,-50%);
-
 font-size:25px;
-
 cursor:pointer;
-
 z-index:3;
-
-transition:
-left 2s linear,
-top 2s linear;
-
+transition:left 2s linear,top 2s linear;
 }
 
 .zombieName{
-
 font-size:9px;
-
 background:#111c;
-
 padding:2px 4px;
-
 border-radius:4px;
-
 }
 
-/* =========================
-FORT
-========================= */
-
 .fort{
-
 position:absolute;
-
 transform:translate(-50%,-50%);
-
 font-size:30px;
-
 cursor:pointer;
-
 z-index:2;
-
 }
 
 .fortName{
-
 font-size:10px;
-
 background:#111c;
-
 padding:2px 4px;
-
 border-radius:4px;
-
 }
-
-/* =========================
-MARCH
-========================= */
 
 .march{
-
 position:absolute;
-
 font-size:25px;
-
 pointer-events:none;
-
 z-index:8;
-
-transition:
-left 1s linear,
-top 1s linear;
-
+transition:left 1s linear,top 1s linear;
 }
 
-/* =========================
-CONTROLS
-========================= */
-
 .controls{
-
 display:flex;
-
 flex-wrap:wrap;
-
 justify-content:center;
-
 }
 
 .log{
-
 background:#101820;
-
 padding:8px;
-
 border-radius:8px;
-
 min-height:35px;
-
 font-size:13px;
-
 }
 
 .target{
-
 background:#263845;
-
 padding:8px;
-
 border-radius:8px;
-
 margin-top:8px;
-
 }
 
-</style>
+.report{
+background:#263845;
+padding:12px;
+border-radius:10px;
+margin-bottom:8px;
+border-right:4px solid #c78a2c;
+}
 
-</head>
+.reportVictory{
+border-right-color:#4caf50;
+}
 
-<body>
+.reportDefeat{
+border-right-color:#d9534f;
+}
 
-<header>
+.reportTitle{
+font-size:17px;
+font-weight:bold;
+margin-bottom:8px;
+}
 
-<h1>🏰 Kardous Survival</h1>
+.reportRow{
+padding:4px 0;
+border-bottom:1px solid #ffffff18;
+}
 
-<div class="resources">
+.small{
+font-size:12px;
+opacity:.8;
+}
 
-<div class="resource">
+</style></head><body><header><h1>🏰 Kardous Survival</h1><div class="resources"><div class="resource">
 🍎 <span id="food">0</span>
-</div>
-
-<div class="resource">
+</div><div class="resource">
 🪵 <span id="wood">0</span>
-</div>
-
-<div class="resource">
+</div><div class="resource">
 ⛓️ <span id="iron">0</span>
-</div>
-
-<div class="resource">
+</div><div class="resource">
 🪙 <span id="gold">0</span>
-</div>
-
-</div>
-
-</header>
-
-<div class="page">
-
-<!-- =====================
+</div></div></header><div class="page"><!-- =====================
 HOME
-===================== -->
-
-<section id="home">
-
-<div class="panel">
-
-<h2>🏰 قلعة Kardous</h2>
-
-<p>
+===================== --><section id="home"><div class="panel"><h2>🏰 قلعة Kardous</h2><p>
 المستوى:
 <b id="castle">1</b>
-</p>
-
-<p>
+</p><p>
 ⚡ القوة:
 <b id="power">0</b>
-</p>
-
-<div class="controls">
-
-<button onclick="collect()">
+</p><div class="controls"><button onclick="collect()">
 🌾 جمع
-</button>
-
-<button onclick="train()">
+</button><button onclick="train()">
 ⚔️ تدريب
-</button>
-
-<button onclick="upgrade()">
+</button><button onclick="upgrade()">
 ⬆️ ترقية
-</button>
-
-</div>
-
-</div>
-
-<div class="panel">
-
-<h3>👑 القائد Kardous</h3>
-
-<p>
+</button></div></div><div class="panel"><h3>👑 القائد Kardous</h3><p>
 المستوى:
 <span id="commander">1</span>
-</p>
-
-<p>
+</p><p>
 الخبرة:
 <span id="xp">0</span>
-</p>
-
-</div>
-
-<div class="panel">
-
-<h3>⚔️ الجيش</h3>
-
-<p>
+</p></div><div class="panel"><h3>⚔️ الجيش</h3><p>
 الجنود:
 <span id="troops">0</span>
-</p>
-
-</div>
-
-<div class="panel">
-
-<h3>🦸 الأبطال</h3>
-
-<div id="heroes">
+</p></div><div class="panel"><h3>🦸 الأبطال</h3><div id="heroes">
 جاري التحميل...
-</div>
-
-</div>
-
-</section>
-
-<!-- =====================
+</div></div></section><!-- =====================
 WORLD
-===================== -->
-
-<section
-id="world"
-class="hidden"
->
-
-<div class="panel">
-
-<h2>🌍 المملكة #1</h2>
-
-<p>
+===================== --><section id="world" class="hidden"><div class="panel"><h2>🌍 المملكة #1</h2><p>
 اللاعبون والزومبي والحصون يظهرون على الخريطة.
-</p>
-
-</div>
-
-<div class="panel">
-
-<div id="map">
-
-</div>
-
-</div>
-
-<div class="panel">
-
-<h3>🎯 الهدف المحدد</h3>
-
-<div
-id="target"
-class="target"
->
+</p></div><div class="panel"><div id="map"></div></div><div class="panel"><h3>🎯 الهدف المحدد</h3><div id="target" class="target">
 لم تحدد هدفًا
-</div>
-
-<button
-onclick="attackTarget()"
->
+</div><button onclick="attackTarget()">
 ⚔️ إرسال الجيش
-</button>
-
-</div>
-
-<div class="panel">
-
-<h3>🚶 المسيرات</h3>
-
-<div
-id="marches"
-class="log"
->
+</button></div><div class="panel"><h3>🚶 المسيرات</h3><div id="marches" class="log">
 لا توجد مسيرات.
-</div>
-
-</div>
-
-<div class="panel">
-
-<h3>📜 الأحداث</h3>
-
-<div
-id="log"
-class="log"
->
+</div></div><div class="panel"><h3>📜 الأحداث</h3><div id="log" class="log">
 الخريطة جاهزة.
-</div>
-
-</div>
-
-</section>
-
-</div>
-
-<!-- =====================
-BOTTOM
-===================== -->
-
-<div
+</div></div></section><!-- =====================
+REPORTS
+===================== --><section id="reports" class="hidden"><div class="panel"><h2>📜 تقارير المعارك</h2><p>
+جميع معاركك محفوظة على السيرفر.
+</p><button onclick="loadReports()">
+🔄 تحديث التقارير
+</button><div id="reportsList">
+جاري تحميل التقارير...
+</div></div></section></div><!-- =====================
+BOTTOM NAVIGATION
+===================== --><div
 style="
 position:fixed;
 bottom:0;
@@ -472,27 +245,16 @@ left:0;
 right:0;
 background:#111a21;
 display:grid;
-grid-template-columns:1fr 1fr;
+grid-template-columns:1fr 1fr 1fr;
 padding:6px;
 z-index:20;
-"
->
-
-<button
-onclick="show('home')"
->
+"><button onclick="show('home')">
 🏰 القلعة
-</button>
-
-<button
-onclick="show('world')"
->
+</button><button onclick="show('world')">
 🌍 الخريطة
-</button>
-
-</div>
-
-<script>
+</button><button onclick="show('reports');loadReports()">
+📜 التقارير
+</button></div><script>
 
 /* =========================
 PLAYER
@@ -534,6 +296,8 @@ LOAD PLAYER
 ========================= */
 
 async function loadPlayer(){
+
+try{
 
 const response =
 await fetch(
@@ -586,6 +350,12 @@ document
 .getElementById("xp")
 .textContent =
 p.commander.experience;
+
+}catch(error){
+
+console.log(error);
+
+}
 
 }
 
@@ -846,6 +616,71 @@ renderWorld(data);
 
 
 /* =========================
+PLAYER UPDATED
+========================= */
+
+socket.on(
+"playerUpdated",
+player => {
+
+if(
+player.id !== playerId
+){
+return;
+}
+
+myPlayer = player;
+
+document
+.getElementById("food")
+.textContent =
+player.food;
+
+document
+.getElementById("wood")
+.textContent =
+player.wood;
+
+document
+.getElementById("iron")
+.textContent =
+player.iron;
+
+document
+.getElementById("gold")
+.textContent =
+player.gold;
+
+document
+.getElementById("castle")
+.textContent =
+player.castle;
+
+document
+.getElementById("power")
+.textContent =
+player.power;
+
+document
+.getElementById("troops")
+.textContent =
+player.troops;
+
+document
+.getElementById("commander")
+.textContent =
+player.commander.level;
+
+document
+.getElementById("xp")
+.textContent =
+player.commander.experience;
+
+}
+);
+
+
+/* =========================
 PLAYER MOVE
 ========================= */
 
@@ -892,7 +727,7 @@ document
 
 
 /* =========================
-BATTLE
+BATTLE FINISHED
 ========================= */
 
 socket.on(
@@ -926,6 +761,8 @@ document
 message;
 
 loadPlayer();
+
+loadReports();
 
 }
 
@@ -1209,12 +1046,138 @@ y
 
 
 /* =========================
+LOAD BATTLE REPORTS
+========================= */
+
+async function loadReports(){
+
+const box =
+document.getElementById(
+"reportsList"
+);
+
+box.innerHTML =
+"⏳ جاري تحميل التقارير...";
+
+try{
+
+const response =
+await fetch(
+`/api/reports/${playerId}`
+);
+
+if(!response.ok){
+
+box.innerHTML =
+"❌ تعذر تحميل التقارير.";
+
+return;
+
+}
+
+const reports =
+await response.json();
+
+if(!reports.length){
+
+box.innerHTML =
+"📭 لا توجد معارك حتى الآن.";
+
+return;
+
+}
+
+box.innerHTML =
+"";
+
+reports.forEach(
+report => {
+
+const element =
+document.createElement("div");
+
+element.className =
+"report " +
+(
+report.result === "victory"
+?
+"reportVictory"
+:
+"reportDefeat"
+);
+
+const date =
+new Date(
+report.created_at
+);
+
+const resultText =
+report.result === "victory"
+?
+"🏆 انتصار"
+:
+"💀 هزيمة";
+
+const targetText =
+report.target_type === "zombie"
+?
+"🧟 زومبي"
+:
+"🏯 حصن";
+
+element.innerHTML =
+`
+<div class="reportTitle">
+${resultText} — ${targetText}
+</div>
+
+<div class="reportRow">
+⚔️ الجنود المرسلون:
+<b>${report.troops_sent}</b>
+</div>
+
+<div class="reportRow">
+💥 الجنود الذين خسروا:
+<b>${report.troops_lost}</b>
+</div>
+
+<div class="reportRow">
+🛡️ الجنود الناجون:
+<b>${report.troops_sent - report.troops_lost}</b>
+</div>
+
+<div class="reportRow">
+⚡ قوة العدو:
+<b>${report.enemy_power}</b>
+</div>
+
+<div class="small">
+🕒 ${date.toLocaleString("ar-TN")}
+</div>
+`;
+
+box.appendChild(element);
+
+}
+);
+
+}catch(error){
+
+console.log(error);
+
+box.innerHTML =
+"❌ حدث خطأ أثناء تحميل التقارير.";
+
+}
+
+}
+
+
+/* =========================
 START
 ========================= */
 
 loadPlayer();
 
-</script>
-
-</body>
+</script></body>
 </html>
