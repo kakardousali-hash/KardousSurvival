@@ -3,185 +3,469 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+
 <title>Kardous Survival</title>
 
 <script src="/socket.io/socket.io.js"></script>
 
 <style>
-*{box-sizing:border-box}
+
+*{
+box-sizing:border-box;
+}
+
 body{
- margin:0;
- background:#101820;
- color:white;
- font-family:Arial;
+margin:0;
+background:#101820;
+color:white;
+font-family:Arial;
 }
+
 header{
- background:#17242e;
- padding:10px;
- position:sticky;
- top:0;
- z-index:10;
+background:#17242e;
+padding:10px;
+position:sticky;
+top:0;
+z-index:10;
 }
-h1,h2,h3{margin:6px}
+
+h1,h2,h3{
+margin:6px;
+}
+
 .resources{
- display:grid;
- grid-template-columns:repeat(4,1fr);
- gap:5px;
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:5px;
 }
+
 .resource{
- background:#263845;
- padding:8px 2px;
- border-radius:8px;
- text-align:center;
- font-size:13px;
+background:#263845;
+padding:8px 2px;
+border-radius:8px;
+text-align:center;
+font-size:13px;
 }
+
 .page{
- padding:10px;
- padding-bottom:70px;
+padding:10px;
+padding-bottom:70px;
 }
+
 .panel{
- background:#1b2b36;
- padding:12px;
- margin-bottom:10px;
- border-radius:14px;
+background:#1b2b36;
+padding:12px;
+margin-bottom:10px;
+border-radius:14px;
 }
+
 button{
- background:#c78a2c;
- color:white;
- border:0;
- border-radius:9px;
- padding:11px;
- margin:4px;
- font-weight:bold;
+background:#c78a2c;
+color:white;
+border:0;
+border-radius:9px;
+padding:11px;
+margin:4px;
+font-weight:bold;
 }
-.hidden{display:none}
+
+.hidden{
+display:none;
+}
+
+/* =========================
+MAP
+========================= */
 
 #map{
- position:relative;
- height:520px;
- overflow:hidden;
- border:4px solid #687b54;
- border-radius:15px;
- background:
- radial-gradient(circle at 20% 30%,#78935c 0 9%,transparent 10%),
- radial-gradient(circle at 70% 75%,#607c4d 0 12%,transparent 13%),
- linear-gradient(135deg,#456c45,#294d38);
+
+position:relative;
+
+height:520px;
+
+overflow:hidden;
+
+border:4px solid #687b54;
+
+border-radius:15px;
+
+background:
+
+radial-gradient(
+circle at 20% 30%,
+#78935c 0 9%,
+transparent 10%
+),
+
+radial-gradient(
+circle at 70% 75%,
+#607c4d 0 12%,
+transparent 13%
+),
+
+linear-gradient(
+135deg,
+#456c45,
+#294d38
+);
+
 }
+
+/* =========================
+PLAYER
+========================= */
 
 .player{
- position:absolute;
- transform:translate(-50%,-50%);
- text-align:center;
- font-size:27px;
- transition:left .6s linear,top .6s linear;
- cursor:pointer;
+
+position:absolute;
+
+transform:translate(-50%,-50%);
+
+text-align:center;
+
+font-size:27px;
+
+transition:
+left .6s linear,
+top .6s linear;
+
+cursor:pointer;
+
+z-index:5;
+
 }
+
 .playerName{
- font-size:11px;
- background:#111b;
- padding:2px 5px;
- border-radius:5px;
- white-space:nowrap;
+
+font-size:11px;
+
+background:#111b;
+
+padding:2px 5px;
+
+border-radius:5px;
+
+white-space:nowrap;
+
 }
+
+/* =========================
+ZOMBIE
+========================= */
+
+.zombie{
+
+position:absolute;
+
+transform:translate(-50%,-50%);
+
+font-size:25px;
+
+cursor:pointer;
+
+z-index:3;
+
+transition:
+left 2s linear,
+top 2s linear;
+
+}
+
+.zombieName{
+
+font-size:9px;
+
+background:#111c;
+
+padding:2px 4px;
+
+border-radius:4px;
+
+}
+
+/* =========================
+FORT
+========================= */
+
+.fort{
+
+position:absolute;
+
+transform:translate(-50%,-50%);
+
+font-size:30px;
+
+cursor:pointer;
+
+z-index:2;
+
+}
+
+.fortName{
+
+font-size:10px;
+
+background:#111c;
+
+padding:2px 4px;
+
+border-radius:4px;
+
+}
+
+/* =========================
+MARCH
+========================= */
 
 .march{
- position:absolute;
- font-size:27px;
- pointer-events:none;
- transition:left 1s linear,top 1s linear;
+
+position:absolute;
+
+font-size:25px;
+
+pointer-events:none;
+
+z-index:8;
+
+transition:
+left 1s linear,
+top 1s linear;
+
 }
 
+/* =========================
+CONTROLS
+========================= */
+
 .controls{
- display:flex;
- flex-wrap:wrap;
- justify-content:center;
+
+display:flex;
+
+flex-wrap:wrap;
+
+justify-content:center;
+
 }
 
 .log{
- background:#101820;
- padding:8px;
- border-radius:8px;
- min-height:35px;
- font-size:13px;
+
+background:#101820;
+
+padding:8px;
+
+border-radius:8px;
+
+min-height:35px;
+
+font-size:13px;
+
 }
+
+.target{
+
+background:#263845;
+
+padding:8px;
+
+border-radius:8px;
+
+margin-top:8px;
+
+}
+
 </style>
+
 </head>
 
 <body>
 
 <header>
+
 <h1>🏰 Kardous Survival</h1>
 
 <div class="resources">
-<div class="resource">🍎 <span id="food">0</span></div>
-<div class="resource">🪵 <span id="wood">0</span></div>
-<div class="resource">⛓️ <span id="iron">0</span></div>
-<div class="resource">🪙 <span id="gold">0</span></div>
+
+<div class="resource">
+🍎 <span id="food">0</span>
 </div>
+
+<div class="resource">
+🪵 <span id="wood">0</span>
+</div>
+
+<div class="resource">
+⛓️ <span id="iron">0</span>
+</div>
+
+<div class="resource">
+🪙 <span id="gold">0</span>
+</div>
+
+</div>
+
 </header>
 
 <div class="page">
 
+<!-- =====================
+HOME
+===================== -->
+
 <section id="home">
 
 <div class="panel">
+
 <h2>🏰 قلعة Kardous</h2>
-<p>المستوى: <b id="castle">1</b></p>
-<p>⚡ القوة: <b id="power">0</b></p>
+
+<p>
+المستوى:
+<b id="castle">1</b>
+</p>
+
+<p>
+⚡ القوة:
+<b id="power">0</b>
+</p>
 
 <div class="controls">
-<button onclick="collect()">🌾 جمع</button>
-<button onclick="train()">⚔️ تدريب</button>
-<button onclick="upgrade()">⬆️ ترقية</button>
+
+<button onclick="collect()">
+🌾 جمع
+</button>
+
+<button onclick="train()">
+⚔️ تدريب
+</button>
+
+<button onclick="upgrade()">
+⬆️ ترقية
+</button>
+
 </div>
+
 </div>
 
 <div class="panel">
+
 <h3>👑 القائد Kardous</h3>
-<p>المستوى: <span id="commander">1</span></p>
-<p>الخبرة: <span id="xp">0</span></p>
+
+<p>
+المستوى:
+<span id="commander">1</span>
+</p>
+
+<p>
+الخبرة:
+<span id="xp">0</span>
+</p>
+
 </div>
 
 <div class="panel">
+
 <h3>⚔️ الجيش</h3>
-<p>الجنود: <span id="troops">0</span></p>
+
+<p>
+الجنود:
+<span id="troops">0</span>
+</p>
+
 </div>
 
 <div class="panel">
+
 <h3>🦸 الأبطال</h3>
-<div id="heroes">جاري التحميل...</div>
+
+<div id="heroes">
+جاري التحميل...
+</div>
+
 </div>
 
 </section>
 
-<section id="world" class="hidden">
+<!-- =====================
+WORLD
+===================== -->
+
+<section
+id="world"
+class="hidden"
+>
 
 <div class="panel">
+
 <h2>🌍 المملكة #1</h2>
-<p>اللاعبون المتصلون يظهرون على الخريطة.</p>
+
+<p>
+اللاعبون والزومبي والحصون يظهرون على الخريطة.
+</p>
+
 </div>
 
 <div class="panel">
 
 <div id="map">
 
-<div id="march" class="march">⚔️</div>
-
 </div>
 
 </div>
 
 <div class="panel">
-<h3>🚶 مسيرة الجيش</h3>
-<button onclick="sendMarch()">إرسال مسيرة</button>
-<div class="log" id="log">جاهز.</div>
+
+<h3>🎯 الهدف المحدد</h3>
+
+<div
+id="target"
+class="target"
+>
+لم تحدد هدفًا
+</div>
+
+<button
+onclick="attackTarget()"
+>
+⚔️ إرسال الجيش
+</button>
+
+</div>
+
+<div class="panel">
+
+<h3>🚶 المسيرات</h3>
+
+<div
+id="marches"
+class="log"
+>
+لا توجد مسيرات.
+</div>
+
+</div>
+
+<div class="panel">
+
+<h3>📜 الأحداث</h3>
+
+<div
+id="log"
+class="log"
+>
+الخريطة جاهزة.
+</div>
+
 </div>
 
 </section>
 
 </div>
 
-<div style="
+<!-- =====================
+BOTTOM
+===================== -->
+
+<div
+style="
 position:fixed;
 bottom:0;
 left:0;
@@ -191,225 +475,742 @@ display:grid;
 grid-template-columns:1fr 1fr;
 padding:6px;
 z-index:20;
-">
-<button onclick="show('home')">🏰 القلعة</button>
-<button onclick="show('world')">🌍 الخريطة</button>
+"
+>
+
+<button
+onclick="show('home')"
+>
+🏰 القلعة
+</button>
+
+<button
+onclick="show('world')"
+>
+🌍 الخريطة
+</button>
+
 </div>
 
 <script>
+
+/* =========================
+PLAYER
+========================= */
 
 const playerId = 1;
 
 const socket = io();
 
-const map = document.getElementById("map");
+const map =
+document.getElementById("map");
 
 let myPlayer = null;
-let march = {
- x:50,
- y:50
-};
+
+let selectedTarget = null;
+
+
+/* =========================
+SHOW PAGE
+========================= */
 
 function show(id){
 
- document.querySelectorAll("section")
- .forEach(x=>x.classList.add("hidden"));
+document
+.querySelectorAll("section")
+.forEach(
+x => x.classList.add("hidden")
+);
 
- document.getElementById(id)
- .classList.remove("hidden");
+document
+.getElementById(id)
+.classList.remove("hidden");
+
 }
+
+
+/* =========================
+LOAD PLAYER
+========================= */
 
 async function loadPlayer(){
 
- const response =
- await fetch(`/api/player/${playerId}`);
+const response =
+await fetch(
+`/api/player/${playerId}`
+);
 
- if(!response.ok){
-   return;
- }
+if(!response.ok){
+return;
+}
 
- const p = await response.json();
+const p =
+await response.json();
 
- myPlayer = p;
+myPlayer = p;
 
- document.getElementById("food").textContent=p.food;
- document.getElementById("wood").textContent=p.wood;
- document.getElementById("iron").textContent=p.iron;
- document.getElementById("gold").textContent=p.gold;
+document
+.getElementById("food")
+.textContent = p.food;
 
- document.getElementById("castle").textContent=p.castle;
- document.getElementById("power").textContent=p.power;
+document
+.getElementById("wood")
+.textContent = p.wood;
 
- document.getElementById("troops").textContent=p.troops;
+document
+.getElementById("iron")
+.textContent = p.iron;
 
- document.getElementById("commander").textContent=
- p.commander.level;
+document
+.getElementById("gold")
+.textContent = p.gold;
 
- document.getElementById("xp").textContent=
- p.commander.experience;
+document
+.getElementById("castle")
+.textContent = p.castle;
 
- document.getElementById("heroes").innerHTML=
- p.heroes ?
- p.heroes.map(h=>
- `<div class="panel">
- 🦸 ${h.name}<br>
- المستوى ${h.level}<br>
- ⚡ القوة ${h.power}
- </div>`
- ).join("")
- :
- "لا يوجد أبطال";
+document
+.getElementById("power")
+.textContent = p.power;
+
+document
+.getElementById("troops")
+.textContent = p.troops;
+
+document
+.getElementById("commander")
+.textContent =
+p.commander.level;
+
+document
+.getElementById("xp")
+.textContent =
+p.commander.experience;
 
 }
+
+
+/* =========================
+ACTIONS
+========================= */
 
 async function action(url){
 
- const response =
- await fetch(url,{method:"POST"});
-
- const data =
- await response.json();
-
- alert(data.message || data.error);
-
- loadPlayer();
+const response =
+await fetch(
+url,
+{
+method:"POST"
 }
+);
+
+const data =
+await response.json();
+
+alert(
+data.message ||
+data.error
+);
+
+loadPlayer();
+
+}
+
 
 function collect(){
- action(`/api/player/${playerId}/collect`);
+
+action(
+`/api/player/${playerId}/collect`
+);
+
 }
+
 
 function train(){
- action(`/api/player/${playerId}/train`);
+
+action(
+`/api/player/${playerId}/train`
+);
+
 }
+
 
 function upgrade(){
- action(`/api/player/${playerId}/upgrade-castle`);
+
+action(
+`/api/player/${playerId}/upgrade-castle`
+);
+
 }
 
-/* =====================
-   WORLD
-===================== */
+
+/* =========================
+CREATE PLAYER
+========================= */
 
 function createPlayer(p){
 
- let element =
- document.getElementById("player-"+p.id);
+let element =
+document.getElementById(
+"player-" + p.id
+);
 
- if(!element){
+if(!element){
 
-   element =
-   document.createElement("div");
+element =
+document.createElement("div");
 
-   element.id="player-"+p.id;
-   element.className="player";
+element.id =
+"player-" + p.id;
 
-   element.innerHTML=
-   `🏰<div class="playerName">${p.name}</div>`;
+element.className =
+"player";
 
-   map.appendChild(element);
- }
+element.innerHTML =
+`
+🏰
+<div class="playerName">
+${p.name}
+</div>
+`;
 
- element.style.left=p.x+"%";
- element.style.top=p.y+"%";
-}
-
-function renderWorld(players){
-
- players.forEach(createPlayer);
-
-}
-
-socket.on("world",data=>{
-
- renderWorld(data.players || []);
-
-});
-
-socket.on("playerMoved",data=>{
-
- const player =
- document.getElementById("player-"+data.id);
-
- if(player){
-
-   player.style.left=data.x+"%";
-   player.style.top=data.y+"%";
-
- }
-
-});
-
-/* =====================
-   MOVE
-===================== */
-
-map.addEventListener("click",async event=>{
-
- if(!myPlayer)return;
-
- const rect =
- map.getBoundingClientRect();
-
- const x =
- ((event.clientX-rect.left)/rect.width)*100;
-
- const y =
- ((event.clientY-rect.top)/rect.height)*100;
-
- await fetch(
- `/api/player/${playerId}/move`,
- {
-   method:"POST",
-   headers:{
-     "Content-Type":"application/json"
-   },
-   body:JSON.stringify({x,y})
- }
- );
-
-});
-
-/* =====================
-   MARCH
-===================== */
-
-function sendMarch(){
-
- if(!myPlayer){
-   return;
- }
-
- const startX=myPlayer.x;
- const startY=myPlayer.y;
-
- const targetX=75;
- const targetY=25;
-
- const element =
- document.getElementById("march");
-
- element.style.left=startX+"%";
- element.style.top=startY+"%";
-
- document.getElementById("log").textContent=
- "⚔️ المسيرة انطلقت...";
-
- setTimeout(()=>{
-
-   element.style.left=targetX+"%";
-   element.style.top=targetY+"%";
-
- },100);
-
- setTimeout(()=>{
-
-   document.getElementById("log").textContent=
-   "🏰 وصلت المسيرة إلى الهدف.";
-
- },6100);
+map.appendChild(element);
 
 }
+
+element.style.left =
+p.x + "%";
+
+element.style.top =
+p.y + "%";
+
+}
+
+
+/* =========================
+CREATE ZOMBIE
+========================= */
+
+function createZombie(z){
+
+let element =
+document.getElementById(
+"zombie-" + z.id
+);
+
+if(!element){
+
+element =
+document.createElement("div");
+
+element.id =
+"zombie-" + z.id;
+
+element.className =
+"zombie";
+
+element.innerHTML =
+`
+🧟
+<div class="zombieName">
+${z.name}
+Lv.${z.level}
+</div>
+`;
+
+element.onclick =
+(event) => {
+
+event.stopPropagation();
+
+selectTarget(
+"zombie",
+z.id,
+z.name,
+z.power
+);
+
+};
+
+map.appendChild(element);
+
+}
+
+element.style.left =
+z.x + "%";
+
+element.style.top =
+z.y + "%";
+
+}
+
+
+/* =========================
+CREATE FORT
+========================= */
+
+function createFort(f){
+
+let element =
+document.getElementById(
+"fort-" + f.id
+);
+
+if(!element){
+
+element =
+document.createElement("div");
+
+element.id =
+"fort-" + f.id;
+
+element.className =
+"fort";
+
+element.innerHTML =
+`
+🏯
+<div class="fortName">
+${f.name}
+Lv.${f.level}
+</div>
+`;
+
+element.onclick =
+(event) => {
+
+event.stopPropagation();
+
+selectTarget(
+"fort",
+f.id,
+f.name,
+f.power
+);
+
+};
+
+map.appendChild(element);
+
+}
+
+element.style.left =
+f.x + "%";
+
+element.style.top =
+f.y + "%";
+
+}
+
+
+/* =========================
+WORLD
+========================= */
+
+function renderWorld(data){
+
+(data.players || [])
+.forEach(
+createPlayer
+);
+
+(data.zombies || [])
+.forEach(
+createZombie
+);
+
+(data.forts || [])
+.forEach(
+createFort
+);
+
+renderMarches(
+data.marches || []
+);
+
+}
+
+
+/* =========================
+SOCKET WORLD
+========================= */
+
+socket.on(
+"world",
+data => {
+
+renderWorld(data);
+
+}
+);
+
+
+/* =========================
+PLAYER MOVE
+========================= */
+
+socket.on(
+"playerMoved",
+data => {
+
+const player =
+document.getElementById(
+"player-" + data.id
+);
+
+if(player){
+
+player.style.left =
+data.x + "%";
+
+player.style.top =
+data.y + "%";
+
+}
+
+}
+);
+
+
+/* =========================
+MARCH CREATED
+========================= */
+
+socket.on(
+"marchCreated",
+march => {
+
+renderMarch(march);
+
+document
+.getElementById("log")
+.textContent =
+"⚔️ مسيرة جديدة انطلقت!";
+
+}
+);
+
+
+/* =========================
+BATTLE
+========================= */
+
+socket.on(
+"battleFinished",
+data => {
+
+if(
+data.playerId === playerId
+){
+
+let message;
+
+if(
+data.result === "victory"
+){
+
+message =
+`🏆 انتصار! خسرت ${data.troopsLost} جندي.`;
+
+}
+else{
+
+message =
+`💀 هزيمة! خسرت ${data.troopsLost} جندي.`;
+
+}
+
+document
+.getElementById("log")
+.textContent =
+message;
+
+loadPlayer();
+
+}
+
+}
+);
+
+
+/* =========================
+SELECT TARGET
+========================= */
+
+function selectTarget(
+type,
+id,
+name,
+power
+){
+
+selectedTarget = {
+
+type,
+id,
+name,
+power
+
+};
+
+document
+.getElementById("target")
+.innerHTML =
+`
+🎯 ${name}
+<br>
+⚡ قوة الهدف: ${power}
+`;
+
+document
+.getElementById("log")
+.textContent =
+`تم اختيار ${name}.`;
+
+}
+
+
+/* =========================
+ATTACK
+========================= */
+
+async function attackTarget(){
+
+if(!selectedTarget){
+
+alert(
+"اختر زومبي أو حصنًا أولًا."
+);
+
+return;
+
+}
+
+if(!myPlayer){
+
+return;
+
+}
+
+const troops =
+Math.min(
+100,
+myPlayer.troops
+);
+
+if(troops < 100){
+
+alert(
+"تحتاج إلى 100 جندي على الأقل."
+);
+
+return;
+
+}
+
+const response =
+await fetch(
+`/api/player/${playerId}/march`,
+{
+method:"POST",
+
+headers:{
+"Content-Type":
+"application/json"
+},
+
+body:
+JSON.stringify({
+
+targetType:
+selectedTarget.type,
+
+targetId:
+selectedTarget.id,
+
+troops:100
+
+})
+
+}
+);
+
+const data =
+await response.json();
+
+if(!response.ok){
+
+alert(
+data.error ||
+"حدث خطأ"
+);
+
+return;
+
+}
+
+document
+.getElementById("log")
+.textContent =
+"⚔️ الجيش في الطريق إلى الهدف!";
+
+loadPlayer();
+
+}
+
+
+/* =========================
+CREATE MARCH
+========================= */
+
+function renderMarch(m){
+
+let element =
+document.getElementById(
+"march-" + m.id
+);
+
+if(!element){
+
+element =
+document.createElement("div");
+
+element.id =
+"march-" + m.id;
+
+element.className =
+"march";
+
+element.textContent =
+"⚔️";
+
+map.appendChild(element);
+
+}
+
+element.style.left =
+m.start_x + "%";
+
+element.style.top =
+m.start_y + "%";
+
+setTimeout(
+() => {
+
+element.style.left =
+m.target_x + "%";
+
+element.style.top =
+m.target_y + "%";
+
+},
+100
+);
+
+}
+
+
+/* =========================
+MARCH LIST
+========================= */
+
+function renderMarches(marches){
+
+const box =
+document.getElementById(
+"marches"
+);
+
+if(!marches.length){
+
+box.textContent =
+"لا توجد مسيرات.";
+
+return;
+
+}
+
+box.innerHTML =
+"";
+
+marches.forEach(
+m => {
+
+renderMarch(m);
+
+const item =
+document.createElement("div");
+
+item.textContent =
+`⚔️ مسيرة #${m.id}`;
+
+box.appendChild(item);
+
+}
+);
+
+}
+
+
+/* =========================
+MAP CLICK
+========================= */
+
+map.addEventListener(
+"click",
+async event => {
+
+if(!myPlayer){
+
+return;
+
+}
+
+const rect =
+map.getBoundingClientRect();
+
+const x =
+(
+(event.clientX -
+rect.left)
+/
+rect.width
+) * 100;
+
+const y =
+(
+(event.clientY -
+rect.top)
+/
+rect.height
+) * 100;
+
+await fetch(
+`/api/player/${playerId}/move`,
+{
+method:"POST",
+
+headers:{
+"Content-Type":
+"application/json"
+},
+
+body:
+JSON.stringify({
+x,
+y
+})
+
+}
+);
+
+}
+);
+
+
+/* =========================
+START
+========================= */
 
 loadPlayer();
 
