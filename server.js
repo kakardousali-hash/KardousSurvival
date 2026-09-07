@@ -119,9 +119,7 @@ async function initDatabase() {
     );
   `);
 
-  const player = await query(
-    `SELECT id FROM players WHERE id = 1`
-  );
+  const player = await query(`SELECT id FROM players WHERE id = 1`);
 
   if (player.rows.length === 0) {
     await query(`
@@ -231,12 +229,16 @@ app.get("/api/player/:id", async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Player not found" });
+      return res.status(404).json({
+        error: "Player not found"
+      });
     }
 
     res.json(result.rows[0]);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
@@ -286,7 +288,12 @@ app.post("/api/register", async (req, res) => {
       );
     }
 
-    for (const name of ["T-Rex", "Giant Monkey", "Lion", "Thunder Bird"]) {
+    for (const name of [
+      "T-Rex",
+      "Giant Monkey",
+      "Lion",
+      "Thunder Bird"
+    ]) {
       await query(
         `INSERT INTO behemoths
          (player_id, name, level, power)
@@ -297,7 +304,9 @@ app.post("/api/register", async (req, res) => {
 
     res.json(player);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
@@ -316,7 +325,9 @@ app.post("/api/player/:id/collect", async (req, res) => {
 
     res.json(result.rows[0]);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
@@ -328,7 +339,9 @@ app.post("/api/player/:id/upgrade-castle", async (req, res) => {
     );
 
     if (playerResult.rows.length === 0) {
-      return res.status(404).json({ error: "Player not found" });
+      return res.status(404).json({
+        error: "Player not found"
+      });
     }
 
     const player = playerResult.rows[0];
@@ -363,12 +376,19 @@ app.post("/api/player/:id/upgrade-castle", async (req, res) => {
            iron = iron - $3
        WHERE id = $4
        RETURNING *`,
-      [costFood, costWood, costIron, req.params.id]
+      [
+        costFood,
+        costWood,
+        costIron,
+        req.params.id
+      ]
     );
 
     res.json(result.rows[0]);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
@@ -381,14 +401,20 @@ app.post("/api/player/:id/speedup-building", async (req, res) => {
 
 app.post("/api/player/:id/train", async (req, res) => {
   try {
-    const troops = Math.max(1, num(req.body.troops) || 10);
+    const troops = Math.max(
+      1,
+      num(req.body.troops) || 10
+    );
 
     const result = await query(
       `UPDATE players
        SET power = power + $1
        WHERE id = $2
        RETURNING *`,
-      [troops * 10, req.params.id]
+      [
+        troops * 10,
+        req.params.id
+      ]
     );
 
     res.json({
@@ -397,7 +423,9 @@ app.post("/api/player/:id/train", async (req, res) => {
       player: result.rows[0]
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
@@ -424,7 +452,9 @@ app.post("/api/player/:id/research", async (req, res) => {
       player: result.rows[0]
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
@@ -448,7 +478,9 @@ app.get("/api/player/:id/profile", async (req, res) => {
 
     res.json(result.rows[0] || {});
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
@@ -463,7 +495,9 @@ app.get("/api/player/:id/heroes", async (req, res) => {
 
     res.json(result.rows);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
@@ -474,14 +508,20 @@ app.post("/api/player/:id/heroes/:heroId/upgrade", async (req, res) => {
        SET level = level + 1,
            power = power + 100,
            skill_level = skill_level + 1
-       WHERE id = $1 AND player_id = $2
+       WHERE id = $1
+       AND player_id = $2
        RETURNING *`,
-      [req.params.heroId, req.params.id]
+      [
+        req.params.heroId,
+        req.params.id
+      ]
     );
 
     res.json(result.rows[0] || {});
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
@@ -496,7 +536,9 @@ app.get("/api/player/:id/behemoths", async (req, res) => {
 
     res.json(result.rows);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
@@ -506,14 +548,20 @@ app.post("/api/player/:id/behemoths/:behemothId/upgrade", async (req, res) => {
       `UPDATE behemoths
        SET level = level + 1,
            power = power + 250
-       WHERE id = $1 AND player_id = $2
+       WHERE id = $1
+       AND player_id = $2
        RETURNING *`,
-      [req.params.behemothId, req.params.id]
+      [
+        req.params.behemothId,
+        req.params.id
+      ]
     );
 
     res.json(result.rows[0] || {});
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
@@ -526,18 +574,27 @@ app.get("/api/alliances", async (req, res) => {
 
     res.json(result.rows);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
 app.post("/api/alliances", async (req, res) => {
   try {
-    const name = String(req.body.name || "Kardous Alliance");
-    const tag = String(req.body.tag || "KDS");
+    const name = String(
+      req.body.name || "Kardous Alliance"
+    );
+
+    const tag = String(
+      req.body.tag || "KDS"
+    );
+
     const playerId = req.body.playerId;
 
     const result = await query(
-      `INSERT INTO alliances (name, tag, power)
+      `INSERT INTO alliances
+       (name, tag, power)
        VALUES ($1, $2, 1000)
        RETURNING *`,
       [name, tag]
@@ -550,27 +607,34 @@ app.post("/api/alliances", async (req, res) => {
         `INSERT INTO alliance_members
          (alliance_id, player_id, rank)
          VALUES ($1, $2, 'leader')`,
-        [alliance.id, playerId]
+        [
+          alliance.id,
+          playerId
+        ]
       );
     }
 
     res.json(alliance);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
 app.get("/api/alliance/:id", async (req, res) => {
   try {
     const alliance = await query(
-      `SELECT * FROM alliances WHERE id = $1`,
+      `SELECT * FROM alliances
+       WHERE id = $1`,
       [req.params.id]
     );
 
     const members = await query(
       `SELECT p.id, p.name, p.power, am.rank
        FROM alliance_members am
-       JOIN players p ON p.id = am.player_id
+       JOIN players p
+       ON p.id = am.player_id
        WHERE am.alliance_id = $1`,
       [req.params.id]
     );
@@ -580,7 +644,9 @@ app.get("/api/alliance/:id", async (req, res) => {
       members: members.rows
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
@@ -591,14 +657,19 @@ app.post("/api/player/:id/alliance/join", async (req, res) => {
        (alliance_id, player_id, rank)
        VALUES ($1, $2, 'member')
        ON CONFLICT DO NOTHING`,
-      [req.body.allianceId, req.params.id]
+      [
+        req.body.allianceId,
+        req.params.id
+      ]
     );
 
     res.json({
       ok: true
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
@@ -653,11 +724,13 @@ app.get("/api/rankings/all", async (req, res) => {
 app.get("/api/world", async (req, res) => {
   try {
     const zombies = await query(
-      `SELECT * FROM zombies ORDER BY id`
+      `SELECT * FROM zombies
+       ORDER BY id`
     );
 
     const forts = await query(
-      `SELECT * FROM forts ORDER BY id`
+      `SELECT * FROM forts
+       ORDER BY id`
     );
 
     const players = await query(`
@@ -693,7 +766,11 @@ app.post("/api/player/:id/move", async (req, res) => {
        SET x = $1, y = $2
        WHERE id = $3
        RETURNING *`,
-      [x, y, req.params.id]
+      [
+        x,
+        y,
+        req.params.id
+      ]
     );
 
     io.emit("playerMoved", {
@@ -712,19 +789,37 @@ app.post("/api/player/:id/move", async (req, res) => {
 
 app.post("/api/player/:id/march", async (req, res) => {
   try {
-    const targetType = String(req.body.targetType || "zombie");
-    const targetId = num(req.body.targetId);
-    const troops = Math.max(1, num(req.body.troops) || 10);
+    const targetType = String(
+      req.body.targetType || "zombie"
+    );
+
+    const targetId = num(
+      req.body.targetId
+    );
+
+    const troops = Math.max(
+      1,
+      num(req.body.troops) || 10
+    );
 
     const result = await query(
       `INSERT INTO marches
-       (player_id, target_type, target_id, troops, status)
+       (player_id, target_type, target_id,
+        troops, status)
        VALUES ($1, $2, $3, $4, 'marching')
        RETURNING *`,
-      [req.params.id, targetType, targetId, troops]
+      [
+        req.params.id,
+        targetType,
+        targetId,
+        troops
+      ]
     );
 
-    io.emit("marchStarted", result.rows[0]);
+    io.emit(
+      "marchStarted",
+      result.rows[0]
+    );
 
     res.json(result.rows[0]);
   } catch (error) {
@@ -759,7 +854,11 @@ io.on("connection", socket => {
   });
 
   socket.on("joinGame", data => {
-    socket.join(`player_${data.playerId}`);
+    if (data && data.playerId) {
+      socket.join(
+        `player_${data.playerId}`
+      );
+    }
   });
 });
 
@@ -805,7 +904,9 @@ async function processMarches() {
         ]
       );
 
-      io.to(`player_${march.player_id}`).emit(
+      io.to(
+        `player_${march.player_id}`
+      ).emit(
         "battleFinished",
         {
           result: battleResult,
@@ -814,7 +915,10 @@ async function processMarches() {
       );
     }
   } catch (error) {
-    console.error("March processor error:", error.message);
+    console.error(
+      "March processor error:",
+      error.message
+    );
   }
 }
 
@@ -822,16 +926,27 @@ async function start() {
   try {
     await initDatabase();
 
-    server.listen(PORT, () => {
-      console.log(
-        `Kardous Survival server running on port ${PORT}`
-      );
-    });
+    server.listen(
+      PORT,
+      "0.0.0.0",
+      () => {
+        console.log(
+          `🏰 Kardous Survival server running on port ${PORT}`
+        );
+      }
+    );
 
-    setInterval(processMarches, 5000);
+    setInterval(
+      processMarches,
+      5000
+    );
   } catch (error) {
-    console.error("Database initialization failed:");
+    console.error(
+      "Database initialization failed:"
+    );
+
     console.error(error);
+
     process.exit(1);
   }
 }
