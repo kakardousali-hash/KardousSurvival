@@ -12,18 +12,18 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(__dirname));
 
-/* =========================
+/* =========================================================
    DATABASE
-========================= */
+========================================================= */
 
 const db = new Database("kardous_survival.db");
 
 db.pragma("journal_mode = WAL");
 
 
-/* =========================
-   PLAYERS TABLE
-========================= */
+/* =========================================================
+   PLAYERS
+========================================================= */
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS players (
@@ -56,6 +56,16 @@ CREATE TABLE IF NOT EXISTS players (
 
     commander_xp INTEGER NOT NULL DEFAULT 0,
 
+    commander_weapon INTEGER NOT NULL DEFAULT 1,
+
+    commander_armor INTEGER NOT NULL DEFAULT 1,
+
+    commander_helmet INTEGER NOT NULL DEFAULT 1,
+
+    commander_boots INTEGER NOT NULL DEFAULT 1,
+
+    commander_talent INTEGER NOT NULL DEFAULT 1,
+
     castle_upgrade_end INTEGER NOT NULL DEFAULT 0,
 
     training_end INTEGER NOT NULL DEFAULT 0,
@@ -76,9 +86,9 @@ CREATE TABLE IF NOT EXISTS players (
 `);
 
 
-/* =========================
+/* =========================================================
    MIGRATIONS
-========================= */
+========================================================= */
 
 function addColumnIfMissing(table, column, definition) {
 
@@ -101,56 +111,148 @@ function addColumnIfMissing(table, column, definition) {
 
 addColumnIfMissing(
     "players",
-    "castle_upgrade_end",
-    "INTEGER NOT NULL DEFAULT 0"
+    "commander_weapon",
+    "INTEGER NOT NULL DEFAULT 1"
 );
 
 addColumnIfMissing(
     "players",
-    "training_end",
-    "INTEGER NOT NULL DEFAULT 0"
+    "commander_armor",
+    "INTEGER NOT NULL DEFAULT 1"
 );
 
 addColumnIfMissing(
     "players",
-    "training_amount",
-    "INTEGER NOT NULL DEFAULT 0"
+    "commander_helmet",
+    "INTEGER NOT NULL DEFAULT 1"
 );
 
 addColumnIfMissing(
     "players",
-    "training_speedups",
-    "INTEGER NOT NULL DEFAULT 0"
+    "commander_boots",
+    "INTEGER NOT NULL DEFAULT 1"
 );
 
 addColumnIfMissing(
     "players",
-    "building_speedups",
-    "INTEGER NOT NULL DEFAULT 0"
-);
-
-addColumnIfMissing(
-    "players",
-    "research_speedups",
-    "INTEGER NOT NULL DEFAULT 0"
-);
-
-addColumnIfMissing(
-    "players",
-    "research_name",
-    "TEXT NOT NULL DEFAULT ''"
-);
-
-addColumnIfMissing(
-    "players",
-    "research_end",
-    "INTEGER NOT NULL DEFAULT 0"
+    "commander_talent",
+    "INTEGER NOT NULL DEFAULT 1"
 );
 
 
-/* =========================
+/* =========================================================
+   HEROES
+========================================================= */
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS heroes (
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    player_id INTEGER NOT NULL,
+
+    hero_key TEXT NOT NULL,
+
+    name TEXT NOT NULL,
+
+    level INTEGER NOT NULL DEFAULT 1,
+
+    xp INTEGER NOT NULL DEFAULT 0,
+
+    power INTEGER NOT NULL DEFAULT 100,
+
+    skill_1 INTEGER NOT NULL DEFAULT 1,
+
+    skill_2 INTEGER NOT NULL DEFAULT 1,
+
+    skill_3 INTEGER NOT NULL DEFAULT 1,
+
+    unlocked INTEGER NOT NULL DEFAULT 1,
+
+    UNIQUE(player_id, hero_key)
+
+);
+`);
+
+
+/* =========================================================
+   BEHEMOTHS
+========================================================= */
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS behemoths (
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    player_id INTEGER NOT NULL,
+
+    type TEXT NOT NULL,
+
+    name TEXT NOT NULL,
+
+    level INTEGER NOT NULL DEFAULT 1,
+
+    xp INTEGER NOT NULL DEFAULT 0,
+
+    power INTEGER NOT NULL DEFAULT 500,
+
+    skill_1 INTEGER NOT NULL DEFAULT 1,
+
+    skill_2 INTEGER NOT NULL DEFAULT 1,
+
+    skill_3 INTEGER NOT NULL DEFAULT 1,
+
+    active INTEGER NOT NULL DEFAULT 1,
+
+    UNIQUE(player_id, type)
+
+);
+`);
+
+
+/* =========================================================
+   ALLIANCES
+========================================================= */
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS alliances (
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    name TEXT NOT NULL UNIQUE,
+
+    tag TEXT NOT NULL UNIQUE,
+
+    kingdom INTEGER NOT NULL DEFAULT 1,
+
+    leader_id INTEGER NOT NULL,
+
+    created_at INTEGER NOT NULL
+
+);
+`);
+
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS alliance_members (
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    alliance_id INTEGER NOT NULL,
+
+    player_id INTEGER NOT NULL UNIQUE,
+
+    role TEXT NOT NULL DEFAULT 'member',
+
+    joined_at INTEGER NOT NULL
+
+);
+`);
+
+
+/* =========================================================
    ZOMBIES
-========================= */
+========================================================= */
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS zombies (
@@ -171,9 +273,9 @@ CREATE TABLE IF NOT EXISTS zombies (
 `);
 
 
-/* =========================
+/* =========================================================
    FORTS
-========================= */
+========================================================= */
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS forts (
@@ -194,9 +296,9 @@ CREATE TABLE IF NOT EXISTS forts (
 `);
 
 
-/* =========================
+/* =========================================================
    MARCHES
-========================= */
+========================================================= */
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS marches (
@@ -229,9 +331,9 @@ CREATE TABLE IF NOT EXISTS marches (
 `);
 
 
-/* =========================
+/* =========================================================
    BATTLE REPORTS
-========================= */
+========================================================= */
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS battle_reports (
@@ -254,19 +356,257 @@ CREATE TABLE IF NOT EXISTS battle_reports (
 `);
 
 
-/* =========================
+/* =========================================================
+   HERO NAMES
+========================================================= */
+
+const HEROES = [
+
+    {
+        key: "rayan",
+        name: "Rayan",
+        power: 150
+    },
+
+    {
+        key: "nova",
+        name: "Nova",
+        power: 160
+    },
+
+    {
+        key: "kael",
+        name: "Kael",
+        power: 170
+    },
+
+    {
+        key: "mira",
+        name: "Mira",
+        power: 180
+    },
+
+    {
+        key: "zane",
+        name: "Zane",
+        power: 190
+    },
+
+    {
+        key: "lyra",
+        name: "Lyra",
+        power: 200
+    },
+
+    {
+        key: "darius",
+        name: "Darius",
+        power: 210
+    },
+
+    {
+        key: "aria",
+        name: "Aria",
+        power: 220
+    },
+
+    {
+        key: "kairo",
+        name: "Kairo",
+        power: 230
+    },
+
+    {
+        key: "selene",
+        name: "Selene",
+        power: 240
+    },
+
+    {
+        key: "viktor",
+        name: "Viktor",
+        power: 250
+    },
+
+    {
+        key: "nira",
+        name: "Nira",
+        power: 260
+    },
+
+    {
+        key: "axel",
+        name: "Axel",
+        power: 270
+    },
+
+    {
+        key: "tara",
+        name: "Tara",
+        power: 280
+    },
+
+    {
+        key: "leon",
+        name: "Leon",
+        power: 290
+    },
+
+    {
+        key: "maya",
+        name: "Maya",
+        power: 300
+    },
+
+    {
+        key: "ronan",
+        name: "Ronan",
+        power: 310
+    },
+
+    {
+        key: "elara",
+        name: "Elara",
+        power: 320
+    },
+
+    {
+        key: "jax",
+        name: "Jax",
+        power: 330
+    },
+
+    {
+        key: "sora",
+        name: "Sora",
+        power: 340
+    }
+
+];
+
+
+/* =========================================================
+   BEHEMOTHS
+========================================================= */
+
+const BEHEMOTHS = [
+
+    {
+        type: "trex",
+        name: "T-Rex",
+        power: 1000
+    },
+
+    {
+        type: "monkey",
+        name: "القرد العملاق",
+        power: 900
+    },
+
+    {
+        type: "lion",
+        name: "الأسد الملكي",
+        power: 950
+    },
+
+    {
+        type: "bird",
+        name: "العصفور الحربي",
+        power: 850
+    }
+
+];
+
+
+/* =========================================================
+   CREATE HEROES
+========================================================= */
+
+function createHeroesForPlayer(playerId) {
+
+    const insert = db.prepare(`
+        INSERT OR IGNORE INTO heroes
+        (
+            player_id,
+            hero_key,
+            name,
+            level,
+            xp,
+            power,
+            skill_1,
+            skill_2,
+            skill_3,
+            unlocked
+        )
+        VALUES (?, ?, ?, 1, 0, ?, 1, 1, 1, 1)
+    `);
+
+    for (const hero of HEROES) {
+
+        insert.run(
+            playerId,
+            hero.key,
+            hero.name,
+            hero.power
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   CREATE BEHEMOTHS
+========================================================= */
+
+function createBehemothsForPlayer(playerId) {
+
+    const insert = db.prepare(`
+        INSERT OR IGNORE INTO behemoths
+        (
+            player_id,
+            type,
+            name,
+            level,
+            xp,
+            power,
+            skill_1,
+            skill_2,
+            skill_3,
+            active
+        )
+        VALUES (?, ?, ?, 1, 0, ?, 1, 1, 1, 1)
+    `);
+
+    for (const behemoth of BEHEMOTHS) {
+
+        insert.run(
+            playerId,
+            behemoth.type,
+            behemoth.name,
+            behemoth.power
+        );
+
+    }
+
+}
+
+
+/* =========================================================
    DEFAULT PLAYER
-========================= */
+========================================================= */
 
 const playerCount =
     db.prepare(
         "SELECT COUNT(*) AS count FROM players"
     ).get().count;
 
+
 if (playerCount === 0) {
 
     db.prepare(`
-        INSERT INTO players (
+        INSERT INTO players
+        (
             name,
             kingdom,
             x,
@@ -280,7 +620,8 @@ if (playerCount === 0) {
             troops
         )
 
-        VALUES (
+        VALUES
+        (
             'Kardous',
             1,
             0,
@@ -298,14 +639,33 @@ if (playerCount === 0) {
 }
 
 
-/* =========================
+/* =========================================================
+   GIVE HEROES / BEHEMOTHS TO ALL EXISTING PLAYERS
+========================================================= */
+
+const existingPlayers =
+    db.prepare(
+        "SELECT id FROM players"
+    ).all();
+
+for (const player of existingPlayers) {
+
+    createHeroesForPlayer(player.id);
+
+    createBehemothsForPlayer(player.id);
+
+}
+
+
+/* =========================================================
    DEFAULT ZOMBIES
-========================= */
+========================================================= */
 
 const zombieCount =
     db.prepare(
         "SELECT COUNT(*) AS count FROM zombies"
     ).get().count;
+
 
 if (zombieCount === 0) {
 
@@ -338,14 +698,15 @@ if (zombieCount === 0) {
 }
 
 
-/* =========================
+/* =========================================================
    DEFAULT FORTS
-========================= */
+========================================================= */
 
 const fortCount =
     db.prepare(
         "SELECT COUNT(*) AS count FROM forts"
     ).get().count;
+
 
 if (fortCount === 0) {
 
@@ -378,9 +739,9 @@ if (fortCount === 0) {
 }
 
 
-/* =========================
+/* =========================================================
    PLAYER
-========================= */
+========================================================= */
 
 function getPlayer(id) {
 
@@ -393,9 +754,68 @@ function getPlayer(id) {
 }
 
 
-/* =========================
+/* =========================================================
+   COMMANDER
+========================================================= */
+
+function commanderXpNeeded(level) {
+
+    return level * 1000;
+
+}
+
+
+function updateCommanderLevel(playerId) {
+
+    let player =
+        getPlayer(playerId);
+
+    if (!player) return;
+
+    let level =
+        player.commander_level;
+
+    let xp =
+        player.commander_xp;
+
+    while (
+        level < 60 &&
+        xp >= commanderXpNeeded(level)
+    ) {
+
+        xp -= commanderXpNeeded(level);
+
+        level++;
+
+    }
+
+    if (
+        level !== player.commander_level ||
+        xp !== player.commander_xp
+    ) {
+
+        db.prepare(`
+            UPDATE players
+
+            SET
+                commander_level = ?,
+                commander_xp = ?
+
+            WHERE id = ?
+        `).run(
+            level,
+            xp,
+            playerId
+        );
+
+    }
+
+}
+
+
+/* =========================================================
    CASTLE
-========================= */
+========================================================= */
 
 function getCastleUpgradeTime(level) {
 
@@ -441,9 +861,9 @@ function getUpgradeInfo(level) {
 }
 
 
-/* =========================
+/* =========================================================
    TRAINING
-========================= */
+========================================================= */
 
 function getTrainingTime(amount) {
 
@@ -452,9 +872,9 @@ function getTrainingTime(amount) {
 }
 
 
-/* =========================
+/* =========================================================
    RESEARCH
-========================= */
+========================================================= */
 
 function getResearchTime() {
 
@@ -480,18 +900,39 @@ function getResearchCost() {
 }
 
 
-/* =========================
+/* =========================================================
    PUBLIC PLAYER
-========================= */
+========================================================= */
 
 function publicPlayer(player) {
 
-    if (!player) {
-        return null;
-    }
+    if (!player) return null;
+
+    updateCommanderLevel(player.id);
+
+    player =
+        getPlayer(player.id);
 
     const upgradeInfo =
         getUpgradeInfo(player.castle);
+
+    const alliance =
+        db.prepare(`
+            SELECT
+                a.id,
+                a.name,
+                a.tag,
+                am.role
+
+            FROM alliance_members am
+
+            JOIN alliances a
+            ON a.id = am.alliance_id
+
+            WHERE am.player_id = ?
+
+            LIMIT 1
+        `).get(player.id);
 
     return {
 
@@ -519,11 +960,38 @@ function publicPlayer(player) {
 
         troops: player.troops,
 
+        commander: {
+
+            name: "Kardous",
+
+            level: player.commander_level,
+
+            xp: player.commander_xp,
+
+            talent: player.commander_talent,
+
+            equipment: {
+
+                weapon: player.commander_weapon,
+
+                armor: player.commander_armor,
+
+                helmet: player.commander_helmet,
+
+                boots: player.commander_boots
+
+            }
+
+        },
+
         commander_level:
             player.commander_level,
 
         commander_xp:
             player.commander_xp,
+
+        alliance:
+            alliance || null,
 
         castleUpgrade: {
 
@@ -609,9 +1077,9 @@ function publicPlayer(player) {
 }
 
 
-/* =========================
+/* =========================================================
    REGISTER
-========================= */
+========================================================= */
 
 app.post(
     "/api/register",
@@ -648,7 +1116,8 @@ app.post(
 
             const result =
                 db.prepare(`
-                    INSERT INTO players (
+                    INSERT INTO players
+                    (
                         name,
                         kingdom,
                         x,
@@ -665,6 +1134,16 @@ app.post(
             player =
                 getPlayer(result.lastInsertRowid);
 
+            createHeroesForPlayer(player.id);
+
+            createBehemothsForPlayer(player.id);
+
+        } else {
+
+            createHeroesForPlayer(player.id);
+
+            createBehemothsForPlayer(player.id);
+
         }
 
         res.json({
@@ -680,9 +1159,9 @@ app.post(
 );
 
 
-/* =========================
+/* =========================================================
    GET PLAYER
-========================= */
+========================================================= */
 
 app.get(
     "/api/player/:id",
@@ -699,6 +1178,10 @@ app.get(
 
         }
 
+        createHeroesForPlayer(player.id);
+
+        createBehemothsForPlayer(player.id);
+
         res.json(
             publicPlayer(player)
         );
@@ -707,9 +1190,753 @@ app.get(
 );
 
 
-/* =========================
+/* =========================================================
+   COMMANDER PROFILE
+========================================================= */
+
+app.get(
+    "/api/player/:id/profile",
+    (req, res) => {
+
+        const player =
+            getPlayer(req.params.id);
+
+        if (!player) {
+
+            return res.status(404).json({
+                error: "اللاعب غير موجود."
+            });
+
+        }
+
+        res.json({
+
+            commander: {
+
+                name: "Kardous",
+
+                level: player.commander_level,
+
+                xp: player.commander_xp,
+
+                nextXp:
+                    commanderXpNeeded(
+                        player.commander_level
+                    ),
+
+                talent:
+                    player.commander_talent,
+
+                equipment: {
+
+                    weapon:
+                        player.commander_weapon,
+
+                    armor:
+                        player.commander_armor,
+
+                    helmet:
+                        player.commander_helmet,
+
+                    boots:
+                        player.commander_boots
+
+                }
+
+            }
+
+        });
+
+    }
+);
+
+
+/* =========================================================
+   HEROES
+========================================================= */
+
+app.get(
+    "/api/player/:id/heroes",
+    (req, res) => {
+
+        const player =
+            getPlayer(req.params.id);
+
+        if (!player) {
+
+            return res.status(404).json({
+                error: "اللاعب غير موجود."
+            });
+
+        }
+
+        createHeroesForPlayer(player.id);
+
+        const heroes =
+            db.prepare(`
+                SELECT *
+                FROM heroes
+
+                WHERE player_id = ?
+
+                ORDER BY power DESC
+            `).all(player.id);
+
+        res.json({
+
+            heroes
+
+        });
+
+    }
+);
+
+
+/* =========================================================
+   HERO UPGRADE
+========================================================= */
+
+app.post(
+    "/api/player/:id/heroes/:heroId/upgrade",
+    (req, res) => {
+
+        const player =
+            getPlayer(req.params.id);
+
+        if (!player) {
+
+            return res.status(404).json({
+                error: "اللاعب غير موجود."
+            });
+
+        }
+
+        const hero =
+            db.prepare(`
+                SELECT *
+                FROM heroes
+
+                WHERE id = ?
+
+                AND player_id = ?
+            `).get(
+                req.params.heroId,
+                player.id
+            );
+
+        if (!hero) {
+
+            return res.status(404).json({
+                error: "البطل غير موجود."
+            });
+
+        }
+
+        const cost =
+            hero.level * 500;
+
+        if (player.food < cost) {
+
+            return res.status(400).json({
+
+                error: "🍎 الطعام غير كافٍ.",
+
+                player:
+                    publicPlayer(player)
+
+            });
+
+        }
+
+        const newLevel =
+            hero.level + 1;
+
+        const newPower =
+            hero.power + 100;
+
+        db.prepare(`
+            UPDATE players
+
+            SET
+                food = food - ?,
+                power = power + 100,
+                commander_xp = commander_xp + 50
+
+            WHERE id = ?
+        `).run(
+            cost,
+            player.id
+        );
+
+        db.prepare(`
+            UPDATE heroes
+
+            SET
+                level = ?,
+                power = ?,
+                xp = xp + ?
+
+            WHERE id = ?
+        `).run(
+            newLevel,
+            newPower,
+            100,
+            hero.id
+        );
+
+        const updated =
+            getPlayer(player.id);
+
+        io.emit(
+            "heroUpdated",
+            {
+                playerId: player.id,
+                heroId: hero.id
+            }
+        );
+
+        io.emit(
+            "playerUpdated",
+            publicPlayer(updated)
+        );
+
+        res.json({
+
+            success: true,
+
+            hero:
+                db.prepare(`
+                    SELECT *
+                    FROM heroes
+                    WHERE id = ?
+                `).get(hero.id),
+
+            player:
+                publicPlayer(updated)
+
+        });
+
+    }
+);
+
+
+/* =========================================================
+   BEHEMOTHS
+========================================================= */
+
+app.get(
+    "/api/player/:id/behemoths",
+    (req, res) => {
+
+        const player =
+            getPlayer(req.params.id);
+
+        if (!player) {
+
+            return res.status(404).json({
+                error: "اللاعب غير موجود."
+            });
+
+        }
+
+        createBehemothsForPlayer(player.id);
+
+        const behemoths =
+            db.prepare(`
+                SELECT *
+                FROM behemoths
+
+                WHERE player_id = ?
+
+                ORDER BY power DESC
+            `).all(player.id);
+
+        res.json({
+
+            behemoths
+
+        });
+
+    }
+);
+
+
+/* =========================================================
+   BEHEMOTH UPGRADE
+========================================================= */
+
+app.post(
+    "/api/player/:id/behemoths/:behemothId/upgrade",
+    (req, res) => {
+
+        const player =
+            getPlayer(req.params.id);
+
+        if (!player) {
+
+            return res.status(404).json({
+                error: "اللاعب غير موجود."
+            });
+
+        }
+
+        const behemoth =
+            db.prepare(`
+                SELECT *
+                FROM behemoths
+
+                WHERE id = ?
+
+                AND player_id = ?
+            `).get(
+                req.params.behemothId,
+                player.id
+            );
+
+        if (!behemoth) {
+
+            return res.status(404).json({
+                error: "البهيثومي غير موجود."
+            });
+
+        }
+
+        const cost =
+            behemoth.level * 1000;
+
+        if (player.food < cost) {
+
+            return res.status(400).json({
+
+                error: "🍎 الطعام غير كافٍ.",
+
+                player:
+                    publicPlayer(player)
+
+            });
+
+        }
+
+        db.prepare(`
+            UPDATE players
+
+            SET
+                food = food - ?,
+                power = power + 500,
+                commander_xp = commander_xp + 100
+
+            WHERE id = ?
+        `).run(
+            cost,
+            player.id
+        );
+
+        db.prepare(`
+            UPDATE behemoths
+
+            SET
+                level = level + 1,
+                power = power + 500,
+                xp = xp + 100
+
+            WHERE id = ?
+        `).run(
+            behemoth.id
+        );
+
+        const updated =
+            getPlayer(player.id);
+
+        io.emit(
+            "behemothUpdated",
+            {
+                playerId: player.id,
+                behemothId: behemoth.id
+            }
+        );
+
+        io.emit(
+            "playerUpdated",
+            publicPlayer(updated)
+        );
+
+        res.json({
+
+            success: true,
+
+            behemoth:
+                db.prepare(`
+                    SELECT *
+                    FROM behemoths
+                    WHERE id = ?
+                `).get(behemoth.id),
+
+            player:
+                publicPlayer(updated)
+
+        });
+
+    }
+);
+
+
+/* =========================================================
+   ALLIANCE HELPER
+========================================================= */
+
+function getPlayerAlliance(playerId) {
+
+    return db.prepare(`
+        SELECT
+            a.*,
+            am.role
+
+        FROM alliances a
+
+        JOIN alliance_members am
+        ON am.alliance_id = a.id
+
+        WHERE am.player_id = ?
+
+        LIMIT 1
+    `).get(playerId);
+
+}
+
+
+/* =========================================================
+   CREATE ALLIANCE
+========================================================= */
+
+app.post(
+    "/api/alliances",
+    (req, res) => {
+
+        const playerId =
+            Number(req.body.playerId);
+
+        const name =
+            String(req.body.name || "")
+            .trim()
+            .slice(0, 30);
+
+        const tag =
+            String(req.body.tag || "")
+            .trim()
+            .slice(0, 6)
+            .toUpperCase();
+
+        const player =
+            getPlayer(playerId);
+
+        if (!player) {
+
+            return res.status(404).json({
+                error: "اللاعب غير موجود."
+            });
+
+        }
+
+        if (!name || !tag) {
+
+            return res.status(400).json({
+                error: "اكتب اسم التحالف والاختصار."
+            });
+
+        }
+
+        if (getPlayerAlliance(player.id)) {
+
+            return res.status(400).json({
+                error: "أنت داخل تحالف بالفعل."
+            });
+
+        }
+
+        try {
+
+            const result =
+                db.prepare(`
+                    INSERT INTO alliances
+                    (
+                        name,
+                        tag,
+                        kingdom,
+                        leader_id,
+                        created_at
+                    )
+
+                    VALUES (?, ?, ?, ?, ?)
+                `).run(
+                    name,
+                    tag,
+                    player.kingdom,
+                    player.id,
+                    Date.now()
+                );
+
+            db.prepare(`
+                INSERT INTO alliance_members
+                (
+                    alliance_id,
+                    player_id,
+                    role,
+                    joined_at
+                )
+
+                VALUES (?, ?, 'leader', ?)
+            `).run(
+                result.lastInsertRowid,
+                player.id,
+                Date.now()
+            );
+
+            res.json({
+
+                success: true,
+
+                alliance:
+                    getAlliance(
+                        result.lastInsertRowid
+                    )
+
+            });
+
+        } catch (error) {
+
+            return res.status(400).json({
+                error: "اسم التحالف أو الاختصار مستخدم بالفعل."
+            });
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   JOIN ALLIANCE
+========================================================= */
+
+app.post(
+    "/api/player/:id/alliance/join",
+    (req, res) => {
+
+        const player =
+            getPlayer(req.params.id);
+
+        const allianceId =
+            Number(req.body.allianceId);
+
+        if (!player) {
+
+            return res.status(404).json({
+                error: "اللاعب غير موجود."
+            });
+
+        }
+
+        if (getPlayerAlliance(player.id)) {
+
+            return res.status(400).json({
+                error: "أنت داخل تحالف بالفعل."
+            });
+
+        }
+
+        const alliance =
+            db.prepare(`
+                SELECT *
+                FROM alliances
+                WHERE id = ?
+            `).get(allianceId);
+
+        if (!alliance) {
+
+            return res.status(404).json({
+                error: "التحالف غير موجود."
+            });
+
+        }
+
+        db.prepare(`
+            INSERT INTO alliance_members
+            (
+                alliance_id,
+                player_id,
+                role,
+                joined_at
+            )
+
+            VALUES (?, ?, 'member', ?)
+        `).run(
+            alliance.id,
+            player.id,
+            Date.now()
+        );
+
+        io.emit(
+            "allianceUpdated",
+            {
+                allianceId: alliance.id
+            }
+        );
+
+        res.json({
+
+            success: true,
+
+            alliance:
+                getAlliance(alliance.id),
+
+            player:
+                publicPlayer(
+                    getPlayer(player.id)
+                )
+
+        });
+
+    }
+);
+
+
+/* =========================================================
+   LIST ALLIANCES
+========================================================= */
+
+app.get(
+    "/api/alliances",
+    (req, res) => {
+
+        const alliances =
+            db.prepare(`
+                SELECT
+                    a.id,
+                    a.name,
+                    a.tag,
+                    a.kingdom,
+                    a.leader_id,
+                    COUNT(am.player_id) AS members
+
+                FROM alliances a
+
+                LEFT JOIN alliance_members am
+                ON am.alliance_id = a.id
+
+                GROUP BY a.id
+
+                ORDER BY members DESC, a.id ASC
+
+                LIMIT 100
+            `).all();
+
+        res.json({
+
+            alliances
+
+        });
+
+    }
+);
+
+
+/* =========================================================
+   GET ALLIANCE
+========================================================= */
+
+function getAlliance(id) {
+
+    const alliance =
+        db.prepare(`
+            SELECT *
+            FROM alliances
+            WHERE id = ?
+        `).get(id);
+
+    if (!alliance) return null;
+
+    const members =
+        db.prepare(`
+            SELECT
+                p.id,
+                p.name,
+                p.kingdom,
+                p.castle,
+                p.power,
+                p.troops,
+                am.role
+
+            FROM alliance_members am
+
+            JOIN players p
+            ON p.id = am.player_id
+
+            WHERE am.alliance_id = ?
+
+            ORDER BY p.power DESC
+        `).all(id);
+
+    let power = 0;
+
+    let warPower = 0;
+
+    for (const member of members) {
+
+        power += member.power || 0;
+
+        warPower +=
+            (member.power || 0) +
+            ((member.troops || 0) * 10);
+
+    }
+
+    return {
+
+        id: alliance.id,
+
+        name: alliance.name,
+
+        tag: alliance.tag,
+
+        kingdom: alliance.kingdom,
+
+        leader_id: alliance.leader_id,
+
+        power,
+
+        warPower,
+
+        members
+
+    };
+
+}
+
+
+app.get(
+    "/api/alliance/:id",
+    (req, res) => {
+
+        const alliance =
+            getAlliance(req.params.id);
+
+        if (!alliance) {
+
+            return res.status(404).json({
+                error: "التحالف غير موجود."
+            });
+
+        }
+
+        res.json(alliance);
+
+    }
+);
+
+
+/* =========================================================
    COLLECT RESOURCES
-========================= */
+========================================================= */
 
 app.post(
     "/api/player/:id/collect",
@@ -759,9 +1986,9 @@ app.post(
 );
 
 
-/* =========================
-   START TRAINING
-========================= */
+/* =========================================================
+   TRAINING
+========================================================= */
 
 app.post(
     "/api/player/:id/train",
@@ -831,11 +2058,6 @@ app.post(
         let duration =
             getTrainingTime(amount);
 
-        /*
-           استخدام تسريع تلقائي
-           فقط إذا كان لدى اللاعب تسريع
-        */
-
         if (
             player.training_speedups > 0
         ) {
@@ -903,29 +2125,23 @@ app.post(
 );
 
 
-/* =========================
+/* =========================================================
    COMPLETE TRAINING
-========================= */
+========================================================= */
 
 function completeTraining(player) {
 
-    if (!player) {
-        return;
-    }
+    if (!player) return;
 
     if (
         !player.training_end ||
         player.training_end <= 0
-    ) {
-        return;
-    }
+    ) return;
 
     if (
         player.training_end >
         Date.now()
-    ) {
-        return;
-    }
+    ) return;
 
     const amount =
         player.training_amount || 0;
@@ -972,6 +2188,8 @@ function completeTraining(player) {
         player.id
     );
 
+    updateCommanderLevel(player.id);
+
     const updated =
         getPlayer(player.id);
 
@@ -991,9 +2209,9 @@ function completeTraining(player) {
 }
 
 
-/* =========================
-   USE TRAINING SPEEDUP
-========================= */
+/* =========================================================
+   SPEEDUP TRAINING
+========================================================= */
 
 app.post(
     "/api/player/:id/speedup-training",
@@ -1020,12 +2238,6 @@ app.post(
             });
 
         }
-
-        /*
-           التصحيح:
-           لا يمكن استعمال التسريع
-           إذا كان المخزون صفرًا
-        */
 
         if (
             player.training_speedups <= 0
@@ -1076,9 +2288,6 @@ app.post(
 
             success: true,
 
-            message:
-                "⚡ تم تسريع التدريب.",
-
             player:
                 publicPlayer(updated)
 
@@ -1088,9 +2297,9 @@ app.post(
 );
 
 
-/* =========================
+/* =========================================================
    CASTLE UPGRADE
-========================= */
+========================================================= */
 
 app.post(
     "/api/player/:id/upgrade-castle",
@@ -1182,11 +2391,6 @@ app.post(
                 player.castle
             );
 
-        /*
-           استخدام تسريع البناء
-           فقط إذا كان موجودًا
-        */
-
         if (
             player.building_speedups > 0
         ) {
@@ -1248,9 +2452,6 @@ app.post(
 
             success: true,
 
-            message:
-                "🏗️ بدأت ترقية القلعة.",
-
             duration,
 
             player:
@@ -1262,36 +2463,27 @@ app.post(
 );
 
 
-/* =========================
+/* =========================================================
    COMPLETE CASTLE
-========================= */
+========================================================= */
 
 function completeCastleUpgrade(player) {
 
-    if (!player) {
-        return;
-    }
+    if (!player) return;
 
-    if (
-        !player.castle_upgrade_end
-    ) {
-        return;
-    }
+    if (!player.castle_upgrade_end) return;
 
     if (
         player.castle_upgrade_end >
         Date.now()
-    ) {
-        return;
-    }
+    ) return;
 
     if (player.castle >= 30) {
 
         db.prepare(`
             UPDATE players
 
-            SET
-                castle_upgrade_end = 0
+            SET castle_upgrade_end = 0
 
             WHERE id = ?
         `).run(player.id);
@@ -1316,6 +2508,8 @@ function completeCastleUpgrade(player) {
         WHERE id = ?
     `).run(player.id);
 
+    updateCommanderLevel(player.id);
+
     const updated =
         getPlayer(player.id);
 
@@ -1332,9 +2526,9 @@ function completeCastleUpgrade(player) {
 }
 
 
-/* =========================
-   USE BUILDING SPEEDUP
-========================= */
+/* =========================================================
+   BUILDING SPEEDUP
+========================================================= */
 
 app.post(
     "/api/player/:id/speedup-building",
@@ -1361,11 +2555,6 @@ app.post(
             });
 
         }
-
-        /*
-           التصحيح:
-           يجب امتلاك تسريع
-        */
 
         if (
             player.building_speedups <= 0
@@ -1418,9 +2607,6 @@ app.post(
 
             success: true,
 
-            message:
-                "⚡ تم تسريع البناء.",
-
             player:
                 publicPlayer(updated)
 
@@ -1430,9 +2616,9 @@ app.post(
 );
 
 
-/* =========================
-   START RESEARCH
-========================= */
+/* =========================================================
+   RESEARCH
+========================================================= */
 
 app.post(
     "/api/player/:id/research",
@@ -1482,7 +2668,9 @@ app.post(
             String(
                 req.body.name ||
                 "تكنولوجيا البداية"
-            ).trim().slice(0, 50);
+            )
+            .trim()
+            .slice(0, 50);
 
         const cost =
             getResearchCost();
@@ -1510,11 +2698,6 @@ app.post(
 
         let duration =
             getResearchTime();
-
-        /*
-           استخدام تسريع البحث
-           فقط إذا كان موجودًا
-        */
 
         if (
             player.research_speedups > 0
@@ -1580,9 +2763,6 @@ app.post(
 
             success: true,
 
-            message:
-                "🔬 بدأ البحث.",
-
             duration,
 
             player:
@@ -1594,26 +2774,20 @@ app.post(
 );
 
 
-/* =========================
+/* =========================================================
    COMPLETE RESEARCH
-========================= */
+========================================================= */
 
 function completeResearch(player) {
 
-    if (!player) {
-        return;
-    }
+    if (!player) return;
 
-    if (!player.research_end) {
-        return;
-    }
+    if (!player.research_end) return;
 
     if (
         player.research_end >
         Date.now()
-    ) {
-        return;
-    }
+    ) return;
 
     const name =
         player.research_name ||
@@ -1635,6 +2809,8 @@ function completeResearch(player) {
         WHERE id = ?
     `).run(player.id);
 
+    updateCommanderLevel(player.id);
+
     const updated =
         getPlayer(player.id);
 
@@ -1654,9 +2830,9 @@ function completeResearch(player) {
 }
 
 
-/* =========================
+/* =========================================================
    RESEARCH SPEEDUP
-========================= */
+========================================================= */
 
 app.post(
     "/api/player/:id/speedup-research",
@@ -1683,11 +2859,6 @@ app.post(
             });
 
         }
-
-        /*
-           التصحيح:
-           يجب امتلاك تسريع بحث
-        */
 
         if (
             player.research_speedups <= 0
@@ -1740,9 +2911,6 @@ app.post(
 
             success: true,
 
-            message:
-                "⚡ تم تسريع البحث.",
-
             player:
                 publicPlayer(updated)
 
@@ -1752,9 +2920,9 @@ app.post(
 );
 
 
-/* =========================
-   SPEEDUP INVENTORY
-========================= */
+/* =========================================================
+   ADD SPEEDUPS
+========================================================= */
 
 app.post(
     "/api/player/:id/add-speedups",
@@ -1782,14 +2950,10 @@ app.post(
         }
 
         amount =
-            Math.floor(amount);
-
-        /*
-           حماية من أرقام ضخمة
-        */
-
-        amount =
-            Math.min(amount, 100000);
+            Math.min(
+                Math.floor(amount),
+                100000
+            );
 
         db.prepare(`
             UPDATE players
@@ -1824,9 +2988,6 @@ app.post(
 
             success: true,
 
-            message:
-                "⚡ تمت إضافة التسريعات.",
-
             player:
                 publicPlayer(updated)
 
@@ -1836,9 +2997,51 @@ app.post(
 );
 
 
-/* =========================
+/* =========================================================
    WORLD
-========================= */
+========================================================= */
+
+function getWorldData() {
+
+    return {
+
+        players:
+            db.prepare(`
+                SELECT
+                    id,
+                    name,
+                    kingdom,
+                    x,
+                    y,
+                    castle,
+                    power
+                FROM players
+            `).all(),
+
+        zombies:
+            db.prepare(`
+                SELECT *
+                FROM zombies
+            `).all(),
+
+        forts:
+            db.prepare(`
+                SELECT *
+                FROM forts
+            `).all(),
+
+        marches:
+            db.prepare(`
+                SELECT *
+                FROM marches
+
+                WHERE status = 'marching'
+            `).all()
+
+    };
+
+}
+
 
 app.get(
     "/api/world",
@@ -1852,9 +3055,9 @@ app.get(
 );
 
 
-/* =========================
-   RANKING
-========================= */
+/* =========================================================
+   BASIC RANKING
+========================================================= */
 
 app.get(
     "/api/ranking",
@@ -1885,9 +3088,209 @@ app.get(
 );
 
 
-/* =========================
+/* =========================================================
+   ALL RANKINGS
+========================================================= */
+
+app.get(
+    "/api/rankings/all",
+    (req, res) => {
+
+        const kingdom =
+            db.prepare(`
+                SELECT
+                    kingdom,
+                    SUM(power) AS power
+
+                FROM players
+
+                GROUP BY kingdom
+
+                ORDER BY power DESC
+
+                LIMIT 100
+            `).all();
+
+        const power =
+            db.prepare(`
+                SELECT
+                    id,
+                    name,
+                    kingdom,
+                    power
+
+                FROM players
+
+                ORDER BY power DESC
+
+                LIMIT 100
+            `).all();
+
+        const war =
+            db.prepare(`
+                SELECT
+                    id,
+                    name,
+                    kingdom,
+                    power,
+                    troops,
+                    (power + troops * 10) AS war_power
+
+                FROM players
+
+                ORDER BY war_power DESC
+
+                LIMIT 100
+            `).all();
+
+        const castle =
+            db.prepare(`
+                SELECT
+                    id,
+                    name,
+                    kingdom,
+                    castle,
+                    power
+
+                FROM players
+
+                ORDER BY castle DESC, power DESC
+
+                LIMIT 100
+            `).all();
+
+        const hero =
+            db.prepare(`
+                SELECT
+                    p.id AS player_id,
+                    p.name AS player_name,
+                    h.name AS hero_name,
+                    h.level,
+                    h.power
+
+                FROM heroes h
+
+                JOIN players p
+                ON p.id = h.player_id
+
+                ORDER BY h.power DESC
+
+                LIMIT 100
+            `).all();
+
+        const heroes =
+            db.prepare(`
+                SELECT
+                    p.id AS player_id,
+                    p.name AS player_name,
+                    SUM(h.power) AS heroes_power
+
+                FROM heroes h
+
+                JOIN players p
+                ON p.id = h.player_id
+
+                GROUP BY p.id
+
+                ORDER BY heroes_power DESC
+
+                LIMIT 100
+            `).all();
+
+        const behemoth =
+            db.prepare(`
+                SELECT
+                    p.id AS player_id,
+                    p.name AS player_name,
+                    b.name AS behemoth_name,
+                    b.level,
+                    b.power
+
+                FROM behemoths b
+
+                JOIN players p
+                ON p.id = b.player_id
+
+                ORDER BY b.power DESC
+
+                LIMIT 100
+            `).all();
+
+        const alliances =
+            db.prepare(`
+                SELECT
+                    a.id,
+                    a.name,
+                    a.tag,
+                    COUNT(am.player_id) AS members,
+                    COALESCE(
+                        SUM(p.power),
+                        0
+                    ) AS alliance_power
+
+                FROM alliances a
+
+                LEFT JOIN alliance_members am
+                ON am.alliance_id = a.id
+
+                LEFT JOIN players p
+                ON p.id = am.player_id
+
+                GROUP BY a.id
+
+                ORDER BY alliance_power DESC
+
+                LIMIT 100
+            `).all();
+
+        const allianceWar =
+            alliances.map(alliance => {
+
+                return {
+
+                    ...alliance,
+
+                    war_power:
+                        Number(alliance.alliance_power || 0)
+
+                };
+
+            })
+            .sort(
+                (a, b) =>
+                    b.war_power -
+                    a.war_power
+            );
+
+        res.json({
+
+            kingdom,
+
+            power,
+
+            war,
+
+            castle,
+
+            hero,
+
+            heroes,
+
+            behemoth,
+
+            alliances,
+
+            allianceWar
+
+        });
+
+    }
+);
+
+
+/* =========================================================
    MOVE PLAYER
-========================= */
+========================================================= */
 
 app.post(
     "/api/player/:id/move",
@@ -1920,10 +3323,6 @@ app.post(
             });
 
         }
-
-        /*
-           حدود الخريطة
-        */
 
         const safeX =
             Math.max(-1000, Math.min(1000, x));
@@ -1971,9 +3370,9 @@ app.post(
 );
 
 
-/* =========================
+/* =========================================================
    MARCH
-========================= */
+========================================================= */
 
 app.post(
     "/api/player/:id/march",
@@ -2119,33 +3518,23 @@ app.post(
         );
 
         db.prepare(`
-            INSERT INTO marches (
-
+            INSERT INTO marches
+            (
                 player_id,
-
                 target_type,
-
                 target_id,
-
                 troops,
-
                 start_x,
-
                 start_y,
-
                 target_x,
-
                 target_y,
-
                 start_time,
-
                 arrival_time,
-
                 status
-
             )
 
-            VALUES (
+            VALUES
+            (
                 ?, ?, ?, ?,
                 ?, ?, ?, ?,
                 ?, ?, 'marching'
@@ -2180,9 +3569,6 @@ app.post(
 
             success: true,
 
-            message:
-                "🚶 تم إرسال الجيش.",
-
             arrivalTime:
                 arrival,
 
@@ -2195,9 +3581,9 @@ app.post(
 );
 
 
-/* =========================
-   BATTLE PROCESSOR
-========================= */
+/* =========================================================
+   BATTLE
+========================================================= */
 
 function processMarches() {
 
@@ -2214,9 +3600,7 @@ function processMarches() {
             AND arrival_time <= ?
         `).all(now);
 
-    for (
-        const march of marches
-    ) {
+    for (const march of marches) {
 
         processBattle(march);
 
@@ -2235,8 +3619,7 @@ function processBattle(march) {
         db.prepare(`
             UPDATE marches
 
-            SET
-                status = 'finished'
+            SET status = 'finished'
 
             WHERE id = ?
         `).run(march.id);
@@ -2345,20 +3728,14 @@ function processBattle(march) {
     }
 
     db.prepare(`
-        INSERT INTO battle_reports (
-
+        INSERT INTO battle_reports
+        (
             player_id,
-
             target_type,
-
             target_id,
-
             troops_sent,
-
             result,
-
             created_at
-
         )
 
         VALUES (?, ?, ?, ?, ?, ?)
@@ -2374,13 +3751,14 @@ function processBattle(march) {
     db.prepare(`
         UPDATE marches
 
-        SET
-            status = 'finished'
+        SET status = 'finished'
 
         WHERE id = ?
     `).run(
         march.id
     );
+
+    updateCommanderLevel(player.id);
 
     const updated =
         getPlayer(player.id);
@@ -2389,7 +3767,7 @@ function processBattle(march) {
         "battleFinished",
         {
             playerId: player.id,
-            result: result,
+            result,
             marchId: march.id
         }
     );
@@ -2407,55 +3785,9 @@ function processBattle(march) {
 }
 
 
-/* =========================
-   WORLD DATA
-========================= */
-
-function getWorldData() {
-
-    return {
-
-        players:
-            db.prepare(`
-                SELECT
-                    id,
-                    name,
-                    kingdom,
-                    x,
-                    y,
-                    castle,
-                    power
-                FROM players
-            `).all(),
-
-        zombies:
-            db.prepare(`
-                SELECT *
-                FROM zombies
-            `).all(),
-
-        forts:
-            db.prepare(`
-                SELECT *
-                FROM forts
-            `).all(),
-
-        marches:
-            db.prepare(`
-                SELECT *
-                FROM marches
-
-                WHERE status = 'marching'
-            `).all()
-
-    };
-
-}
-
-
-/* =========================
+/* =========================================================
    REPORTS
-========================= */
+========================================================= */
 
 app.get(
     "/api/reports/:playerId",
@@ -2483,9 +3815,93 @@ app.get(
 );
 
 
-/* =========================
+/* =========================================================
+   PROCESS TRAINING
+========================================================= */
+
+function processTraining() {
+
+    const now =
+        Date.now();
+
+    const players =
+        db.prepare(`
+            SELECT *
+            FROM players
+
+            WHERE training_end > 0
+
+            AND training_end <= ?
+        `).all(now);
+
+    for (const player of players) {
+
+        completeTraining(player);
+
+    }
+
+}
+
+
+/* =========================================================
+   PROCESS CASTLE
+========================================================= */
+
+function processCastleUpgrades() {
+
+    const now =
+        Date.now();
+
+    const players =
+        db.prepare(`
+            SELECT *
+            FROM players
+
+            WHERE castle_upgrade_end > 0
+
+            AND castle_upgrade_end <= ?
+        `).all(now);
+
+    for (const player of players) {
+
+        completeCastleUpgrade(player);
+
+    }
+
+}
+
+
+/* =========================================================
+   PROCESS RESEARCH
+========================================================= */
+
+function processResearch() {
+
+    const now =
+        Date.now();
+
+    const players =
+        db.prepare(`
+            SELECT *
+            FROM players
+
+            WHERE research_end > 0
+
+            AND research_end <= ?
+        `).all(now);
+
+    for (const player of players) {
+
+        completeResearch(player);
+
+    }
+
+}
+
+
+/* =========================================================
    STATUS
-========================= */
+========================================================= */
 
 app.get(
     "/api/status",
@@ -2495,12 +3911,26 @@ app.get(
 
             online: true,
 
-            version: "10.1",
+            version: "11.0",
 
             game:
                 "Kardous Survival",
 
             systems: {
+
+                commander: true,
+
+                heroes: true,
+
+                heroesCount: 20,
+
+                behemoths: true,
+
+                behemothTypes: 4,
+
+                alliances: true,
+
+                rankings: true,
 
                 training: true,
 
@@ -2514,7 +3944,9 @@ app.get(
 
                 multiplayer: true,
 
-                battles: true
+                battles: true,
+
+                worldMap: true
 
             }
 
@@ -2524,9 +3956,9 @@ app.get(
 );
 
 
-/* =========================
+/* =========================================================
    SOCKET.IO
-========================= */
+========================================================= */
 
 io.on(
     "connection",
@@ -2558,99 +3990,9 @@ io.on(
 );
 
 
-/* =========================
-   PROCESS TRAINING
-========================= */
-
-function processTraining() {
-
-    const now =
-        Date.now();
-
-    const players =
-        db.prepare(`
-            SELECT *
-            FROM players
-
-            WHERE training_end > 0
-
-            AND training_end <= ?
-        `).all(now);
-
-    for (
-        const player of players
-    ) {
-
-        completeTraining(player);
-
-    }
-
-}
-
-
-/* =========================
-   PROCESS CASTLE
-========================= */
-
-function processCastleUpgrades() {
-
-    const now =
-        Date.now();
-
-    const players =
-        db.prepare(`
-            SELECT *
-            FROM players
-
-            WHERE castle_upgrade_end > 0
-
-            AND castle_upgrade_end <= ?
-        `).all(now);
-
-    for (
-        const player of players
-    ) {
-
-        completeCastleUpgrade(player);
-
-    }
-
-}
-
-
-/* =========================
-   PROCESS RESEARCH
-========================= */
-
-function processResearch() {
-
-    const now =
-        Date.now();
-
-    const players =
-        db.prepare(`
-            SELECT *
-            FROM players
-
-            WHERE research_end > 0
-
-            AND research_end <= ?
-        `).all(now);
-
-    for (
-        const player of players
-    ) {
-
-        completeResearch(player);
-
-    }
-
-}
-
-
-/* =========================
+/* =========================================================
    GAME LOOP
-========================= */
+========================================================= */
 
 setInterval(
     () => {
@@ -2668,9 +4010,9 @@ setInterval(
 );
 
 
-/* =========================
+/* =========================================================
    ERROR HANDLING
-========================= */
+========================================================= */
 
 app.use(
     (err, req, res, next) => {
@@ -2691,16 +4033,16 @@ app.use(
 );
 
 
-/* =========================
-   START SERVER
-========================= */
+/* =========================================================
+   START
+========================================================= */
 
 server.listen(
     PORT,
     () => {
 
         console.log(
-            "🏰 Kardous Survival v10.1"
+            "🏰 Kardous Survival v11.0"
         );
 
         console.log(
