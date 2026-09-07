@@ -216,6 +216,52 @@ app.get("/", (req, res) => {
    PLAYER
 ========================= */
 
+/* =========================
+CREATE PLAYER ACCOUNT
+========================= */
+
+app.post("/api/register", (req, res) => {
+
+const name = String(req.body.name || "").trim();
+
+if (!name) {
+    return res.status(400).json({
+        error: "اكتب اسم اللاعب"
+    });
+}
+
+if (name.length < 3 || name.length > 20) {
+    return res.status(400).json({
+        error: "اسم اللاعب يجب أن يكون بين 3 و20 حرفًا"
+    });
+}
+
+const existing = db.prepare(
+    "SELECT id FROM players WHERE name = ?"
+).get(name);
+
+if (existing) {
+    return res.status(400).json({
+        error: "اسم اللاعب مستخدم بالفعل"
+    });
+}
+
+const result = db.prepare(`
+    INSERT INTO players
+    (name, kingdom, x, y)
+    VALUES (?, 1, 50, 50)
+`).run(name);
+
+const player =
+    getPlayer(result.lastInsertRowid);
+
+res.json({
+    success: true,
+    message: "🎉 تم إنشاء اللاعب!",
+    player: publicPlayer(player)
+});
+
+});
 app.get("/api/player/:id", (req, res) => {
 
     const player = getPlayer(req.params.id);
