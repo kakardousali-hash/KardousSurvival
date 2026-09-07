@@ -2,291 +2,913 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Kardous Survival</title>
 
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#101820;color:white}
-button{border:0;border-radius:12px;padding:12px 18px;margin:5px;font-size:16px;cursor:pointer;background:#d99b32;color:white}
-button:disabled{opacity:.5;cursor:not-allowed}
+body{
+margin:0;
+font-family:Arial,sans-serif;
+background:#0d151c;
+color:#fff;
+padding-bottom:80px
+}
+button{
+border:0;
+border-radius:12px;
+padding:11px 15px;
+margin:4px;
+font-size:15px;
+cursor:pointer;
+background:#d99b32;
+color:#fff
+}
+button:disabled{opacity:.45}
+input{
+width:100%;
+padding:13px;
+border:0;
+border-radius:10px;
+font-size:16px;
+margin:6px 0
+}
 .hidden{display:none!important}
-.page{padding:15px;padding-bottom:90px}
-.card{background:#1d2a35;border-radius:16px;padding:15px;margin:10px 0;box-shadow:0 3px 10px #0006}
-header{background:#17232d;padding:12px;text-align:center;position:sticky;top:0;z-index:5}
-.resources{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
-.resource{background:#263744;padding:10px 3px;border-radius:10px;text-align:center;font-size:14px}
-.city{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:15px}
-.building{background:#263744;min-height:120px;border-radius:16px;padding:15px;text-align:center}
-.building .icon{font-size:42px}
-.building h3{margin:8px 0 3px}
-.world{min-height:430px;position:relative;overflow:hidden;border-radius:16px;background:radial-gradient(circle at 20% 30%,#405c36 0 7%,transparent 8%),radial-gradient(circle at 70% 60%,#405c36 0 8%,transparent 9%),radial-gradient(circle at 40% 80%,#405c36 0 6%,transparent 7%),#29452b;border:3px solid #65785b}
-.map-object{position:absolute;transform:translate(-50%,-50%);font-size:30px;cursor:pointer;user-select:none}
-.player-object{font-size:34px}
-.target{outline:3px solid yellow;border-radius:50%}
-.march{position:absolute;font-size:22px;transition:left 1s linear,top 1s linear}
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#17232d;display:grid;grid-template-columns:repeat(3,1fr);padding:8px;z-index:10}
-.bottom-nav button{background:#263744;margin:2px}
-.overlay{position:fixed;inset:0;background:#000c;display:flex;justify-content:center;align-items:center;z-index:100;padding:20px}
-.login{width:100%;max-width:400px;background:#1d2a35;padding:25px;border-radius:20px;text-align:center}
-input{width:100%;padding:14px;border-radius:10px;border:0;margin:10px 0;font-size:17px}
-.timer{font-size:25px;font-weight:bold;margin:10px}
+
+header{
+position:sticky;
+top:0;
+z-index:20;
+background:#17232d;
+padding:8px
+}
+
+.top{
+display:flex;
+align-items:center;
+gap:10px
+}
+
+.commander-box{
+width:72px;
+height:72px;
+border-radius:14px;
+background:#263744;
+border:2px solid #d99b32;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+cursor:pointer;
+flex-shrink:0
+}
+
+.commander-picture{
+font-size:34px;
+line-height:35px
+}
+
+.commander-box small{
+font-size:10px
+}
+
+.top-title{
+flex:1;
+text-align:center
+}
+
+.top-title h2{
+margin:0 0 5px;
+font-size:19px
+}
+
+.resources{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:4px
+}
+
+.resource{
+background:#263744;
+border-radius:8px;
+padding:6px 2px;
+text-align:center;
+font-size:12px
+}
+
+.page{
+padding:10px;
+max-width:900px;
+margin:auto
+}
+
+.card{
+background:#1b2934;
+border-radius:15px;
+padding:14px;
+margin:9px 0;
+box-shadow:0 2px 8px #0007
+}
+
+.card h2,.card h3{
+margin-top:3px
+}
+
+.hero-grid,
+.behemoth-grid,
+.rank-grid,
+.alliance-grid{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:8px
+}
+
+.hero-card,
+.behemoth-card,
+.rank-card,
+.alliance-card{
+background:#263744;
+border-radius:13px;
+padding:12px
+}
+
+.hero-icon,
+.behemoth-icon{
+font-size:40px;
+text-align:center
+}
+
+.hero-card h3,
+.behemoth-card h3{
+text-align:center;
+margin:5px
+}
+
+.stat{
+display:flex;
+justify-content:space-between;
+border-bottom:1px solid #ffffff12;
+padding:5px 0
+}
+
+.menu-grid{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:9px
+}
+
+.menu-button{
+background:#263744;
+min-height:95px;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+font-size:17px
+}
+
+.menu-icon{
+font-size:38px
+}
+
+.city{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:9px
+}
+
+.building{
+background:#263744;
+min-height:115px;
+border-radius:15px;
+padding:12px;
+text-align:center;
+cursor:pointer
+}
+
+.building .icon{
+font-size:40px
+}
+
+.world{
+height:480px;
+position:relative;
+overflow:hidden;
+border-radius:16px;
+background:
+radial-gradient(circle at 20% 30%,#405c36 0 7%,transparent 8%),
+radial-gradient(circle at 70% 60%,#405c36 0 8%,transparent 9%),
+radial-gradient(circle at 40% 80%,#405c36 0 6%,transparent 7%),
+#29452b;
+border:3px solid #65785b
+}
+
+.map-object{
+position:absolute;
+transform:translate(-50%,-50%);
+font-size:27px;
+cursor:pointer;
+user-select:none;
+text-align:center
+}
+
+.map-name{
+font-size:9px;
+white-space:nowrap;
+background:#0009;
+padding:2px 4px;
+border-radius:5px
+}
+
+.player-object{
+font-size:33px
+}
+
+.target{
+outline:3px solid #ffe600;
+border-radius:50%
+}
+
+.march{
+position:absolute;
+font-size:22px;
+transition:left 1s linear,top 1s linear
+}
+
+.bottom-nav{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+height:72px;
+background:#17232d;
+display:grid;
+grid-template-columns:repeat(5,1fr);
+padding:5px;
+z-index:30
+}
+
+.bottom-nav button{
+background:#263744;
+margin:2px;
+font-size:12px;
+padding:5px
+}
+
+.overlay{
+position:fixed;
+inset:0;
+background:#000d;
+display:flex;
+align-items:center;
+justify-content:center;
+z-index:100;
+padding:20px
+}
+
+.login{
+width:100%;
+max-width:400px;
+background:#1b2934;
+padding:25px;
+border-radius:20px;
+text-align:center
+}
+
+.modal{
+position:fixed;
+inset:0;
+background:#000c;
+z-index:80;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:15px
+}
+
+.modal-box{
+width:100%;
+max-width:650px;
+max-height:90vh;
+overflow-y:auto;
+background:#1b2934;
+border-radius:20px;
+padding:17px
+}
+
+.close{
+float:left;
+background:#8c3030
+}
+
+.timer{
+font-size:24px;
+font-weight:bold;
+text-align:center;
+margin:8px
+}
+
 .good{color:#6ee66e}
 .warning{color:#ffd45c}
 .danger{color:#ff6868}
-.log{max-height:180px;overflow-y:auto;background:#101820;border-radius:10px;padding:10px}
-.log div{padding:5px;border-bottom:1px solid #ffffff18}
-.report{border-bottom:1px solid #ffffff22;padding:12px 0}
-.speedup-box{background:#263744;border-radius:12px;padding:12px;margin-top:10px}
-.speedup-button{background:#3b7ddd;width:100%;margin-top:8px}
+.log{
+max-height:180px;
+overflow-y:auto;
+background:#101820;
+border-radius:10px;
+padding:8px
+}
+.log div{
+padding:5px;
+border-bottom:1px solid #ffffff18
+}
+
+.report{
+padding:10px 0;
+border-bottom:1px solid #ffffff20
+}
+
+.speedup-box{
+background:#263744;
+border-radius:11px;
+padding:10px
+}
+
+.rank-tabs{
+display:flex;
+overflow-x:auto;
+gap:5px;
+padding-bottom:5px
+}
+
+.rank-tabs button{
+white-space:nowrap;
+background:#263744
+}
+
+.rank-row{
+display:grid;
+grid-template-columns:40px 1fr auto;
+gap:7px;
+align-items:center;
+padding:9px;
+border-bottom:1px solid #ffffff15
+}
+
+.rank-number{
+font-size:20px;
+font-weight:bold
+}
+
+.small{
+font-size:12px;
+opacity:.8
+}
+
+.progress{
+height:8px;
+background:#101820;
+border-radius:10px;
+overflow:hidden
+}
+
+.progress span{
+display:block;
+height:100%;
+background:#d99b32
+}
+
+@media(max-width:500px){
+.hero-grid,
+.behemoth-grid{
+grid-template-columns:1fr
+}
+}
 </style>
 </head>
 
 <body>
 
+<!-- LOGIN -->
+
 <div id="loginScreen" class="overlay">
 <div class="login">
+
 <h1>🏰 Kardous Survival</h1>
-<h2>👤 إنشاء / دخول لاعب</h2>
-<p>اكتب اسم لاعبك لدخول المملكة #1</p>
-<input id="playerName" type="text" maxlength="20" placeholder="اكتب اسم اللاعب" autocomplete="off">
-<button type="button" onclick="registerPlayer()">🚀 دخول المملكة</button>
-<p>🌍 المملكة #1</p>
+<h2>🌍 المملكة #1</h2>
+
+<p>اكتب اسم اللاعب للدخول</p>
+
+<input
+id="playerName"
+maxlength="20"
+placeholder="اسم اللاعب"
+autocomplete="off"
+>
+
+<button onclick="registerPlayer()">
+🚀 دخول المملكة
+</button>
+
 <p id="loginMessage"></p>
+
 </div>
 </div>
 
+
+<!-- HEADER -->
+
 <header>
-<h2>🏰 Kardous Survival</h2>
-<div class="resources">
-<div class="resource">🍎<div id="food">0</div></div>
-<div class="resource">🪵<div id="wood">0</div></div>
-<div class="resource">⛓️<div id="iron">0</div></div>
-<div class="resource">🪙<div id="gold">0</div></div>
+
+<div class="top">
+
+<div
+class="commander-box"
+onclick="openCommander()"
+>
+
+<div class="commander-picture">
+👑
 </div>
+
+<strong>Kardous</strong>
+
+<small>
+Lv.<span id="topCommanderLevel">1</span>
+</small>
+
+</div>
+
+<div class="top-title">
+
+<h2>🏰 Kardous Survival</h2>
+
+<div class="resources">
+
+<div class="resource">
+🍎
+<div id="food">0</div>
+</div>
+
+<div class="resource">
+🪵
+<div id="wood">0</div>
+</div>
+
+<div class="resource">
+⛓️
+<div id="iron">0</div>
+</div>
+
+<div class="resource">
+🪙
+<div id="gold">0</div>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
 </header>
+
+
+<!-- HOME -->
 
 <main id="home" class="page">
 
 <div class="card">
-<h2>👑 مملكة Kardous</h2>
-<p>🆔 ID: <b id="playerId">-</b></p>
-<p>🌍 المملكة: <b id="kingdom">1</b></p>
-<p>🏰 مستوى القلعة: <b id="castle">1</b></p>
-<p>⚡ القوة: <b id="power">0</b></p>
+
+<h2>🏰 مملكة Kardous</h2>
+
+<div class="stat">
+<span>👤 اللاعب</span>
+<b id="playerNameDisplay">-</b>
 </div>
 
+<div class="stat">
+<span>🆔 ID</span>
+<b id="playerId">-</b>
+</div>
+
+<div class="stat">
+<span>🌍 المملكة</span>
+<b id="kingdom">1</b>
+</div>
+
+<div class="stat">
+<span>🏰 القلعة</span>
+<b id="castle">1</b>
+</div>
+
+<div class="stat">
+<span>⚡ القوة</span>
+<b id="power">0</b>
+</div>
+
+<div class="stat">
+<span>🤝 التحالف</span>
+<b id="allianceName">بدون تحالف</b>
+</div>
+
+</div>
+
+
+<!-- MAIN MENU -->
+
 <div class="card">
-<h2>🏰 مدينتك</h2>
-<p>اضغط على أي مبنى لعرض وظائفه.</p>
+
+<h2>🎮 مركز المملكة</h2>
+
+<div class="menu-grid">
+
+<button class="menu-button" onclick="openCommander()">
+<span class="menu-icon">👑</span>
+القائد
+</button>
+
+<button class="menu-button" onclick="openHeroes()">
+<span class="menu-icon">🦸</span>
+الأبطال
+</button>
+
+<button class="menu-button" onclick="openBehemoths()">
+<span class="menu-icon">🦖</span>
+البهيثومي
+</button>
+
+<button class="menu-button" onclick="openAlliance()">
+<span class="menu-icon">🤝</span>
+التحالف
+</button>
+
+<button class="menu-button" onclick="openRankings()">
+<span class="menu-icon">🏆</span>
+الترتيبات
+</button>
+
+<button class="menu-button" onclick="show('world');loadWorld()">
+<span class="menu-icon">🌍</span>
+الخريطة
+</button>
+
+</div>
+
+</div>
+
+
+<!-- CITY -->
+
+<div class="card">
+
+<h2>🏰 القلعة من الداخل</h2>
+
+<p>
+هذه هي مدينتك. اضغط على المباني.
+</p>
 
 <div class="city">
 
-<div class="building" onclick="openBuilding('gift')">
-<div class="icon">🎁</div>
-<h3>الهدايا</h3>
-<small>جوائز يومية</small>
+<div class="building" onclick="openBuilding('castle')">
+<div class="icon">🏰</div>
+<h3>قلعة Kardous</h3>
+<small>المستوى <span id="castleBuilding">1</span></small>
 </div>
 
 <div class="building" onclick="openBuilding('resource')">
 <div class="icon">🌾</div>
-<h3>مبنى الموارد</h3>
-<small>المستوى 1</small>
+<h3>الموارد</h3>
+<small>🍎 🪵 ⛓️ 🪙</small>
 </div>
 
 <div class="building" onclick="openBuilding('training')">
 <div class="icon">⚔️</div>
 <h3>معسكر الجنود</h3>
-<small>المستوى 1</small>
+<small>تدريب الجيش</small>
 </div>
 
 <div class="building" onclick="openBuilding('research')">
 <div class="icon">🔬</div>
 <h3>مركز الأبحاث</h3>
-<small>المستوى 1</small>
+<small>تطوير المملكة</small>
 </div>
 
 <div class="building" onclick="openBuilding('adventure')">
 <div class="icon">🗺️</div>
 <h3>المغامرات</h3>
-<small>مغامرات</small>
+<small>أرسل الأبطال</small>
 </div>
 
-<div class="building" onclick="openBuilding('castle')">
-<div class="icon">🏰</div>
-<h3>قلعة Kardous</h3>
-<small>المستوى 1</small>
+<div class="building" onclick="openBuilding('gift')">
+<div class="icon">🎁</div>
+<h3>الهدايا</h3>
+<small>هدية يومية</small>
 </div>
 
 </div>
+
 </div>
 
-<div class="card">
-<h3>🏗️ المبنى المحدد</h3>
-<h2 id="buildingTitle">-</h2>
-<p id="buildingDescription">اضغط على مبنى من الخريطة.</p>
-</div>
+
+<!-- CASTLE -->
 
 <div class="card">
-<h3>🏰 ترقية القلعة</h3>
-<p id="upgradeStatus">جاهز للترقية</p>
-<div id="castleTimer" class="timer">--:--</div>
 
-<button id="upgradeButton" type="button" onclick="upgrade()">
+<h3>🏗️ ترقية القلعة</h3>
+
+<p id="upgradeStatus">
+جاهز للترقية
+</p>
+
+<div id="castleTimer" class="timer">
+--:--
+</div>
+
+<p>
+المستوى الحالي:
+<b id="castleLevel2">1</b>
+</p>
+
+<button
+id="upgradeButton"
+onclick="upgradeCastle()"
+>
 ⬆️ ترقية القلعة
 </button>
 
-<div id="buildingSpeedupBox" class="speedup-box hidden">
-<p>🏗️ لديك <b id="buildingSpeedupsActive">0</b> تسريع بناء.</p>
-<button class="speedup-button" type="button" onclick="speedupBuilding()">
-⚡ استخدام تسريع البناء (-10 ثوانٍ)
+<div
+id="buildingSpeedupBox"
+class="speedup-box hidden"
+>
+
+<p>
+🏗️ تسريع البناء:
+<b id="buildingSpeedupsActive">0</b>
+</p>
+
+<button onclick="speedupBuilding()">
+⚡ -10 ثوانٍ
 </button>
-</div>
+
 </div>
 
-<div class="card">
-<h3>👑 القائد</h3>
-<p>المستوى: <b id="commanderLevel">1</b></p>
-<p>الخبرة: <b id="commanderXP">0</b></p>
 </div>
 
+
+<!-- ARMY -->
+
 <div class="card">
+
 <h3>⚔️ الجيش</h3>
 
-<p>الجنود: <b id="troops">0</b></p>
+<p>
+الجنود:
+<b id="troops">0</b>
+</p>
 
-<div id="trainingStatus" class="warning">
+<p id="trainingStatus" class="warning">
 لا يوجد تدريب حاليًا.
+</p>
+
+<div id="trainingTimer" class="timer">
+--:--
 </div>
 
-<div id="trainingTimer" class="timer">--:--</div>
-
-<button id="trainButton" type="button" onclick="train()">
+<button
+id="trainButton"
+onclick="train()"
+>
 ⚔️ تدريب 100 جندي
 </button>
 
-<div id="trainingSpeedupBox" class="speedup-box hidden">
-<p>⚡ لديك <b id="trainingSpeedupsActive">0</b> تسريع تدريب.</p>
-<button class="speedup-button" type="button" onclick="speedupTraining()">
-⚡ استخدام تسريع التدريب (-10 ثوانٍ)
+<div
+id="trainingSpeedupBox"
+class="speedup-box hidden"
+>
+
+<p>
+⚡ تسريع التدريب:
+<b id="trainingSpeedupsActive">0</b>
+</p>
+
+<button onclick="speedupTraining()">
+⚡ -10 ثوانٍ
 </button>
+
 </div>
 
 </div>
+
+
+<!-- RESEARCH -->
 
 <div class="card">
+
 <h3>🔬 مركز الأبحاث</h3>
 
 <p id="researchStatus">
 لا يوجد بحث جارٍ.
 </p>
 
-<div id="researchTimer" class="timer">--:--</div>
-
-<button id="researchButton" type="button" onclick="startResearch()">
-🔬 بدء بحث
-</button>
-
-<div id="researchSpeedupBox" class="speedup-box hidden">
-<p>🔬 لديك <b id="researchSpeedupsActive">0</b> تسريع أبحاث.</p>
-<button class="speedup-button" type="button" onclick="speedupResearch()">
-⚡ استخدام تسريع الأبحاث (-10 ثوانٍ)
-</button>
+<div id="researchTimer" class="timer">
+--:--
 </div>
 
-</div>
+<button
+id="researchButton"
+onclick="startResearch()"
+>
+🔬 بدء البحث
+</button>
 
-<div class="card">
-<h3>⚡ التسريعات</h3>
-
-<p>⚡ تسريع التدريب: <b id="trainingSpeedups">0</b></p>
-<p>🏗️ تسريع البناء: <b id="buildingSpeedups">0</b></p>
-<p>🔬 تسريع الأبحاث: <b id="researchSpeedups">0</b></p>
+<div
+id="researchSpeedupBox"
+class="speedup-box hidden"
+>
 
 <p>
-كل ضغطة على زر التسريع تقلل الوقت المتبقي بمقدار 10 ثوانٍ.
+⚡ تسريع الأبحاث:
+<b id="researchSpeedupsActive">0</b>
 </p>
-</div>
 
-<div class="card">
-<h3>🦸 الأبطال</h3>
-<p>🦸 نظام الأبطال قادم...</p>
-</div>
-
-<div class="card">
-<h3>🗺️ المغامرات</h3>
-<p>أرسل أبطالك في مغامرات للحصول على الموارد والخبرة والجوائز.</p>
-<button type="button" onclick="openBuilding('adventure')">
-🗺️ دخول المغامرات
+<button onclick="speedupResearch()">
+⚡ -10 ثوانٍ
 </button>
+
 </div>
 
+</div>
+
+
+<!-- SPEEDUPS -->
+
 <div class="card">
-<h3>🎁 الهدايا اليومية</h3>
-<p>يمكنك الحصول على هدية مجانية عندما تكون متاحة.</p>
-<button id="giftButton" type="button" onclick="claimGift()">
-🎁 استلام الهدية
-</button>
-<p id="giftMessage">لا توجد هدية مستلمة بعد.</p>
+
+<h3>⚡ التسريعات</h3>
+
+<p>⚔️ تدريب: <b id="trainingSpeedups">0</b></p>
+<p>🏗️ بناء: <b id="buildingSpeedups">0</b></p>
+<p>🔬 أبحاث: <b id="researchSpeedups">0</b></p>
+
+</div>
+
+
+<!-- EVENT LOG -->
+
+<div class="card">
+
+<h3>📜 سجل الأحداث</h3>
+
+<div id="eventLog" class="log">
+<div>🟢 المملكة جاهزة.</div>
+</div>
+
 </div>
 
 </main>
 
+
+<!-- WORLD -->
+
 <main id="world" class="page hidden">
 
 <div class="card">
-<h2>🌍 المملكة #1</h2>
-<p>اللاعبون والزومبي والحصون يظهرون على الخريطة.</p>
+
+<h2>🌍 الخريطة الخارجية</h2>
+
+<p>
+🧟 الزومبي — 🏯 الحصون — 🏰 اللاعبون
+</p>
+
 </div>
 
 <div id="worldMap" class="world"></div>
 
 <div class="card">
+
 <h3>🎯 الهدف المحدد</h3>
-<p id="selectedTarget">لم تحدد هدفًا</p>
-<button type="button" onclick="attackTarget()">⚔️ إرسال الجيش</button>
+
+<p id="selectedTarget">
+لم تحدد هدفًا.
+</p>
+
+<button onclick="attackTarget()">
+⚔️ إرسال الجيش
+</button>
+
 </div>
 
 <div class="card">
-<h3>🚶 المسيرات</h3>
-<div id="marches">لا توجد مسيرات.</div>
+
+<h3>🚶 مسيرات الجيش</h3>
+
+<div id="marches">
+لا توجد مسيرات.
 </div>
 
-<div class="card">
-<h3>📜 الأحداث</h3>
-<div id="eventLog" class="log">
-<div>الخريطة جاهزة.</div>
-</div>
 </div>
 
 </main>
+
+
+<!-- REPORTS -->
 
 <main id="reports" class="page hidden">
 
 <div class="card">
+
 <h2>📜 تقارير المعارك</h2>
-<p>جميع معاركك محفوظة على السيرفر.</p>
-<button type="button" onclick="loadReports()">🔄 تحديث التقارير</button>
-<div id="reportsList">جاري تحميل التقارير...</div>
+
+<button onclick="loadReports()">
+🔄 تحديث
+</button>
+
+<div id="reportsList">
+جاري التحميل...
+</div>
+
 </div>
 
 </main>
 
+
+<!-- BOTTOM -->
+
 <nav class="bottom-nav">
-<button type="button" onclick="show('home')">🏰 القلعة</button>
-<button type="button" onclick="show('world');loadWorld()">🌍 الخريطة</button>
-<button type="button" onclick="show('reports');loadReports()">📜 التقارير</button>
+
+<button onclick="show('home')">
+🏰
+<br>
+القلعة
+</button>
+
+<button onclick="show('world');loadWorld()">
+🌍
+<br>
+الخريطة
+</button>
+
+<button onclick="openHeroes()">
+🦸
+<br>
+الأبطال
+</button>
+
+<button onclick="openAlliance()">
+🤝
+<br>
+التحالف
+</button>
+
+<button onclick="openRankings()">
+🏆
+<br>
+الترتيب
+</button>
+
 </nav>
+
+
+<!-- GENERAL MODAL -->
+
+<div id="modal" class="modal hidden">
+
+<div class="modal-box">
+
+<button
+class="close"
+onclick="closeModal()"
+>
+✖
+</button>
+
+<div id="modalContent"></div>
+
+</div>
+
+</div>
+
 
 <script src="/socket.io/socket.io.js"></script>
 
 <script>
 
-let playerId = null;
-let playerData = null;
-let selectedTarget = null;
-let worldData = null;
-let socket = null;
+let playerId=null;
+let playerData=null;
+let worldData=null;
+let selectedTarget=null;
+let socket=null;
+let rankingsData=null;
+
+
+/* =====================================================
+   HELPERS
+===================================================== */
+
+function $(id){
+return document.getElementById(id);
+}
 
 function escapeHTML(text){
 if(text===null||text===undefined)return "";
@@ -298,95 +920,145 @@ return String(text)
 .replaceAll("'","&#039;");
 }
 
-function formatNumber(number){
-return Number(number||0).toLocaleString("en-US");
+function formatNumber(n){
+return Number(n||0).toLocaleString("en-US");
 }
 
 function formatTime(ms){
+
 if(!ms||ms<=0)return "00:00";
 
-const totalSeconds=Math.ceil(ms/1000);
-const minutes=Math.floor(totalSeconds/60);
-const seconds=totalSeconds%60;
+let s=Math.ceil(ms/1000);
+let m=Math.floor(s/60);
+let sec=s%60;
 
-return String(minutes).padStart(2,"0")+":"+String(seconds).padStart(2,"0");
-}
-
-function logEvent(message){
-
-const log=document.getElementById("eventLog");
-
-if(!log)return;
-
-const item=document.createElement("div");
-
-item.textContent=
-new Date().toLocaleTimeString()
-+" — "
-+message;
-
-log.prepend(item);
+return String(m).padStart(2,"0")+":"+String(sec).padStart(2,"0");
 }
 
 function show(page){
 
-document.querySelectorAll(".page").forEach(element=>{
-element.classList.add("hidden");
+document.querySelectorAll(".page")
+.forEach(x=>x.classList.add("hidden"));
+
+const element=$(page);
+
+if(element)
+element.classList.remove("hidden");
+
+window.scrollTo({
+top:0,
+behavior:"smooth"
 });
-
-const selected=document.getElementById(page);
-
-if(selected){
-selected.classList.remove("hidden");
 }
+
+function openModal(html){
+
+$("modalContent").innerHTML=html;
+$("modal").classList.remove("hidden");
+
 }
+
+function closeModal(){
+
+$("modal").classList.add("hidden");
+
+}
+
+function logEvent(message){
+
+const log=$("eventLog");
+
+if(!log)return;
+
+const div=document.createElement("div");
+
+div.textContent=
+new Date().toLocaleTimeString()
++" — "
++message;
+
+log.prepend(div);
+
+}
+
+
+/* =====================================================
+   REGISTER
+===================================================== */
 
 async function registerPlayer(){
 
-const input=document.getElementById("playerName");
-const message=document.getElementById("loginMessage");
-
-const name=input.value.trim();
+const name=$("playerName")
+.value
+.trim();
 
 if(!name){
-message.textContent="⚠️ اكتب اسم اللاعب أولًا.";
+
+$("loginMessage").textContent=
+"⚠️ اكتب اسم اللاعب.";
+
 return;
+
 }
 
-message.textContent="⏳ جاري الدخول...";
+$("loginMessage").textContent=
+"⏳ جاري الدخول...";
 
 try{
 
-const response=await fetch("/api/register",{
+const response=await fetch(
+"/api/register",
+{
 method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({name:name})
-});
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({name})
+}
+);
 
 const data=await response.json();
 
 if(!response.ok){
-message.textContent=data.error||"حدث خطأ.";
+
+$("loginMessage").textContent=
+data.error||"حدث خطأ.";
+
 return;
+
 }
 
 playerId=data.player.id;
 
-localStorage.setItem("kardousPlayerId",playerId);
+localStorage.setItem(
+"kardousPlayerId",
+playerId
+);
 
-document.getElementById("loginScreen").classList.add("hidden");
+$("loginScreen")
+.classList.add("hidden");
 
 updatePlayerUI(data.player);
-loadWorld();
+
 connectSocket();
+
+loadWorld();
 
 }catch(error){
 
 console.error(error);
-message.textContent="❌ تعذر الاتصال بالسيرفر.";
+
+$("loginMessage").textContent=
+"❌ تعذر الاتصال بالسيرفر.";
 
 }
+
 }
+
+
+/* =====================================================
+   PLAYER
+===================================================== */
 
 async function loadPlayer(){
 
@@ -394,15 +1066,21 @@ if(!playerId)return;
 
 try{
 
-const response=await fetch(`/api/player/${playerId}`);
+const response=await fetch(
+`/api/player/${playerId}`
+);
 
 if(!response.ok){
 
-localStorage.removeItem("kardousPlayerId");
+localStorage.removeItem(
+"kardousPlayerId"
+);
 
-document.getElementById("loginScreen").classList.remove("hidden");
+$("loginScreen")
+.classList.remove("hidden");
 
 return;
+
 }
 
 const data=await response.json();
@@ -410,9 +1088,13 @@ const data=await response.json();
 updatePlayerUI(data);
 
 }catch(error){
+
 console.error(error);
+
 }
+
 }
+
 
 function updatePlayerUI(player){
 
@@ -421,326 +1103,1046 @@ if(!player)return;
 playerData=player;
 playerId=player.id;
 
-document.getElementById("playerId").textContent=player.id;
-document.getElementById("kingdom").textContent=player.kingdom||1;
-document.getElementById("castle").textContent=player.castle||1;
-document.getElementById("power").textContent=formatNumber(player.power);
+$("playerId").textContent=player.id;
+$("playerNameDisplay").textContent=player.name;
+$("kingdom").textContent=player.kingdom||1;
 
-document.getElementById("food").textContent=formatNumber(player.food);
-document.getElementById("wood").textContent=formatNumber(player.wood);
-document.getElementById("iron").textContent=formatNumber(player.iron);
-document.getElementById("gold").textContent=formatNumber(player.gold);
+$("castle").textContent=player.castle||1;
+$("castleBuilding").textContent=player.castle||1;
+$("castleLevel2").textContent=player.castle||1;
 
-document.getElementById("troops").textContent=formatNumber(player.troops);
+$("power").textContent=
+formatNumber(player.power);
 
-document.getElementById("commanderLevel").textContent=player.commander_level||1;
-document.getElementById("commanderXP").textContent=formatNumber(player.commander_xp);
+$("food").textContent=
+formatNumber(player.food);
 
-const speedups=player.speedups||{};
+$("wood").textContent=
+formatNumber(player.wood);
 
-document.getElementById("trainingSpeedups").textContent=formatNumber(speedups.training);
-document.getElementById("buildingSpeedups").textContent=formatNumber(speedups.building);
-document.getElementById("researchSpeedups").textContent=formatNumber(speedups.research);
+$("iron").textContent=
+formatNumber(player.iron);
 
-document.getElementById("trainingSpeedupsActive").textContent=formatNumber(speedups.training);
-document.getElementById("buildingSpeedupsActive").textContent=formatNumber(speedups.building);
-document.getElementById("researchSpeedupsActive").textContent=formatNumber(speedups.research);
+$("gold").textContent=
+formatNumber(player.gold);
+
+$("troops").textContent=
+formatNumber(player.troops);
+
+const commander=
+player.commander||{};
+
+$("topCommanderLevel").textContent=
+commander.level||1;
+
+const alliance=
+player.alliance;
+
+$("allianceName").textContent=
+alliance
+?`${alliance.tag} — ${alliance.name}`
+:"بدون تحالف";
 
 updateCastleUI(player);
 updateTrainingUI(player);
 updateResearchUI(player);
+
 }
+
+
+/* =====================================================
+   COMMANDER
+===================================================== */
+
+async function openCommander(){
+
+if(!playerId)return;
+
+try{
+
+const response=await fetch(
+`/api/player/${playerId}/profile`
+);
+
+const data=await response.json();
+
+const c=data.commander||{};
+
+const equipment=
+c.equipment||{};
+
+const level=
+Number(c.level||1);
+
+const xp=
+Number(c.xp||0);
+
+const next=
+Number(c.nextXp||1000);
+
+const percent=
+Math.min(100,(xp/next)*100);
+
+openModal(`
+
+<h2>👑 القائد Kardous</h2>
+
+<div class="hero-card">
+
+<div class="hero-icon">👑</div>
+
+<h3>Kardous</h3>
+
+<div class="stat">
+<span>المستوى</span>
+<b>${formatNumber(level)}</b>
+</div>
+
+<div class="stat">
+<span>الخبرة</span>
+<b>${formatNumber(xp)}</b>
+</div>
+
+<div class="stat">
+<span>الخبرة المطلوبة</span>
+<b>${formatNumber(next)}</b>
+</div>
+
+<div class="progress">
+<span style="width:${percent}%"></span>
+</div>
+
+</div>
+
+<div class="card">
+
+<h3>⭐ المواهب</h3>
+
+<div class="stat">
+<span>موهبة القائد</span>
+<b>${formatNumber(c.talent||1)}</b>
+</div>
+
+</div>
+
+<div class="card">
+
+<h3>🛡️ العتاد</h3>
+
+<div class="stat">
+<span>⚔️ السلاح</span>
+<b>Lv.${equipment.weapon||1}</b>
+</div>
+
+<div class="stat">
+<span>🛡️ الدرع</span>
+<b>Lv.${equipment.armor||1}</b>
+</div>
+
+<div class="stat">
+<span>⛑️ الخوذة</span>
+<b>Lv.${equipment.helmet||1}</b>
+</div>
+
+<div class="stat">
+<span>🥾 الأحذية</span>
+<b>Lv.${equipment.boots||1}</b>
+</div>
+
+</div>
+
+<div class="card">
+
+<h3>📊 قوة القائد</h3>
+
+<p>
+قائدك سيصبح أقوى مع رفع المستوى والعتاد والمواهب.
+</p>
+
+</div>
+
+`);
+
+}catch(error){
+
+console.error(error);
+
+}
+
+}
+
+
+/* =====================================================
+   HEROES
+===================================================== */
+
+async function openHeroes(){
+
+if(!playerId)return;
+
+try{
+
+const response=await fetch(
+`/api/player/${playerId}/heroes`
+);
+
+const data=await response.json();
+
+const heroes=data.heroes||[];
+
+let html=`
+
+<h2>🦸 أبطال المملكة</h2>
+
+<p>
+عدد الأبطال: <b>${heroes.length}</b>
+</p>
+
+<div class="hero-grid">
+`;
+
+heroes.forEach((hero,index)=>{
+
+html+=`
+
+<div class="hero-card">
+
+<div class="hero-icon">
+🦸
+</div>
+
+<h3>${escapeHTML(hero.name)}</h3>
+
+<div class="stat">
+<span>المستوى</span>
+<b>${hero.level}</b>
+</div>
+
+<div class="stat">
+<span>القوة</span>
+<b>${formatNumber(hero.power)}</b>
+</div>
+
+<div class="stat">
+<span>XP</span>
+<b>${formatNumber(hero.xp)}</b>
+</div>
+
+<div class="stat">
+<span>المهارة 1</span>
+<b>${hero.skill_1}</b>
+</div>
+
+<div class="stat">
+<span>المهارة 2</span>
+<b>${hero.skill_2}</b>
+</div>
+
+<div class="stat">
+<span>المهارة 3</span>
+<b>${hero.skill_3}</b>
+</div>
+
+<button onclick="upgradeHero(${hero.id})">
+⬆️ تطوير البطل
+</button>
+
+</div>
+`;
+
+});
+
+html+=`
+</div>
+`;
+
+openModal(html);
+
+}catch(error){
+
+console.error(error);
+
+}
+
+}
+
+
+async function upgradeHero(heroId){
+
+try{
+
+const response=await fetch(
+`/api/player/${playerId}/heroes/${heroId}/upgrade`,
+{
+method:"POST"
+}
+);
+
+const data=await response.json();
+
+if(!response.ok){
+
+alert(data.error||"تعذر تطوير البطل.");
+
+return;
+
+}
+
+updatePlayerUI(data.player);
+
+logEvent(
+"🦸 تم تطوير أحد الأبطال."
+);
+
+openHeroes();
+
+}catch(error){
+
+console.error(error);
+
+}
+
+}
+
+
+/* =====================================================
+   BEHEMOTHS
+===================================================== */
+
+async function openBehemoths(){
+
+if(!playerId)return;
+
+try{
+
+const response=await fetch(
+`/api/player/${playerId}/behemoths`
+);
+
+const data=await response.json();
+
+const list=data.behemoths||[];
+
+let html=`
+
+<h2>🦖 البهيثومي</h2>
+
+<p>
+مخلوقات الحرب داخل قلعتك.
+</p>
+
+<div class="behemoth-grid">
+`;
+
+list.forEach(b=>{
+
+let icon="🦖";
+
+if(b.type==="monkey")
+icon="🐒";
+
+if(b.type==="lion")
+icon="🦁";
+
+if(b.type==="bird")
+icon="🐦";
+
+html+=`
+
+<div class="behemoth-card">
+
+<div class="behemoth-icon">
+${icon}
+</div>
+
+<h3>${escapeHTML(b.name)}</h3>
+
+<div class="stat">
+<span>المستوى</span>
+<b>${b.level}</b>
+</div>
+
+<div class="stat">
+<span>القوة</span>
+<b>${formatNumber(b.power)}</b>
+</div>
+
+<div class="stat">
+<span>XP</span>
+<b>${formatNumber(b.xp)}</b>
+</div>
+
+<div class="stat">
+<span>مهارة 1</span>
+<b>${b.skill_1}</b>
+</div>
+
+<div class="stat">
+<span>مهارة 2</span>
+<b>${b.skill_2}</b>
+</div>
+
+<div class="stat">
+<span>مهارة 3</span>
+<b>${b.skill_3}</b>
+</div>
+
+<button onclick="upgradeBehemoth(${b.id})">
+⬆️ تطوير البهيثومي
+</button>
+
+</div>
+`;
+
+});
+
+html+=`
+</div>
+`;
+
+openModal(html);
+
+}catch(error){
+
+console.error(error);
+
+}
+
+}
+
+
+async function upgradeBehemoth(id){
+
+try{
+
+const response=await fetch(
+`/api/player/${playerId}/behemoths/${id}/upgrade`,
+{
+method:"POST"
+}
+);
+
+const data=await response.json();
+
+if(!response.ok){
+
+alert(data.error||"تعذر تطوير البهيثومي.");
+
+return;
+
+}
+
+updatePlayerUI(data.player);
+
+logEvent(
+"🦖 تم تطوير البهيثومي."
+);
+
+openBehemoths();
+
+}catch(error){
+
+console.error(error);
+
+}
+
+}
+
+
+/* =====================================================
+   ALLIANCE
+===================================================== */
+
+async function openAlliance(){
+
+if(!playerId)return;
+
+const current=
+playerData&&playerData.alliance;
+
+if(current){
+
+try{
+
+const response=await fetch(
+`/api/alliance/${current.id}`
+);
+
+const alliance=await response.json();
+
+let members="";
+
+(alliance.members||[]).forEach((member,index)=>{
+
+members+=`
+
+<div class="rank-row">
+
+<div>${index+1}</div>
+
+<div>
+<b>${escapeHTML(member.name)}</b>
+<br>
+<span class="small">
+🏰 ${member.castle}
+— ${member.role}
+</span>
+</div>
+
+<div>
+⚡ ${formatNumber(member.power)}
+</div>
+
+</div>
+`;
+
+});
+
+openModal(`
+
+<h2>🤝 ${escapeHTML(alliance.name)}</h2>
+
+<p>
+🏷️ الاختصار:
+<b>${escapeHTML(alliance.tag)}</b>
+</p>
+
+<div class="stat">
+<span>👥 الأعضاء</span>
+<b>${alliance.members.length}</b>
+</div>
+
+<div class="stat">
+<span>⚡ القوة</span>
+<b>${formatNumber(alliance.power)}</b>
+</div>
+
+<div class="stat">
+<span>⚔️ قوة الحرب</span>
+<b>${formatNumber(alliance.warPower)}</b>
+</div>
+
+<div class="card">
+
+<h3>👥 أعضاء التحالف</h3>
+
+${members}
+
+</div>
+
+`);
+
+return;
+
+}catch(error){
+
+console.error(error);
+
+}
+
+}
+
+
+/* SHOW ALLIANCES */
+
+try{
+
+const response=await fetch(
+"/api/alliances"
+);
+
+const data=await response.json();
+
+const alliances=
+data.alliances||[];
+
+let list="";
+
+alliances.forEach(a=>{
+
+list+=`
+
+<div class="alliance-card">
+
+<h3>
+🤝 ${escapeHTML(a.name)}
+</h3>
+
+<p>
+🏷️ ${escapeHTML(a.tag)}
+</p>
+
+<p>
+👥 الأعضاء: ${a.members}
+</p>
+
+<button onclick="joinAlliance(${a.id})">
+🚪 الانضمام
+</button>
+
+</div>
+
+`;
+
+});
+
+openModal(`
+
+<h2>🤝 التحالفات</h2>
+
+<div class="card">
+
+<h3>🆕 إنشاء تحالف</h3>
+
+<input id="newAllianceName"
+placeholder="اسم التحالف"
+maxlength="30"
+>
+
+<input id="newAllianceTag"
+placeholder="اختصار التحالف"
+maxlength="6"
+>
+
+<button onclick="createAlliance()">
+🏰 إنشاء التحالف
+</button>
+
+</div>
+
+<div class="alliance-grid">
+
+${list||"<p>لا توجد تحالفات بعد.</p>"}
+
+</div>
+
+`);
+
+}catch(error){
+
+console.error(error);
+
+}
+
+}
+
+
+async function createAlliance(){
+
+const name=
+$("newAllianceName")
+.value
+.trim();
+
+const tag=
+$("newAllianceTag")
+.value
+.trim();
+
+if(!name||!tag){
+
+alert("اكتب اسم التحالف والاختصار.");
+
+return;
+
+}
+
+try{
+
+const response=await fetch(
+"/api/alliances",
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+playerId,
+name,
+tag
+})
+}
+);
+
+const data=await response.json();
+
+if(!response.ok){
+
+alert(data.error||"تعذر إنشاء التحالف.");
+
+return;
+
+}
+
+alert("🎉 تم إنشاء التحالف!");
+
+await loadPlayer();
+
+openAlliance();
+
+}catch(error){
+
+console.error(error);
+
+}
+
+}
+
+
+async function joinAlliance(allianceId){
+
+try{
+
+const response=await fetch(
+`/api/player/${playerId}/alliance/join`,
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+allianceId
+})
+}
+);
+
+const data=await response.json();
+
+if(!response.ok){
+
+alert(data.error||"تعذر الانضمام.");
+
+return;
+
+}
+
+alert("🤝 انضممت إلى التحالف!");
+
+updatePlayerUI(data.player);
+
+openAlliance();
+
+}catch(error){
+
+console.error(error);
+
+}
+
+}
+
+
+/* =====================================================
+   RANKINGS
+===================================================== */
+
+async function openRankings(){
+
+try{
+
+const response=await fetch(
+"/api/rankings/all"
+);
+
+rankingsData=await response.json();
+
+renderRanking("power");
+
+}catch(error){
+
+console.error(error);
+
+}
+
+}
+
+
+function renderRanking(type){
+
+if(!rankingsData)return;
+
+const titles={
+kingdom:"🌍 المملكة",
+power:"⚡ القوة",
+war:"⚔️ الحرب",
+castle:"🏰 القلعة",
+hero:"🦸 البطل",
+heroes:"🦸 الأبطال",
+behemoth:"🦖 البهيثومي",
+alliances:"🤝 قوة التحالف",
+allianceWar:"⚔️ حرب التحالف"
+};
+
+const list=
+rankingsData[type]||[];
+
+let html=`
+
+<h2>🏆 الترتيبات</h2>
+
+<div class="rank-tabs">
+
+${Object.keys(titles).map(key=>`
+
+<button onclick="renderRanking('${key}')">
+${titles[key]}
+</button>
+
+`).join("")}
+
+</div>
+
+<div class="card">
+
+<h3>${titles[type]}</h3>
+`;
+
+if(!list.length){
+
+html+=
+"<p>لا توجد بيانات.</p>";
+
+}else{
+
+list.forEach((row,index)=>{
+
+let name="-";
+let value="";
+
+if(type==="kingdom"){
+
+name="المملكة #"+row.kingdom;
+value="⚡ "+formatNumber(row.power);
+
+}
+
+else if(type==="power"){
+
+name=row.name;
+value="⚡ "+formatNumber(row.power);
+
+}
+
+else if(type==="war"){
+
+name=row.name;
+value="⚔️ "+formatNumber(row.war_power);
+
+}
+
+else if(type==="castle"){
+
+name=row.name;
+value="🏰 Lv."+row.castle;
+
+}
+
+else if(type==="hero"){
+
+name=row.player_name;
+value=
+"🦸 "+row.hero_name+
+"<br>⚡ "+formatNumber(row.power);
+
+}
+
+else if(type==="heroes"){
+
+name=row.player_name;
+value=
+"🦸 "+formatNumber(row.heroes_power);
+
+}
+
+else if(type==="behemoth"){
+
+name=row.player_name;
+value=
+row.behemoth_name+
+"<br>⚡ "+formatNumber(row.power);
+
+}
+
+else{
+
+name=row.name;
+value=
+"⚡ "+formatNumber(
+row.war_power||
+row.alliance_power
+);
+
+}
+
+html+=`
+
+<div class="rank-row">
+
+<div class="rank-number">
+${index+1}
+</div>
+
+<div>
+<b>${escapeHTML(name)}</b>
+</div>
+
+<div>
+${value}
+</div>
+
+</div>
+
+`;
+
+});
+
+}
+
+html+=`
+</div>
+`;
+
+openModal(html);
+
+}
+
+
+/* =====================================================
+   BUILDINGS
+===================================================== */
+
+function openBuilding(type){
+
+const data={
+
+castle:[
+"🏰 قلعة Kardous",
+"مركز مدينتك. ارفع مستواها حتى المستوى 30."
+],
+
+resource:[
+"🌾 مبنى الموارد",
+"إدارة الطعام والخشب والحديد والذهب."
+],
+
+training:[
+"⚔️ معسكر الجنود",
+"درّب الجنود لزيادة قوة جيشك."
+],
+
+research:[
+"🔬 مركز الأبحاث",
+"طور تقنيات المملكة."
+],
+
+adventure:[
+"🗺️ المغامرات",
+"نظام المغامرات سيستخدم أبطالك للحصول على الخبرة والجوائز."
+],
+
+gift:[
+"🎁 الهدايا",
+"الهدايا اليومية والجوائز."
+]
+
+};
+
+const item=data[type];
+
+if(!item)return;
+
+openModal(`
+
+<h2>${item[0]}</h2>
+
+<div class="card">
+
+<p>${item[1]}</p>
+
+</div>
+
+`);
+
+}
+
+
+/* =====================================================
+   CASTLE
+===================================================== */
 
 function updateCastleUI(player){
 
-const upgrade=player.castleUpgrade;
-const button=document.getElementById("upgradeButton");
-const status=document.getElementById("upgradeStatus");
-const box=document.getElementById("buildingSpeedupBox");
-
-if(!upgrade){
-
-status.textContent="جاهز للترقية";
-button.disabled=false;
-box.classList.add("hidden");
-return;
-}
+const upgrade=
+player.castleUpgrade||{};
 
 if(upgrade.active){
 
-status.textContent="🏗️ الترقية جارية...";
-button.disabled=true;
+$("upgradeStatus").textContent=
+"🏗️ الترقية جارية...";
 
-const amount=Number((player.speedups||{}).building||0);
+$("upgradeButton").disabled=true;
 
-document.getElementById("buildingSpeedupsActive").textContent=amount;
+if(
+Number((player.speedups||{}).building)>0
+){
 
-if(amount>0){
-box.classList.remove("hidden");
+$("buildingSpeedupBox")
+.classList.remove("hidden");
+
 }else{
-box.classList.add("hidden");
+
+$("buildingSpeedupBox")
+.classList.add("hidden");
+
 }
 
 return;
+
 }
 
 if(upgrade.max){
 
-status.textContent="⭐ وصلت إلى أقصى مستوى";
-button.disabled=true;
-box.classList.add("hidden");
-return;
-}
+$("upgradeStatus").textContent=
+"⭐ وصلت إلى المستوى 30";
 
-status.textContent="جاهز للترقية";
-button.disabled=false;
-box.classList.add("hidden");
-}
-
-function updateCastleTimer(){
-
-if(!playerData)return;
-
-const upgrade=playerData.castleUpgrade;
-const timer=document.getElementById("castleTimer");
-
-if(upgrade&&upgrade.active){
-
-const remaining=upgrade.endTime-Date.now();
-
-timer.textContent=formatTime(remaining);
-
-if(remaining<=0){
-loadPlayer();
-}
-
-}else{
-
-timer.textContent="--:--";
-
-}
-}
-
-function updateTrainingUI(player){
-
-const training=player.training;
-const button=document.getElementById("trainButton");
-const status=document.getElementById("trainingStatus");
-const timer=document.getElementById("trainingTimer");
-const box=document.getElementById("trainingSpeedupBox");
-
-if(training&&training.active){
-
-button.disabled=true;
-
-status.textContent="⚔️ جاري تدريب "+training.amount+" جندي...";
-status.className="warning";
-
-timer.textContent=formatTime(training.endTime-Date.now());
-
-const amount=Number((player.speedups||{}).training||0);
-
-document.getElementById("trainingSpeedupsActive").textContent=amount;
-
-if(amount>0){
-box.classList.remove("hidden");
-}else{
-box.classList.add("hidden");
-}
+$("upgradeButton").disabled=true;
 
 return;
-}
-
-button.disabled=false;
-
-status.textContent="✅ لا يوجد تدريب حاليًا.";
-status.className="good";
-
-timer.textContent="--:--";
-box.classList.add("hidden");
-}
-
-function updateTrainingTimer(){
-
-if(!playerData)return;
-
-const training=playerData.training;
-
-if(training&&training.active){
-
-const remaining=training.endTime-Date.now();
-
-document.getElementById("trainingTimer").textContent=formatTime(remaining);
-
-if(remaining<=0){
-loadPlayer();
-}
 
 }
+
+$("upgradeStatus").textContent=
+"✅ جاهز للترقية";
+
+$("upgradeButton").disabled=false;
+
+$("buildingSpeedupBox")
+.classList.add("hidden");
+
 }
 
-function updateResearchUI(player){
 
-const research=player.research||{active:false};
-
-const status=document.getElementById("researchStatus");
-const timer=document.getElementById("researchTimer");
-const button=document.getElementById("researchButton");
-const box=document.getElementById("researchSpeedupBox");
-
-if(research.active){
-
-status.textContent="🔬 البحث الجاري: "+(research.name||"بحث");
-timer.textContent=formatTime(research.endTime-Date.now());
-button.disabled=true;
-
-const amount=Number((player.speedups||{}).research||0);
-
-document.getElementById("researchSpeedupsActive").textContent=amount;
-
-if(amount>0){
-box.classList.remove("hidden");
-}else{
-box.classList.add("hidden");
-}
-
-return;
-}
-
-status.textContent="✅ لا يوجد بحث جارٍ.";
-timer.textContent="--:--";
-button.disabled=false;
-box.classList.add("hidden");
-}
-
-function updateResearchTimer(){
-
-if(!playerData)return;
-
-const research=playerData.research||{active:false};
-
-if(research.active){
-
-const remaining=research.endTime-Date.now();
-
-document.getElementById("researchTimer").textContent=formatTime(remaining);
-
-if(remaining<=0){
-loadPlayer();
-}
-}
-}
-
-async function train(){
-
-if(!playerId)return;
-
-if(playerData&&playerData.training&&playerData.training.active){
-
-alert("⚔️ يوجد تدريب جارٍ بالفعل.");
-return;
-}
-
-const button=document.getElementById("trainButton");
-button.disabled=true;
+async function upgradeCastle(){
 
 try{
 
-const response=await fetch(`/api/player/${playerId}/train`,{
+const response=await fetch(
+`/api/player/${playerId}/upgrade-castle`,
+{
 method:"POST"
-});
+}
+);
 
 const data=await response.json();
 
 if(!response.ok){
 
-alert(data.error||"تعذر بدء التدريب.");
+alert(data.error||"تعذر الترقية.");
 
-if(data.player)updatePlayerUI(data.player);
-
-return;
-}
-
+if(data.player)
 updatePlayerUI(data.player);
 
-logEvent("⚔️ بدأ تدريب 100 جندي.");
-
-}catch(error){
-
-console.error(error);
-alert("❌ حدث خطأ في الاتصال.");
-
-}finally{
-
-if(playerData)updateTrainingUI(playerData);
-
-}
-}
-
-async function speedupTraining(){
-
-if(!playerId)return;
-
-if(!playerData||!playerData.training||!playerData.training.active){
-alert("⚠️ لا يوجد تدريب جارٍ.");
 return;
-}
 
-const amount=Number((playerData.speedups||{}).training||0);
-
-if(amount<=0){
-alert("⚠️ لا تملك تسريع تدريب.");
-return;
-}
-
-try{
-
-const response=await fetch(`/api/player/${playerId}/speedup-training`,{
-method:"POST"
-});
-
-const data=await response.json();
-
-if(!response.ok){
-
-alert(data.error||"تعذر استخدام التسريع.");
-
-if(data.player)updatePlayerUI(data.player);
-
-return;
-}
-
-updatePlayerUI(data.player);
-
-logEvent("⚡ تم استخدام تسريع التدريب.");
-
-}catch(error){
-
-console.error(error);
-alert("❌ حدث خطأ.");
-
-}
-}
-
-async function upgrade(){
-
-if(!playerId)return;
-
-try{
-
-const response=await fetch(`/api/player/${playerId}/upgrade-castle`,{
-method:"POST"
-});
-
-const data=await response.json();
-
-if(!response.ok){
-
-alert(data.error||"تعذر بدء الترقية.");
-
-if(data.player)updatePlayerUI(data.player);
-
-return;
 }
 
 updatePlayerUI(data.player);
@@ -750,32 +2152,22 @@ logEvent("🏗️ بدأت ترقية القلعة.");
 }catch(error){
 
 console.error(error);
-alert("❌ حدث خطأ.");
 
 }
+
 }
+
 
 async function speedupBuilding(){
 
-if(!playerId)return;
-
-if(!playerData||!playerData.castleUpgrade||!playerData.castleUpgrade.active){
-alert("⚠️ لا توجد ترقية قلعة جارية.");
-return;
-}
-
-const amount=Number((playerData.speedups||{}).building||0);
-
-if(amount<=0){
-alert("⚠️ لا تملك تسريع بناء.");
-return;
-}
-
 try{
 
-const response=await fetch(`/api/player/${playerId}/speedup-building`,{
+const response=await fetch(
+`/api/player/${playerId}/speedup-building`,
+{
 method:"POST"
-});
+}
+);
 
 const data=await response.json();
 
@@ -783,9 +2175,8 @@ if(!response.ok){
 
 alert(data.error||"تعذر استخدام التسريع.");
 
-if(data.player)updatePlayerUI(data.player);
-
 return;
+
 }
 
 updatePlayerUI(data.player);
@@ -795,30 +2186,201 @@ logEvent("⚡ تم استخدام تسريع البناء.");
 }catch(error){
 
 console.error(error);
-alert("❌ حدث خطأ.");
 
 }
+
 }
 
-async function startResearch(){
 
-if(!playerId)return;
+/* =====================================================
+   TRAINING
+===================================================== */
 
-if(playerData&&playerData.research&&playerData.research.active){
+function updateTrainingUI(player){
 
-alert("🔬 يوجد بحث جارٍ بالفعل.");
-return;
+const training=
+player.training||{};
+
+if(training.active){
+
+$("trainingStatus").textContent=
+"⚔️ جاري تدريب "
++training.amount
++" جندي...";
+
+$("trainingStatus").className=
+"warning";
+
+$("trainButton").disabled=true;
+
+if(
+Number((player.speedups||{}).training)>0
+){
+
+$("trainingSpeedupBox")
+.classList.remove("hidden");
+
+}else{
+
+$("trainingSpeedupBox")
+.classList.add("hidden");
+
 }
+
+}else{
+
+$("trainingStatus").textContent=
+"✅ لا يوجد تدريب حاليًا.";
+
+$("trainingStatus").className=
+"good";
+
+$("trainButton").disabled=false;
+
+$("trainingSpeedupBox")
+.classList.add("hidden");
+
+}
+
+}
+
+
+async function train(){
 
 try{
 
-const response=await fetch(`/api/player/${playerId}/research`,{
+const response=await fetch(
+`/api/player/${playerId}/train`,
+{
+method:"POST"
+}
+);
+
+const data=await response.json();
+
+if(!response.ok){
+
+alert(data.error||"تعذر التدريب.");
+
+if(data.player)
+updatePlayerUI(data.player);
+
+return;
+
+}
+
+updatePlayerUI(data.player);
+
+logEvent(
+"⚔️ بدأ تدريب 100 جندي."
+);
+
+}catch(error){
+
+console.error(error);
+
+}
+
+}
+
+
+async function speedupTraining(){
+
+try{
+
+const response=await fetch(
+`/api/player/${playerId}/speedup-training`,
+{
+method:"POST"
+}
+);
+
+const data=await response.json();
+
+if(!response.ok){
+
+alert(data.error||"تعذر التسريع.");
+
+return;
+
+}
+
+updatePlayerUI(data.player);
+
+logEvent(
+"⚡ تم استخدام تسريع التدريب."
+);
+
+}catch(error){
+
+console.error(error);
+
+}
+
+}
+
+
+/* =====================================================
+   RESEARCH
+===================================================== */
+
+function updateResearchUI(player){
+
+const research=
+player.research||{};
+
+if(research.active){
+
+$("researchStatus").textContent=
+"🔬 "+research.name;
+
+$("researchButton").disabled=true;
+
+if(
+Number((player.speedups||{}).research)>0
+){
+
+$("researchSpeedupBox")
+.classList.remove("hidden");
+
+}else{
+
+$("researchSpeedupBox")
+.classList.add("hidden");
+
+}
+
+}else{
+
+$("researchStatus").textContent=
+"✅ لا يوجد بحث جارٍ.";
+
+$("researchButton").disabled=false;
+
+$("researchSpeedupBox")
+.classList.add("hidden");
+
+}
+
+}
+
+
+async function startResearch(){
+
+try{
+
+const response=await fetch(
+`/api/player/${playerId}/research`,
+{
 method:"POST",
-headers:{"Content-Type":"application/json"},
+headers:{
+"Content-Type":"application/json"
+},
 body:JSON.stringify({
 name:"تقنية تطوير المملكة"
 })
-});
+}
+);
 
 const data=await response.json();
 
@@ -826,44 +2388,33 @@ if(!response.ok){
 
 alert(data.error||"تعذر بدء البحث.");
 
-if(data.player)updatePlayerUI(data.player);
-
 return;
+
 }
 
 updatePlayerUI(data.player);
 
-logEvent("🔬 بدأ بحث جديد.");
+logEvent("🔬 بدأ البحث.");
 
 }catch(error){
 
 console.error(error);
-alert("❌ حدث خطأ أثناء بدء البحث.");
 
 }
+
 }
+
 
 async function speedupResearch(){
 
-if(!playerId)return;
-
-if(!playerData||!playerData.research||!playerData.research.active){
-alert("⚠️ لا يوجد بحث جارٍ.");
-return;
-}
-
-const amount=Number((playerData.speedups||{}).research||0);
-
-if(amount<=0){
-alert("⚠️ لا تملك تسريع أبحاث.");
-return;
-}
-
 try{
 
-const response=await fetch(`/api/player/${playerId}/speedup-research`,{
+const response=await fetch(
+`/api/player/${playerId}/speedup-research`,
+{
 method:"POST"
-});
+}
+);
 
 const data=await response.json();
 
@@ -871,103 +2422,36 @@ if(!response.ok){
 
 alert(data.error||"تعذر استخدام التسريع.");
 
-if(data.player)updatePlayerUI(data.player);
-
 return;
+
 }
 
 updatePlayerUI(data.player);
 
-logEvent("⚡ تم استخدام تسريع الأبحاث.");
+logEvent(
+"⚡ تم استخدام تسريع الأبحاث."
+);
 
 }catch(error){
 
 console.error(error);
-alert("❌ حدث خطأ.");
 
 }
+
 }
 
-function openBuilding(type){
 
-const title=document.getElementById("buildingTitle");
-const description=document.getElementById("buildingDescription");
-
-const buildings={
-
-gift:{
-title:"🎁 الهدايا",
-description:"احصل على الهدايا اليومية."
-},
-
-resource:{
-title:"🌾 مبنى الموارد",
-description:"هنا ستدير إنتاج الطعام والخشب والحديد والذهب."
-},
-
-training:{
-title:"⚔️ معسكر الجنود",
-description:"تدريب الجنود يحتاج إلى وقت. كل تدريب حاليًا = 100 جندي."
-},
-
-research:{
-title:"🔬 مركز الأبحاث",
-description:"ابدأ الأبحاث وطوّر تقنيات المملكة."
-},
-
-adventure:{
-title:"🗺️ المغامرات",
-description:"أرسل الأبطال في مغامرات للحصول على الموارد والخبرة."
-},
-
-castle:{
-title:"🏰 قلعة Kardous",
-description:"القلعة هي مركز مدينتك. قم بترقيتها لفتح مستويات وقوة أكبر."
-}
-
-};
-
-const building=buildings[type];
-
-if(!building)return;
-
-title.textContent=building.title;
-description.textContent=building.description;
-
-show("home");
-
-window.scrollTo({
-top:document.body.scrollHeight,
-behavior:"smooth"
-});
-}
-
-function claimGift(){
-
-const today=new Date().toISOString().slice(0,10);
-const key="kardousGift_"+today;
-
-if(localStorage.getItem(key)){
-
-document.getElementById("giftMessage").textContent=
-"🎁 استلمت هدية اليوم بالفعل.";
-
-return;
-}
-
-localStorage.setItem(key,"1");
-
-document.getElementById("giftMessage").textContent=
-"🎉 تم استلام الهدية اليومية!";
-
-logEvent("🎁 استلمت الهدية اليومية.");
-}
+/* =====================================================
+   WORLD
+===================================================== */
 
 async function loadWorld(){
 
 try{
 
-const response=await fetch("/api/world");
+const response=await fetch(
+"/api/world"
+);
 
 if(!response.ok)return;
 
@@ -980,143 +2464,215 @@ renderWorld();
 console.error(error);
 
 }
+
 }
+
 
 function renderWorld(){
 
-const map=document.getElementById("worldMap");
+const map=$("worldMap");
 
-if(!map)return;
+if(!map||!worldData)return;
 
 map.innerHTML="";
 
-if(!worldData)return;
-
-if(Array.isArray(worldData.zombies)){
-
-worldData.zombies.forEach(zombie=>{
-createMapObject(map,zombie,"🧟","zombie");
+(worldData.zombies||[])
+.forEach(z=>{
+createMapObject(
+map,
+z,
+"🧟",
+"zombie"
+);
 });
 
-}
-
-if(Array.isArray(worldData.forts)){
-
-worldData.forts.forEach(fort=>{
-createMapObject(map,fort,"🏯","fort");
+(worldData.forts||[])
+.forEach(f=>{
+createMapObject(
+map,
+f,
+"🏯",
+"fort"
+);
 });
 
-}
-
-if(Array.isArray(worldData.players)){
-
-worldData.players.forEach(player=>{
-createMapObject(map,player,"🏰","player");
+(worldData.players||[])
+.forEach(p=>{
+createMapObject(
+map,
+p,
+"🏰",
+"player"
+);
 });
-
-}
 
 renderMarches();
+
 }
 
-function createMapObject(map,object,icon,type){
 
-const element=document.createElement("div");
+function createMapObject(
+map,
+object,
+icon,
+type
+){
+
+const element=
+document.createElement("div");
 
 element.className=
 "map-object "+
-(type==="player"?"player-object":"");
+(type==="player"
+?"player-object":"");
 
-element.textContent=icon;
+element.innerHTML=
+icon+
+`<div class="map-name">${
+escapeHTML(object.name||type)
+}</div>`;
 
 const x=Number(object.x||0);
 const y=Number(object.y||0);
 
-const left=Math.max(3,Math.min(97,((x+1000)/2000)*100));
-const top=Math.max(3,Math.min(97,((y+1000)/2000)*100));
+const left=
+Math.max(
+3,
+Math.min(
+97,
+((x+1000)/2000)*100
+)
+);
 
-element.style.left=left+"%";
-element.style.top=top+"%";
+const top=
+Math.max(
+3,
+Math.min(
+97,
+((y+1000)/2000)*100
+)
+);
 
-element.title=object.name||type;
+element.style.left=
+left+"%";
 
-element.onclick=function(event){
+element.style.top=
+top+"%";
 
-event.stopPropagation();
+element.onclick=function(e){
 
-selectTarget(type,object);
+e.stopPropagation();
+
+selectTarget(
+type,
+object,
+element
+);
 
 };
 
 map.appendChild(element);
+
 }
 
-function selectTarget(type,object){
+
+function selectTarget(
+type,
+object,
+element
+){
 
 selectedTarget={
-type:type,
+type,
 id:object.id,
-name:object.name||
-(type==="zombie"?"زومبي":type==="fort"?"حصن":"لاعب")
+name:object.name||type
 };
 
-document.getElementById("selectedTarget").textContent=
-selectedTarget.name+" — ID: "+selectedTarget.id;
+$("selectedTarget").textContent=
+selectedTarget.name+
+" — ID: "+
+selectedTarget.id;
 
-document.querySelectorAll(".map-object").forEach(element=>{
-element.classList.remove("target");
-});
+document.querySelectorAll(
+".map-object"
+)
+.forEach(x=>
+x.classList.remove("target")
+);
 
-logEvent("🎯 تم تحديد: "+selectedTarget.name);
+element.classList.add("target");
+
+logEvent(
+"🎯 تم تحديد "+selectedTarget.name
+);
+
 }
+
 
 async function attackTarget(){
 
-if(!playerId){
-
-alert("يجب تسجيل الدخول أولًا.");
-return;
-}
-
 if(!selectedTarget){
 
-alert("🎯 اختر هدفًا من الخريطة أولًا.");
+alert("🎯 اختر هدفًا أولًا.");
+
 return;
+
 }
 
-if(selectedTarget.type!=="zombie"&&selectedTarget.type!=="fort"){
+if(
+selectedTarget.type!=="zombie" &&
+selectedTarget.type!=="fort"
+){
 
-alert("⚠️ مهاجمة اللاعبين ستتم إضافتها في نظام حروب اللاعبين القادم.");
+alert(
+"⚠️ حروب اللاعبين قادمة. حاليًا تستطيع مهاجمة الزومبي والحصون."
+);
+
 return;
+
 }
 
-if(!playerData||Number(playerData.troops||0)<=0){
+if(
+!playerData||
+Number(playerData.troops)<=0
+){
 
 alert("⚔️ لا تملك جنودًا.");
+
 return;
+
 }
 
 try{
 
-const response=await fetch(`/api/player/${playerId}/march`,{
+const response=await fetch(
+`/api/player/${playerId}/march`,
+{
 method:"POST",
-headers:{"Content-Type":"application/json"},
+headers:{
+"Content-Type":"application/json"
+},
 body:JSON.stringify({
 targetType:selectedTarget.type,
 targetId:selectedTarget.id,
 troops:playerData.troops
 })
-});
+}
+);
 
 const data=await response.json();
 
 if(!response.ok){
 
 alert(data.error||"تعذر إرسال الجيش.");
+
 return;
+
 }
 
-logEvent("🚶 تم إرسال الجيش إلى "+selectedTarget.name);
+logEvent(
+"🚶 تم إرسال الجيش."
+);
 
 await loadPlayer();
 await loadWorld();
@@ -1124,87 +2680,130 @@ await loadWorld();
 }catch(error){
 
 console.error(error);
-alert("❌ حدث خطأ أثناء إرسال الجيش.");
 
 }
+
 }
+
 
 function renderMarches(){
 
-const container=document.getElementById("marches");
+const box=$("marches");
 
-if(!container)return;
+if(!worldData||
+!worldData.marches||
+!worldData.marches.length
+){
 
-if(!worldData||!Array.isArray(worldData.marches)||worldData.marches.length===0){
+box.textContent=
+"لا توجد مسيرات.";
 
-container.textContent="لا توجد مسيرات.";
 return;
+
 }
 
-container.innerHTML="";
+box.innerHTML="";
 
-worldData.marches.forEach(march=>{
+worldData.marches
+.forEach(march=>{
 
-const div=document.createElement("div");
+const div=
+document.createElement("div");
 
 div.className="card";
 
-div.innerHTML=
-"🚶 المسيرة #"+escapeHTML(march.id)
-+"<br>⚔️ الجنود: "+escapeHTML(march.troops)
-+"<br>🎯 الهدف: "+escapeHTML(march.targetType)
-+" #"+escapeHTML(march.targetId);
+div.innerHTML=`
 
-container.appendChild(div);
+🚶 المسيرة #${march.id}
+
+<br>
+
+⚔️ الجنود:
+${formatNumber(march.troops)}
+
+<br>
+
+🎯 الهدف:
+${escapeHTML(march.target_type)}
+#${march.target_id}
+
+`;
+
+box.appendChild(div);
 
 });
+
 }
+
+
+/* =====================================================
+   REPORTS
+===================================================== */
 
 async function loadReports(){
 
 if(!playerId)return;
 
-const container=document.getElementById("reportsList");
+const box=$("reportsList");
 
-container.textContent="⏳ جاري تحميل التقارير...";
+box.textContent=
+"⏳ جاري التحميل...";
 
 try{
 
-const response=await fetch(`/api/reports/${playerId}`);
+const response=await fetch(
+`/api/reports/${playerId}`
+);
 
-if(!response.ok){
+const reports=
+await response.json();
 
-container.textContent="❌ تعذر تحميل التقارير.";
+if(!reports.length){
+
+box.textContent=
+"📜 لا توجد تقارير.";
+
 return;
+
 }
 
-const data=await response.json();
-
-const reports=Array.isArray(data)
-?data
-:(Array.isArray(data.reports)?data.reports:[]);
-
-if(reports.length===0){
-
-container.textContent="📜 لا توجد تقارير حتى الآن.";
-return;
-}
-
-container.innerHTML="";
+box.innerHTML="";
 
 reports.forEach(report=>{
 
-const div=document.createElement("div");
+const div=
+document.createElement("div");
 
 div.className="report";
 
-div.innerHTML=
-"⚔️ "+escapeHTML(report.result||"معركة")
-+"<br>🎯 الهدف: "+escapeHTML(report.target_type||report.targetType||"-")
-+"<br>⚔️ الجنود: "+escapeHTML(report.troops_sent||report.troops||0)
-+"<br>🕒 "+escapeHTML(report.created_at||report.createdAt||"");
+div.innerHTML=`
 
-container.appendChild(div);
+<b>
+${escapeHTML(report.result)}
+</b>
+
+<br>
+
+🎯 الهدف:
+${escapeHTML(report.target_type)}
+#${report.target_id}
+
+<br>
+
+⚔️ الجنود:
+${formatNumber(report.troops_sent)}
+
+<br>
+
+<span class="small">
+🕒 ${new Date(
+report.created_at
+).toLocaleString()}
+</span>
+
+`;
+
+box.appendChild(div);
 
 });
 
@@ -1212,10 +2811,17 @@ container.appendChild(div);
 
 console.error(error);
 
-container.textContent="❌ حدث خطأ أثناء تحميل التقارير.";
+box.textContent=
+"❌ حدث خطأ.";
 
 }
+
 }
+
+
+/* =====================================================
+   SOCKET
+===================================================== */
 
 function connectSocket(){
 
@@ -1223,127 +2829,283 @@ if(socket)return;
 
 socket=io();
 
-socket.on("connect",function(){
+socket.on("connect",()=>{
 
-logEvent("🟢 تم الاتصال بالسيرفر.");
+logEvent(
+"🟢 تم الاتصال بالسيرفر."
+);
+
 loadWorld();
 
 });
 
-socket.on("playerUpdated",function(player){
+socket.on(
+"playerUpdated",
+player=>{
 
-if(!player)return;
-
-if(String(player.id)===String(playerId)){
+if(
+player &&
+String(player.id)===
+String(playerId)
+){
 
 updatePlayerUI(player);
 
 }
+
 });
 
-socket.on("trainingFinished",function(data){
+socket.on(
+"trainingFinished",
+data=>{
 
-if(data&&String(data.playerId)===String(playerId)){
+if(
+data &&
+String(data.playerId)===
+String(playerId)
+){
 
-logEvent("🎉 انتهى تدريب "+data.amount+" جندي!");
+logEvent(
+"🎉 انتهى تدريب "
++data.amount+
+" جندي!"
+);
 
 loadPlayer();
 
 }
+
 });
 
-socket.on("castleUpgradeFinished",function(data){
+socket.on(
+"castleUpgradeFinished",
+data=>{
 
-if(data&&String(data.id)===String(playerId)){
+if(
+data &&
+String(data.id)===
+String(playerId)
+){
+
+logEvent(
+"🏰 اكتملت ترقية القلعة!"
+);
 
 updatePlayerUI(data);
 
-logEvent("🏰 اكتملت ترقية القلعة!");
-
 }
+
 });
 
-socket.on("researchFinished",function(data){
+socket.on(
+"researchFinished",
+data=>{
 
-if(data&&String(data.playerId)===String(playerId)){
+if(
+data &&
+String(data.playerId)===
+String(playerId)
+){
 
-logEvent("🔬 اكتمل البحث!");
+logEvent(
+"🔬 اكتمل البحث!"
+);
 
 loadPlayer();
 
 }
+
 });
 
-socket.on("battleFinished",function(){
+socket.on(
+"battleFinished",
+data=>{
 
-logEvent("⚔️ انتهت معركة!");
+if(
+data &&
+String(data.playerId)===
+String(playerId)
+){
+
+logEvent(
+"⚔️ انتهت المعركة: "+
+data.result
+);
+
+}
 
 loadPlayer();
 loadWorld();
 
 });
 
-socket.on("worldUpdated",function(data){
-
-if(data){
+socket.on(
+"worldUpdated",
+data=>{
 
 worldData=data;
 renderWorld();
 
+});
+
+socket.on(
+"heroUpdated",
+()=>{
+
+if(
+!$("modal").classList.contains("hidden")
+){
+
 }
+
+});
+
+socket.on(
+"behemothUpdated",
+()=>{
+
+});
+
+socket.on(
+"allianceUpdated",
+()=>{
+
+loadPlayer();
+
 });
 
 }
 
-setInterval(function(){
 
-updateCastleTimer();
-updateTrainingTimer();
-updateResearchTimer();
+/* =====================================================
+   TIMERS
+===================================================== */
+
+setInterval(()=>{
+
+if(!playerData)return;
+
+const castle=
+playerData.castleUpgrade||{};
+
+const training=
+playerData.training||{};
+
+const research=
+playerData.research||{};
+
+$("castleTimer").textContent=
+castle.active
+?formatTime(
+castle.endTime-Date.now()
+)
+:"--:--";
+
+$("trainingTimer").textContent=
+training.active
+?formatTime(
+training.endTime-Date.now()
+)
+:"--:--";
+
+$("researchTimer").textContent=
+research.active
+?formatTime(
+research.endTime-Date.now()
+)
+:"--:--";
+
+if(
+castle.active &&
+castle.endTime<=Date.now()
+){
+
+loadPlayer();
+
+}
+
+if(
+training.active &&
+training.endTime<=Date.now()
+){
+
+loadPlayer();
+
+}
+
+if(
+research.active &&
+research.endTime<=Date.now()
+){
+
+loadPlayer();
+
+}
 
 },1000);
 
+
+/* =====================================================
+   START
+===================================================== */
+
 async function startGame(){
 
-const savedId=localStorage.getItem("kardousPlayerId");
+const saved=
+localStorage.getItem(
+"kardousPlayerId"
+);
 
-if(!savedId){
+if(!saved){
 
-document.getElementById("loginScreen").classList.remove("hidden");
+$("loginScreen")
+.classList.remove("hidden");
+
 return;
+
 }
 
-playerId=savedId;
+playerId=saved;
 
 try{
 
-const response=await fetch(`/api/player/${playerId}`);
+const response=await fetch(
+`/api/player/${playerId}`
+);
 
 if(!response.ok){
 
-localStorage.removeItem("kardousPlayerId");
+localStorage.removeItem(
+"kardousPlayerId"
+);
 
-document.getElementById("loginScreen").classList.remove("hidden");
+$("loginScreen")
+.classList.remove("hidden");
 
 return;
+
 }
 
 const data=await response.json();
 
 updatePlayerUI(data);
 
-document.getElementById("loginScreen").classList.add("hidden");
+$("loginScreen")
+.classList.add("hidden");
 
 connectSocket();
+
 loadWorld();
 
 }catch(error){
 
 console.error(error);
 
-document.getElementById("loginScreen").classList.remove("hidden");
+$("loginScreen")
+.classList.remove("hidden");
 
 }
+
 }
 
 startGame();
