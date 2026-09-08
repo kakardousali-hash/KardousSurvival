@@ -1,14 +1,7 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<!DOCTYPE html><html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-
-<title>Kardous Survival</title>
-
-<script src="/socket.io/socket.io.js"></script>
-
-<style>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Kardous Survival</title><script src="/socket.io/socket.io.js"></script><style>
 
 *{
     box-sizing:border-box;
@@ -32,10 +25,6 @@ button{
     padding:10px;
 }
 
-/* =========================
-   HEADER
-========================= */
-
 .header{
     background:rgba(8,13,10,.95);
     border:1px solid #8d6b2c;
@@ -55,10 +44,6 @@ button{
     color:#aebbb3;
     font-size:13px;
 }
-
-/* =========================
-   LOGIN
-========================= */
 
 .login{
     max-width:450px;
@@ -111,10 +96,6 @@ button:hover{
     color:#f3cf67;
 }
 
-/* =========================
-   GAME
-========================= */
-
 .game{
     display:none;
 }
@@ -132,10 +113,6 @@ button:hover{
     font-size:20px;
     font-weight:bold;
 }
-
-/* =========================
-   RESOURCES
-========================= */
 
 .resources{
     display:grid;
@@ -158,10 +135,6 @@ button:hover{
     color:#f4d06b;
 }
 
-/* =========================
-   NAVIGATION
-========================= */
-
 .nav{
     display:grid;
     grid-template-columns:repeat(4,1fr);
@@ -173,10 +146,6 @@ button:hover{
     font-size:13px;
     padding:10px 4px;
 }
-
-/* =========================
-   PAGES
-========================= */
 
 .page{
     display:none;
@@ -200,14 +169,13 @@ button:hover{
 }
 
 /* =========================
-   CASTLE
+   CASTLE SCENE
 ========================= */
 
 .castleScene{
-    min-height:430px;
+    min-height:470px;
     position:relative;
     overflow:hidden;
-
     background:
         linear-gradient(
             rgba(25,45,28,.3),
@@ -219,9 +187,36 @@ button:hover{
             #1e3823 50%,
             #0b160d
         );
-
     border:2px solid #6f7658;
     border-radius:16px;
+    transition:all .5s;
+}
+
+.castleTitle{
+    position:absolute;
+    top:15px;
+    width:100%;
+    text-align:center;
+    z-index:20;
+}
+
+.castleTitle h2{
+    margin:0;
+    color:#f5d36c;
+    font-size:24px;
+}
+
+.castleStage{
+    margin-top:5px;
+    font-size:15px;
+    color:#ddd;
+}
+
+.castleStars{
+    margin-top:5px;
+    font-size:22px;
+    color:#ffd95a;
+    letter-spacing:3px;
 }
 
 .mountain{
@@ -239,6 +234,10 @@ button:hover{
     opacity:.8;
 }
 
+/* =========================
+   CASTLE BUILDING
+========================= */
+
 .castleBuilding{
     position:absolute;
     left:50%;
@@ -246,6 +245,7 @@ button:hover{
     transform:translateX(-50%);
     width:230px;
     height:190px;
+    transition:all .5s;
 }
 
 .wall{
@@ -257,6 +257,7 @@ button:hover{
     background:
         linear-gradient(#a9a28b,#665f4c);
     border:5px solid #37362f;
+    transition:all .5s;
 }
 
 .tower{
@@ -266,6 +267,7 @@ button:hover{
     height:155px;
     background:linear-gradient(#aaa48c,#625d4c);
     border:5px solid #37362f;
+    transition:all .5s;
 }
 
 .tower.left{
@@ -284,6 +286,7 @@ button:hover{
     height:45px;
     background:#6e2d27;
     clip-path:polygon(50% 0,100% 100%,0 100%);
+    transition:all .5s;
 }
 
 .gate{
@@ -319,16 +322,186 @@ button:hover{
     border-radius:2px;
 }
 
-.castleTitle{
-    position:absolute;
-    top:15px;
-    width:100%;
-    text-align:center;
+/* =========================
+   CASTLE LEVEL STYLES
+========================= */
+
+/* 1 - 5 */
+.castleScene.level1 .castleBuilding,
+.castleScene.level2 .castleBuilding,
+.castleScene.level3 .castleBuilding,
+.castleScene.level4 .castleBuilding,
+.castleScene.level5 .castleBuilding{
+    transform:translateX(-50%) scale(1);
 }
 
-.castleTitle h2{
-    margin:0;
-    color:#f5d36c;
+/* 6 - 10 */
+.castleScene.level6 .castleBuilding,
+.castleScene.level7 .castleBuilding,
+.castleScene.level8 .castleBuilding,
+.castleScene.level9 .castleBuilding,
+.castleScene.level10 .castleBuilding{
+    transform:translateX(-50%) scale(1.08);
+}
+
+.castleScene.level6 .tower,
+.castleScene.level7 .tower,
+.castleScene.level8 .tower,
+.castleScene.level9 .tower,
+.castleScene.level10 .tower{
+    height:170px;
+}
+
+.castleScene.level6 .roof,
+.castleScene.level7 .roof,
+.castleScene.level8 .roof,
+.castleScene.level9 .roof,
+.castleScene.level10 .roof{
+    background:#4d3330;
+}
+
+/* 11 - 15 */
+.castleScene.level11 .castleBuilding,
+.castleScene.level12 .castleBuilding,
+.castleScene.level13 .castleBuilding,
+.castleScene.level14 .castleBuilding,
+.castleScene.level15 .castleBuilding{
+    transform:translateX(-50%) scale(1.16);
+}
+
+.castleScene.level11 .tower,
+.castleScene.level12 .tower,
+.castleScene.level13 .tower,
+.castleScene.level14 .tower,
+.castleScene.level15 .tower{
+    height:185px;
+    width:62px;
+}
+
+.castleScene.level11 .wall,
+.castleScene.level12 .wall,
+.castleScene.level13 .wall,
+.castleScene.level14 .wall,
+.castleScene.level15 .wall{
+    height:120px;
+}
+
+/* 16 - 20 */
+.castleScene.level16 .castleBuilding,
+.castleScene.level17 .castleBuilding,
+.castleScene.level18 .castleBuilding,
+.castleScene.level19 .castleBuilding,
+.castleScene.level20 .castleBuilding{
+    transform:translateX(-50%) scale(1.25);
+}
+
+.castleScene.level16 .tower,
+.castleScene.level17 .tower,
+.castleScene.level18 .tower,
+.castleScene.level19 .tower,
+.castleScene.level20 .tower{
+    height:200px;
+    width:68px;
+}
+
+.castleScene.level16 .roof,
+.castleScene.level17 .roof,
+.castleScene.level18 .roof,
+.castleScene.level19 .roof,
+.castleScene.level20 .roof{
+    background:#332b50;
+}
+
+/* 21 - 25 */
+.castleScene.level21 .castleBuilding,
+.castleScene.level22 .castleBuilding,
+.castleScene.level23 .castleBuilding,
+.castleScene.level24 .castleBuilding,
+.castleScene.level25 .castleBuilding{
+    transform:translateX(-50%) scale(1.35);
+}
+
+.castleScene.level21 .tower,
+.castleScene.level22 .tower,
+.castleScene.level23 .tower,
+.castleScene.level24 .tower,
+.castleScene.level25 .tower{
+    height:215px;
+    width:73px;
+}
+
+.castleScene.level21 .wall,
+.castleScene.level22 .wall,
+.castleScene.level23 .wall,
+.castleScene.level24 .wall,
+.castleScene.level25 .wall{
+    height:135px;
+}
+
+/* 26 - 29 */
+.castleScene.level26 .castleBuilding,
+.castleScene.level27 .castleBuilding,
+.castleScene.level28 .castleBuilding,
+.castleScene.level29 .castleBuilding{
+    transform:translateX(-50%) scale(1.45);
+}
+
+.castleScene.level26 .tower,
+.castleScene.level27 .tower,
+.castleScene.level28 .tower,
+.castleScene.level29 .tower{
+    height:230px;
+    width:78px;
+}
+
+.castleScene.level26 .roof,
+.castleScene.level27 .roof,
+.castleScene.level28 .roof,
+.castleScene.level29 .roof{
+    background:#302c35;
+}
+
+/* LEVEL 30 */
+.castleScene.level30 .castleBuilding{
+    transform:translateX(-50%) scale(1.6);
+}
+
+.castleScene.level30 .tower{
+    height:245px;
+    width:84px;
+}
+
+.castleScene.level30 .wall{
+    height:150px;
+    background:
+        linear-gradient(#c6b878,#77682d);
+    border-color:#211d12;
+}
+
+.castleScene.level30 .roof{
+    background:#6f2525;
+}
+
+.castleScene.level30{
+    border-color:#d2aa45;
+    box-shadow:
+        inset 0 0 40px rgba(255,215,80,.15),
+        0 0 25px rgba(210,170,69,.25);
+}
+
+/* STARS */
+.castleScene.star1,
+.castleScene.star2,
+.castleScene.star3,
+.castleScene.star4,
+.castleScene.star5{
+    border-color:#d8b34c;
+}
+
+.castleScene.star5{
+    box-shadow:
+        inset 0 0 50px rgba(255,215,80,.2),
+        0 0 35px rgba(255,215,80,.3);
 }
 
 /* =========================
@@ -456,18 +629,10 @@ button:hover{
     font-size:38px;
 }
 
-/* =========================
-   LOGOUT
-========================= */
-
 .logout{
     background:#542c2c;
     border-color:#995252;
 }
-
-/* =========================
-   MOBILE
-========================= */
 
 @media(max-width:600px){
 
@@ -480,7 +645,11 @@ button:hover{
     }
 
     .castleScene{
-        min-height:380px;
+        min-height:400px;
+    }
+
+    .castleBuilding{
+        bottom:25px;
     }
 
     .grid{
@@ -489,408 +658,279 @@ button:hover{
 
 }
 
-</style>
-</head>
+</style></head><body><div class="app"><header class="header"><h1>🏰 Kardous Survival</h1>
 
-<body>
-
-<div class="app">
-
-<!-- =========================
-     HEADER
-========================= -->
-
-<header class="header">
-
-    <h1>🏰 Kardous Survival</h1>
-
-    <div class="status" id="status">
-        جاري الاتصال بالسيرفر...
-    </div>
-
-</header>
-
-
-<!-- =========================
-     LOGIN
-========================= -->
-
-<div class="login" id="loginBox">
-
-    <div class="loginIcon">🏰</div>
-
-    <h2>ابدأ مملكتك</h2>
-
-    <p>
-        اختر اسم قائدك وابدأ رحلة البقاء.
-    </p>
-
-    <input
-        id="playerName"
-        maxlength="20"
-        placeholder="اسم القائد"
-        autocomplete="off"
-    >
-
-    <button
-        id="loginButton"
-        onclick="registerPlayer()"
-    >
-        🚀 دخول اللعبة
-    </button>
-
-    <div
-        class="message"
-        id="loginMessage"
-    ></div>
-
+<div class="status" id="status">
+    جاري الاتصال بالسيرفر...
 </div>
 
+</header><div class="login" id="loginBox"><div class="loginIcon">🏰</div>
 
-<!-- =========================
-     GAME
-========================= -->
+<h2>ابدأ مملكتك</h2>
 
-<div class="game" id="gameBox">
+<p>
+    اختر اسم قائدك وابدأ رحلة البقاء.
+</p>
 
+<input
+    id="playerName"
+    maxlength="20"
+    placeholder="اسم القائد"
+    autocomplete="off"
+>
 
-<!-- PLAYER -->
-
-<div class="topPlayer">
-
-    👑 القائد:
-
-    <span
-        class="playerName"
-        id="name"
-    ></span>
-
-    <br>
-
-    🏰 القلعة:
-
-    <b id="castle">1</b>
-
-    ⭐ النجوم:
-
-    <b id="stars">0</b>
-
-    <br>
-
-    ⚡ القوة:
-
-    <b id="power">0</b>
-
-    <br>
-
-    ⚔️ الجنود:
-
-    <b id="troops">0</b>
-
-</div>
-
-
-<!-- RESOURCES -->
-
-<div class="resources">
-
-    <div class="resource">
-        🍎 الطعام
-        <b id="food">0</b>
-    </div>
-
-    <div class="resource">
-        🪵 الخشب
-        <b id="wood">0</b>
-    </div>
-
-    <div class="resource">
-        ⛓️ الحديد
-        <b id="iron">0</b>
-    </div>
-
-    <div class="resource">
-        🪙 الذهب
-        <b id="gold">0</b>
-    </div>
-
-</div>
-
-
-<!-- NAVIGATION -->
-
-<div class="nav">
-
-    <button onclick="showPage('castlePage')">
-        🏰 القلعة
-    </button>
-
-    <button onclick="showPage('heroesPage')">
-        🦸 الأبطال
-    </button>
-
-    <button onclick="showPage('behemothsPage')">
-        🐲 الوحوش
-    </button>
-
-    <button onclick="showPage('mapPage')">
-        🗺️ الخريطة
-    </button>
-
-</div>
-
-
-<!-- =========================
-     CASTLE PAGE
-========================= -->
+<button
+    id="loginButton"
+    onclick="registerPlayer()"
+>
+    🚀 دخول اللعبة
+</button>
 
 <div
+    class="message"
+    id="loginMessage"
+></div>
+
+</div><div class="game" id="gameBox"><div class="topPlayer">👑 القائد:
+
+<span
+    class="playerName"
+    id="name"
+></span>
+
+<br>
+
+🏰 القلعة:
+
+<b id="castle">1</b>
+
+⭐ النجوم:
+
+<b id="stars">0</b>
+
+<br>
+
+⚡ القوة:
+
+<b id="power">0</b>
+
+<br>
+
+⚔️ الجنود:
+
+<b id="troops">0</b>
+
+</div><div class="resources"><div class="resource">
+    🍎 الطعام
+    <b id="food">0</b>
+</div>
+
+<div class="resource">
+    🪵 الخشب
+    <b id="wood">0</b>
+</div>
+
+<div class="resource">
+    ⛓️ الحديد
+    <b id="iron">0</b>
+</div>
+
+<div class="resource">
+    🪙 الذهب
+    <b id="gold">0</b>
+</div>
+
+</div><div class="nav"><button onclick="showPage('castlePage')">
+    🏰 القلعة
+</button>
+
+<button onclick="showPage('heroesPage')">
+    🦸 الأبطال
+</button>
+
+<button onclick="showPage('behemothsPage')">
+    🐲 الوحوش
+</button>
+
+<button onclick="showPage('mapPage')">
+    🗺️ الخريطة
+</button>
+
+</div><div
     class="page active"
     id="castlePage"
+><div
+    class="castleScene level1"
+    id="castleScene"
+><div class="castleTitle">
+
+    <h2 id="castleName">
+        🏰 قلعة Kardous
+    </h2>
+
+    <div class="castleStage" id="castleStage">
+        قلعة البداية
+    </div>
+
+    <div>
+        المستوى
+        <b id="castleLevel">1</b>
+    </div>
+
+    <div
+        class="castleStars"
+        id="castleStarsVisual"
+    >
+        ☆☆☆☆☆
+    </div>
+
+</div>
+
+<div class="mountain"></div>
+
+<div class="castleBuilding">
+
+    <div class="tower left">
+        <div class="roof"></div>
+    </div>
+
+    <div class="tower right">
+        <div class="roof"></div>
+    </div>
+
+    <div class="wall">
+
+        <div class="gate"></div>
+
+    </div>
+
+    <div class="flag"></div>
+
+</div>
+
+</div><div class="panel"><h2>🏗️ تطوير القلعة</h2>
+
+<p id="upgradeInfo">
+    طور القلعة للوصول إلى المستوى التالي.
+</p>
+
+<button
+    onclick="upgradeCastle()"
+    id="upgradeCastleButton"
 >
+    🏗️ تطوير القلعة
+</button>
 
-<div class="castleScene">
+<button onclick="collectResources()">
+    🎁 جمع الموارد
+</button>
 
-    <div class="castleTitle">
+</div><div class="panel"><h2>🏛️ مباني المملكة</h2>
 
-        <h2>🏰 قلعة Kardous</h2>
+<div class="buildings">
 
-        <div>
-            المستوى
-            <b id="castleLevel">1</b>
-        </div>
-
+    <div class="building">
+        <div class="buildingIcon">🏛️</div>
+        مبنى القائد
     </div>
 
-    <div class="mountain"></div>
-
-    <div class="castleBuilding">
-
-        <div class="tower left">
-            <div class="roof"></div>
-        </div>
-
-        <div class="tower right">
-            <div class="roof"></div>
-        </div>
-
-        <div class="wall">
-
-            <div class="gate"></div>
-
-        </div>
-
-        <div class="flag"></div>
-
+    <div class="building">
+        <div class="buildingIcon">⚔️</div>
+        الثكنة
     </div>
 
-</div>
+    <div class="building">
+        <div class="buildingIcon">🔬</div>
+        مركز الأبحاث
+    </div>
 
+    <div class="building">
+        <div class="buildingIcon">🏥</div>
+        المستشفى
+    </div>
 
-<div class="panel">
+    <div class="building">
+        <div class="buildingIcon">🌾</div>
+        مزرعة
+    </div>
 
-    <h2>🏗️ تطوير القلعة</h2>
-
-    <p>
-        تطوير القلعة يزيد قوة مملكتك.
-    </p>
-
-    <button onclick="upgradeCastle()">
-        🏗️ تطوير القلعة
-    </button>
-
-    <button onclick="collectResources()">
-        🎁 جمع الموارد
-    </button>
-
-</div>
-
-
-<div class="panel">
-
-    <h2>🏛️ مباني المملكة</h2>
-
-    <div class="buildings">
-
-        <div class="building">
-            <div class="buildingIcon">🏛️</div>
-            مبنى القائد
-        </div>
-
-        <div class="building">
-            <div class="buildingIcon">⚔️</div>
-            الثكنة
-        </div>
-
-        <div class="building">
-            <div class="buildingIcon">🔬</div>
-            مركز الأبحاث
-        </div>
-
-        <div class="building">
-            <div class="buildingIcon">🏥</div>
-            المستشفى
-        </div>
-
-        <div class="building">
-            <div class="buildingIcon">🌾</div>
-            مزرعة
-        </div>
-
-        <div class="building">
-            <div class="buildingIcon">🪵</div>
-            مصنع الخشب
-        </div>
-
+    <div class="building">
+        <div class="buildingIcon">🪵</div>
+        مصنع الخشب
     </div>
 
 </div>
 
-</div>
-
-
-<!-- =========================
-     HEROES PAGE
-========================= -->
-
-<div
+</div></div><div
     class="page"
     id="heroesPage"
->
+><div class="panel"><h2>🦸 أبطال المملكة</h2>
 
-<div class="panel">
-
-    <h2>🦸 أبطال المملكة</h2>
-
-    <p class="small">
-        اختر بطلاً وشاهد مستواه وقوته.
-    </p>
-
-    <div
-        class="grid"
-        id="heroesList"
-    >
-
-        جاري تحميل الأبطال...
-
-    </div>
-
-</div>
-
-</div>
-
-
-<!-- =========================
-     BEHEMOTHS PAGE
-========================= -->
+<p class="small">
+    اختر بطلاً وشاهد مستواه وقوته.
+</p>
 
 <div
+    class="grid"
+    id="heroesList"
+>
+    جاري تحميل الأبطال...
+</div>
+
+</div></div><div
     class="page"
     id="behemothsPage"
->
-
-<div class="panel">
-
-    <h2>🐲 الوحوش العملاقة</h2>
-
-    <div
-        class="grid"
-        id="behemothsList"
-    >
-
-        جاري تحميل الوحوش...
-
-    </div>
-
-</div>
-
-</div>
-
-
-<!-- =========================
-     MAP PAGE
-========================= -->
+><div class="panel"><h2>🐲 الوحوش العملاقة</h2>
 
 <div
+    class="grid"
+    id="behemothsList"
+>
+    جاري تحميل الوحوش...
+</div>
+
+</div></div><div
     class="page"
     id="mapPage"
+><div class="panel"><h2>🗺️ خريطة العالم</h2>
+
+<p class="small">
+    استكشف الزومبي والحصون واللاعبين.
+</p>
+
+<div
+    class="map"
+    id="worldMap"
 >
 
-<div class="panel">
-
-    <h2>🗺️ خريطة العالم</h2>
-
-    <p class="small">
-        استكشف الزومبي والحصون واللاعبين.
-    </p>
-
-    <div
-        class="map"
-        id="worldMap"
-    >
-
-        <div class="mapTitle">
-            🌍 عالم Kardous Survival
-        </div>
-
+    <div class="mapTitle">
+        🌍 عالم Kardous Survival
     </div>
 
 </div>
 
-</div>
-
-
-<!-- =========================
-     MESSAGE
-========================= -->
-
-<div
+</div></div><div
     class="panel"
     id="messagePanel"
+><div
+    class="message"
+    id="gameMessage"
+></div>
+
+<button
+    class="logout"
+    onclick="logout()"
 >
+    🚪 خروج
+</button>
 
-    <div
-        class="message"
-        id="gameMessage"
-    ></div>
-
-    <button
-        class="logout"
-        onclick="logout()"
-    >
-        🚪 خروج
-    </button>
-
-</div>
-
-
-</div>
-
-</div>
-
-
-<script>
-
-/* =========================
-   VARIABLES
-========================= */
+</div></div></div><script>
 
 let player = null;
-
 let socket = null;
-
-
-/* =========================
-   ELEMENT
-========================= */
 
 const $ = id =>
     document.getElementById(id);
-
-
-/* =========================
-   MESSAGE
-========================= */
 
 function message(text){
 
@@ -898,22 +938,22 @@ function message(text){
 
 }
 
-
 /* =========================
    API
 ========================= */
 
 async function api(url, options = {}){
 
-    const response = await fetch(
-        url,
-        {
-            headers:{
-                "Content-Type":"application/json"
-            },
-            ...options
-        }
-    );
+    const response =
+        await fetch(
+            url,
+            {
+                headers:{
+                    "Content-Type":"application/json"
+                },
+                ...options
+            }
+        );
 
     const text =
         await response.text();
@@ -944,7 +984,6 @@ async function api(url, options = {}){
     return data;
 
 }
-
 
 /* =========================
    REGISTER
@@ -1029,7 +1068,6 @@ async function registerPlayer(){
 
 }
 
-
 /* =========================
    SHOW GAME
 ========================= */
@@ -1046,6 +1084,127 @@ function showGame(){
 
 }
 
+/* =========================
+   CASTLE VISUAL
+========================= */
+
+function updateCastleVisual(){
+
+    if(!player) return;
+
+    const level =
+        Number(player.castle_level || 1);
+
+    const stars =
+        Number(player.castle_stars || 0);
+
+    const scene =
+        $("castleScene");
+
+    scene.className =
+        "castleScene level" + level;
+
+    if(level >= 30){
+
+        scene.classList.add(
+            "star" + stars
+        );
+
+    }
+
+    let stage =
+        "قلعة البداية";
+
+    if(level >= 6 && level <= 10)
+        stage = "🏯 القلعة المحصنة";
+
+    else if(level >= 11 && level <= 15)
+        stage = "🏰 القلعة المتقدمة";
+
+    else if(level >= 16 && level <= 20)
+        stage = "👑 القلعة الملكية";
+
+    else if(level >= 21 && level <= 25)
+        stage = "🏯 القلعة الإمبراطورية";
+
+    else if(level >= 26 && level <= 29)
+        stage = "⚔️ القلعة الأسطورية";
+
+    else if(level === 30)
+        stage = "🔥 Great Kardous Castle";
+
+    $("castleStage").textContent =
+        stage;
+
+    $("castleLevel").textContent =
+        level;
+
+    if(level >= 30){
+
+        let starsText = "";
+
+        for(let i = 1; i <= 5; i++){
+
+            starsText +=
+                i <= stars
+                ? "⭐"
+                : "☆";
+
+        }
+
+        $("castleStarsVisual").textContent =
+            starsText;
+
+        if(stars >= 5){
+
+            $("castleName").textContent =
+                "👑🔥 Great Kardous Castle";
+
+            $("upgradeCastleButton").textContent =
+                "👑 القلعة وصلت إلى القمة";
+
+            $("upgradeCastleButton").disabled =
+                true;
+
+            $("upgradeInfo").textContent =
+                "⭐⭐⭐⭐⭐ وصلت القلعة إلى أقصى مستوى!";
+
+        }else{
+
+            $("castleName").textContent =
+                "🔥 Great Kardous Castle";
+
+            $("upgradeCastleButton").textContent =
+                `⭐ تطوير إلى النجمة ${stars + 1}`;
+
+            $("upgradeInfo").textContent =
+                `القلعة مستوى 30 — الهدف التالي ⭐${stars + 1}`;
+
+            $("upgradeCastleButton").disabled =
+                false;
+
+        }
+
+    }else{
+
+        $("castleStarsVisual").textContent =
+            "☆☆☆☆☆";
+
+        $("castleName").textContent =
+            "🏰 قلعة Kardous";
+
+        $("upgradeCastleButton").textContent =
+            `🏗️ تطوير إلى المستوى ${level + 1}`;
+
+        $("upgradeCastleButton").disabled =
+            false;
+
+        $("upgradeInfo").textContent =
+            `المستوى الحالي ${level} — الهدف التالي ${level + 1}`;
+
+    }
+
+}
 
 /* =========================
    UPDATE UI
@@ -1085,8 +1244,9 @@ function updateUI(){
     $("gold").textContent =
         formatNumber(player.gold);
 
-}
+    updateCastleVisual();
 
+}
 
 /* =========================
    NUMBER
@@ -1117,7 +1277,6 @@ function formatNumber(value){
 
 }
 
-
 /* =========================
    PAGE
 ========================= */
@@ -1147,7 +1306,6 @@ function showPage(pageId){
         loadWorld();
 
 }
-
 
 /* =========================
    COLLECT
@@ -1186,6 +1344,70 @@ async function collectResources(){
 
 }
 
+/* =========================
+   CASTLE UPGRADE
+========================= */
+
+async function upgradeCastle(){
+
+    if(!player) return;
+
+    const level =
+        Number(player.castle_level || 1);
+
+    const stars =
+        Number(player.castle_stars || 0);
+
+    if(level >= 30 && stars >= 5){
+
+        message(
+            "👑 القلعة وصلت إلى 30 ⭐⭐⭐⭐⭐!"
+        );
+
+        return;
+
+    }
+
+    try{
+
+        const data =
+            await api(
+                `/api/player/${player.id}/upgrade-castle`,
+                {
+                    method:"POST"
+                }
+            );
+
+        player =
+            data.player;
+
+        updateUI();
+
+        if(
+            Number(player.castle_level) >= 30
+        ){
+
+            message(
+                `🔥 وصلت إلى Great Kardous Castle! ⭐${player.castle_stars}`
+            );
+
+        }else{
+
+            message(
+                `🏗️ تم تطوير القلعة إلى المستوى ${player.castle_level}!`
+            );
+
+        }
+
+    }catch(error){
+
+        message(
+            "❌ " + error.message
+        );
+
+    }
+
+}
 
 /* =========================
    TRAIN
@@ -1226,45 +1448,6 @@ async function trainTroops(){
     }
 
 }
-
-
-/* =========================
-   CASTLE
-========================= */
-
-async function upgradeCastle(){
-
-    if(!player) return;
-
-    try{
-
-        const data =
-            await api(
-                `/api/player/${player.id}/upgrade-castle`,
-                {
-                    method:"POST"
-                }
-            );
-
-        player =
-            data.player;
-
-        updateUI();
-
-        message(
-            "🏗️ تم تطوير القلعة!"
-        );
-
-    }catch(error){
-
-        message(
-            "❌ " + error.message
-        );
-
-    }
-
-}
-
 
 /* =========================
    HEROES
@@ -1338,9 +1521,8 @@ async function loadHeroes(){
 
 }
 
-
 /* =========================
-   UPGRADE HERO
+   HERO UPGRADE
 ========================= */
 
 async function upgradeHero(heroId){
@@ -1369,7 +1551,6 @@ async function upgradeHero(heroId){
     }
 
 }
-
 
 /* =========================
    BEHEMOTHS
@@ -1464,9 +1645,8 @@ async function loadBehemoths(){
 
 }
 
-
 /* =========================
-   UPGRADE BEHEMOTH
+   BEHEMOTH UPGRADE
 ========================= */
 
 async function upgradeBehemoth(id){
@@ -1495,7 +1675,6 @@ async function upgradeBehemoth(id){
     }
 
 }
-
 
 /* =========================
    WORLD
@@ -1615,7 +1794,6 @@ async function loadWorld(){
 
 }
 
-
 /* =========================
    SOCKET
 ========================= */
@@ -1693,7 +1871,6 @@ function connectSocket(){
 
 }
 
-
 /* =========================
    LOAD SAVED PLAYER
 ========================= */
@@ -1744,7 +1921,6 @@ async function loadSavedPlayer(){
 
 }
 
-
 /* =========================
    LOGOUT
 ========================= */
@@ -1761,7 +1937,6 @@ function logout(){
 
 }
 
-
 /* =========================
    ESCAPE HTML
 ========================= */
@@ -1777,14 +1952,11 @@ function escapeHTML(value){
 
 }
 
-
 /* =========================
    START
 ========================= */
 
 loadSavedPlayer();
 
-</script>
-
-</body>
+</script></body>
 </html>
