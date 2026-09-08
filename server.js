@@ -61,6 +61,84 @@ function getStarPower(star) {
 }
 
 /* =========================
+   BUILDINGS CONFIG
+========================= */
+
+const BUILDING_CONFIG = {
+  barracks: {
+    name: "الثكنة",
+    icon: "⚔️",
+    description: "تدريب وتطوير القوات",
+    basePower: 150
+  },
+
+  hospital: {
+    name: "المستشفى",
+    icon: "🏥",
+    description: "علاج القوات المصابة",
+    basePower: 120
+  },
+
+  farm: {
+    name: "مزرعة الطعام",
+    icon: "🌾",
+    description: "إنتاج الطعام",
+    basePower: 100
+  },
+
+  lumbermill: {
+    name: "منشرة الخشب",
+    icon: "🪵",
+    description: "إنتاج الخشب",
+    basePower: 100
+  },
+
+  ironmine: {
+    name: "منجم الحديد",
+    icon: "⛓️",
+    description: "إنتاج الحديد",
+    basePower: 130
+  },
+
+  goldmine: {
+    name: "منجم الذهب",
+    icon: "🪙",
+    description: "إنتاج الذهب",
+    basePower: 180
+  },
+
+  research: {
+    name: "مركز الأبحاث",
+    icon: "🔬",
+    description: "تطوير التقنيات",
+    basePower: 200
+  },
+
+  warehouse: {
+    name: "المستودع",
+    icon: "📦",
+    description: "حماية وتخزين الموارد",
+    basePower: 120
+  }
+};
+
+function getBuildingCost(level) {
+  return {
+    food: level * 1200,
+    wood: level * 1400,
+    iron: level * 400,
+    gold: level * 150
+  };
+}
+
+function getBuildingPower(level, type) {
+  const base =
+    BUILDING_CONFIG[type]?.basePower || 100;
+
+  return base + level * 75;
+}
+
+/* =========================
    DATABASE
 ========================= */
 
@@ -100,6 +178,15 @@ async function initDatabase() {
       name TEXT NOT NULL,
       level INTEGER DEFAULT 1,
       power BIGINT DEFAULT 500
+    );
+
+    CREATE TABLE IF NOT EXISTS buildings (
+      id SERIAL PRIMARY KEY,
+      player_id INTEGER REFERENCES players(id) ON DELETE CASCADE,
+      type TEXT NOT NULL,
+      level INTEGER DEFAULT 1,
+      power BIGINT DEFAULT 100,
+      UNIQUE(player_id, type)
     );
 
     CREATE TABLE IF NOT EXISTS alliances (
@@ -204,72 +291,21 @@ async function initDatabase() {
       )
     `);
 
-    const heroes = [
-      "Kairo",
-      "Raven",
-      "Luna",
-      "Drake",
-      "Nova",
-      "Axel",
-      "Mira",
-      "Rex",
-      "Vega",
-      "Zane",
-      "Aria",
-      "Blaze",
-      "Nora",
-      "Damon",
-      "Iris",
-      "Titan",
-      "Echo",
-      "Skye",
-      "Orion",
-      "Kira"
-    ];
+    await createStartingHeroes(1);
+    await createStartingBehemoths(1);
+    await createStartingBuildings(1);
+  }
 
-    for (const name of heroes) {
+  /* =========================
+     EXISTING PLAYERS
+  ========================= */
 
-      await query(
-        `
-        INSERT INTO heroes
-        (
-          player_id,
-          name,
-          level,
-          power,
-          skill_level
-        )
-        VALUES
-        ($1,$2,1,100,1)
-        `,
-        [1, name]
-      );
-    }
+  const playersResult = await query(
+    `SELECT id FROM players`
+  );
 
-    const behemoths = [
-      "T-Rex",
-      "Giant Monkey",
-      "Lion",
-      "Thunder Bird"
-    ];
-
-    for (const name of behemoths) {
-
-      await query(
-        `
-        INSERT INTO behemoths
-        (
-          player_id,
-          name,
-          level,
-          power
-        )
-        VALUES
-        ($1,$2,1,500)
-        `,
-        [1, name]
-      );
-    }
+  for (const p of playersResult.rows) {
+    await createStartingBuildings(p.id);
   }
 
   /* =========================
@@ -342,6 +378,111 @@ async function initDatabase() {
 }
 
 /* =========================
+   STARTING DATA
+========================= */
+
+async function createStartingHeroes(playerId) {
+
+  const heroes = [
+    "Kairo",
+    "Raven",
+    "Luna",
+    "Drake",
+    "Nova",
+    "Axel",
+    "Mira",
+    "Rex",
+    "Vega",
+    "Zane",
+    "Aria",
+    "Blaze",
+    "Nora",
+    "Damon",
+    "Iris",
+    "Titan",
+    "Echo",
+    "Skye",
+    "Orion",
+    "Kira"
+  ];
+
+  for (const name of heroes) {
+
+    await query(
+      `
+      INSERT INTO heroes
+      (
+        player_id,
+        name,
+        level,
+        power,
+        skill_level
+      )
+      VALUES
+      ($1,$2,1,100,1)
+      ON CONFLICT DO NOTHING
+      `,
+      [playerId, name]
+    );
+  }
+}
+
+async function createStartingBehemoths(playerId) {
+
+  const behemoths = [
+    "البهيثومي الأول",
+    "البهيثومي العملاق",
+    "البهيثومي الأسد",
+    "البهيثومي الرعد"
+  ];
+
+  for (const name of behemoths) {
+
+    await query(
+      `
+      INSERT INTO behemoths
+      (
+        player_id,
+        name,
+        level,
+        power
+      )
+      VALUES
+      ($1,$2,1,500)
+      `,
+      [playerId, name]
+    );
+  }
+}
+
+async function createStartingBuildings(playerId) {
+
+  for (const type of Object.keys(BUILDING_CONFIG)) {
+
+    await query(
+      `
+      INSERT INTO buildings
+      (
+        player_id,
+        type,
+        level,
+        power
+      )
+      VALUES
+      ($1,$2,1,$3)
+      ON CONFLICT (player_id,type)
+      DO NOTHING
+      `,
+      [
+        playerId,
+        type,
+        getBuildingPower(1, type)
+      ]
+    );
+  }
+}
+
+/* =========================
    STATUS
 ========================= */
 
@@ -354,7 +495,7 @@ app.get("/api/status", async (req, res) => {
     res.json({
       ok: true,
       database: "PostgreSQL / Neon",
-      version: "13.0",
+      version: "14.0",
       game: "Kardous Survival"
     });
 
@@ -432,8 +573,11 @@ app.get("/api/player/:id/castle", async (req, res) => {
 
     const player = result.rows[0];
 
-    const level = Number(player.castle_level || 1);
-    const stars = Number(player.castle_stars || 0);
+    const level =
+      Number(player.castle_level || 1);
+
+    const stars =
+      Number(player.castle_stars || 0);
 
     let next = null;
 
@@ -460,18 +604,27 @@ app.get("/api/player/:id/castle", async (req, res) => {
         cost: getStarCost(nextStar),
         powerGain: getStarPower(nextStar)
       };
-
     }
+
+    const castle = {
+      level,
+      stars,
+      power: Number(player.power || 0),
+      next,
+      max: level >= 30 && stars >= 5
+    };
 
     res.json({
       ok: true,
+      castle,
       current: {
         level,
         stars,
         power: Number(player.power || 0)
       },
       next,
-      maximum: level >= 30 && stars >= 5
+      maximum: castle.max,
+      player
     });
 
   } catch (error) {
@@ -534,72 +687,9 @@ app.post("/api/register", async (req, res) => {
 
     const player = result.rows[0];
 
-    const heroes = [
-      "Kairo",
-      "Raven",
-      "Luna",
-      "Drake",
-      "Nova",
-      "Axel",
-      "Mira",
-      "Rex",
-      "Vega",
-      "Zane",
-      "Aria",
-      "Blaze",
-      "Nora",
-      "Damon",
-      "Iris",
-      "Titan",
-      "Echo",
-      "Skye",
-      "Orion",
-      "Kira"
-    ];
-
-    for (const hero of heroes) {
-
-      await query(
-        `
-        INSERT INTO heroes
-        (
-          player_id,
-          name,
-          level,
-          power,
-          skill_level
-        )
-        VALUES
-        ($1,$2,1,100,1)
-        `,
-        [player.id, hero]
-      );
-    }
-
-    const behemoths = [
-      "T-Rex",
-      "Giant Monkey",
-      "Lion",
-      "Thunder Bird"
-    ];
-
-    for (const name of behemoths) {
-
-      await query(
-        `
-        INSERT INTO behemoths
-        (
-          player_id,
-          name,
-          level,
-          power
-        )
-        VALUES
-        ($1,$2,1,500)
-        `,
-        [player.id, name]
-      );
-    }
+    await createStartingHeroes(player.id);
+    await createStartingBehemoths(player.id);
+    await createStartingBuildings(player.id);
 
     res.json({
       ok: true,
@@ -658,8 +748,6 @@ app.post("/api/player/:id/collect", async (req, res) => {
 
 /* =====================================================
    CASTLE UPGRADE
-   LEVEL 1 → 30
-   THEN ⭐ 1 → ⭐⭐⭐⭐⭐
 ===================================================== */
 
 app.post("/api/player/:id/upgrade-castle", async (req, res) => {
@@ -680,36 +768,30 @@ app.post("/api/player/:id/upgrade-castle", async (req, res) => {
 
     const player = playerResult.rows[0];
 
-    const level = Number(
-      player.castle_level || 1
-    );
+    const level =
+      Number(player.castle_level || 1);
 
-    const stars = Number(
-      player.castle_stars || 0
-    );
-
-    /* =========================
-       MAXIMUM
-    ========================= */
+    const stars =
+      Number(player.castle_stars || 0);
 
     if (level >= 30 && stars >= 5) {
 
       return res.status(400).json({
         error: "Maximum castle reached",
-        message: "القلعة وصلت إلى المستوى 30 ⭐⭐⭐⭐⭐"
+        message:
+          "القلعة وصلت إلى المستوى 30 ⭐⭐⭐⭐⭐"
       });
     }
-
-    /* =========================
-       STARS
-    ========================= */
 
     if (level >= 30) {
 
       const nextStar = stars + 1;
 
-      const cost = getStarCost(nextStar);
-      const powerGain = getStarPower(nextStar);
+      const cost =
+        getStarCost(nextStar);
+
+      const powerGain =
+        getStarPower(nextStar);
 
       if (
         Number(player.food) < cost.food ||
@@ -720,15 +802,8 @@ app.post("/api/player/:id/upgrade-castle", async (req, res) => {
 
         return res.status(400).json({
           error: "Not enough resources",
-          message: "الموارد غير كافية للنجمة التالية",
-          current: {
-            level: 30,
-            stars
-          },
-          next: {
-            level: 30,
-            stars: nextStar
-          },
+          message:
+            "الموارد غير كافية للنجمة التالية",
           cost
         });
       }
@@ -769,10 +844,6 @@ app.post("/api/player/:id/upgrade-castle", async (req, res) => {
       });
     }
 
-    /* =========================
-       LEVEL 1 → 30
-    ========================= */
-
     const nextLevel = level + 1;
 
     const cost =
@@ -790,15 +861,8 @@ app.post("/api/player/:id/upgrade-castle", async (req, res) => {
 
       return res.status(400).json({
         error: "Not enough resources",
-        message: "الموارد غير كافية لتطوير القلعة",
-        current: {
-          level,
-          stars
-        },
-        next: {
-          level: nextLevel,
-          stars: 0
-        },
+        message:
+          "الموارد غير كافية لتطوير القلعة",
         cost
       });
     }
@@ -851,18 +915,276 @@ app.post("/api/player/:id/upgrade-castle", async (req, res) => {
   }
 });
 
-/* =========================
-   BUILDING SPEEDUP
-========================= */
+/* =====================================================
+   BUILDINGS
+===================================================== */
 
-app.post("/api/player/:id/speedup-building", async (req, res) => {
+/* GET BUILDINGS */
 
-  res.json({
-    ok: true,
-    message: "Building speedup applied"
-  });
+app.get("/api/player/:id/buildings", async (req, res) => {
 
+  try {
+
+    const result = await query(
+      `
+      SELECT *
+      FROM buildings
+      WHERE player_id = $1
+      ORDER BY id
+      `,
+      [req.params.id]
+    );
+
+    const buildings =
+      result.rows.map(building => {
+
+        const type = building.type;
+        const level = Number(building.level || 1);
+
+        const config =
+          BUILDING_CONFIG[type];
+
+        return {
+          id: building.id,
+          type,
+          name: config?.name || type,
+          icon: config?.icon || "🏗️",
+          description:
+            config?.description || "",
+          level,
+          power: Number(building.power || 0),
+          maxLevel: 30,
+          next:
+            level < 30
+              ? {
+                  level: level + 1,
+                  cost:
+                    getBuildingCost(level + 1),
+                  powerGain:
+                    getBuildingPower(
+                      level + 1,
+                      type
+                    ) -
+                    Number(building.power || 0)
+                }
+              : null
+        };
+      });
+
+    res.json({
+      ok: true,
+      buildings
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+  }
 });
+
+
+/* UPGRADE BUILDING */
+
+app.post(
+  "/api/player/:id/buildings/:buildingType/upgrade",
+  async (req, res) => {
+
+    try {
+
+      const playerId =
+        req.params.id;
+
+      const type =
+        req.params.buildingType;
+
+      if (!BUILDING_CONFIG[type]) {
+
+        return res.status(400).json({
+          error: "Unknown building"
+        });
+      }
+
+      const playerResult =
+        await query(
+          `SELECT * FROM players WHERE id = $1`,
+          [playerId]
+        );
+
+      if (playerResult.rows.length === 0) {
+
+        return res.status(404).json({
+          error: "Player not found"
+        });
+      }
+
+      const player =
+        playerResult.rows[0];
+
+      const buildingResult =
+        await query(
+          `
+          SELECT *
+          FROM buildings
+          WHERE player_id = $1
+          AND type = $2
+          `,
+          [
+            playerId,
+            type
+          ]
+        );
+
+      if (buildingResult.rows.length === 0) {
+
+        return res.status(404).json({
+          error: "Building not found"
+        });
+      }
+
+      const building =
+        buildingResult.rows[0];
+
+      const level =
+        Number(building.level || 1);
+
+      if (level >= 30) {
+
+        return res.status(400).json({
+          error: "Maximum building level reached",
+          message:
+            "وصل المبنى إلى المستوى 30"
+        });
+      }
+
+      const nextLevel =
+        level + 1;
+
+      const cost =
+        getBuildingCost(nextLevel);
+
+      const oldPower =
+        Number(building.power || 0);
+
+      const newPower =
+        getBuildingPower(
+          nextLevel,
+          type
+        );
+
+      const powerGain =
+        newPower - oldPower;
+
+      if (
+        Number(player.food) < cost.food ||
+        Number(player.wood) < cost.wood ||
+        Number(player.iron) < cost.iron ||
+        Number(player.gold) < cost.gold
+      ) {
+
+        return res.status(400).json({
+          error: "Not enough resources",
+          message:
+            "الموارد غير كافية لتطوير المبنى",
+          cost
+        });
+      }
+
+      await query("BEGIN");
+
+      try {
+
+        const updatedBuilding =
+          await query(
+            `
+            UPDATE buildings
+            SET
+              level = $1,
+              power = $2
+            WHERE player_id = $3
+            AND type = $4
+            RETURNING *
+            `,
+            [
+              nextLevel,
+              newPower,
+              playerId,
+              type
+            ]
+          );
+
+        const updatedPlayer =
+          await query(
+            `
+            UPDATE players
+            SET
+              power = power + $1,
+              food = food - $2,
+              wood = wood - $3,
+              iron = iron - $4,
+              gold = gold - $5
+            WHERE id = $6
+            RETURNING *
+            `,
+            [
+              powerGain,
+              cost.food,
+              cost.wood,
+              cost.iron,
+              cost.gold,
+              playerId
+            ]
+          );
+
+        await query("COMMIT");
+
+        res.json({
+          ok: true,
+          building: updatedBuilding.rows[0],
+          player: updatedPlayer.rows[0],
+          message:
+            `🏗️ تم تطوير ${BUILDING_CONFIG[type].name} إلى المستوى ${nextLevel}`,
+          cost,
+          powerGain
+        });
+
+      } catch (transactionError) {
+
+        await query("ROLLBACK");
+
+        throw transactionError;
+      }
+
+    } catch (error) {
+
+      console.error(
+        "Building upgrade error:",
+        error.message
+      );
+
+      res.status(500).json({
+        error: error.message
+      });
+    }
+  }
+);
+
+
+/* BUILDING SPEEDUP */
+
+app.post(
+  "/api/player/:id/speedup-building",
+  async (req, res) => {
+
+    res.json({
+      ok: true,
+      message:
+        "تم تسريع البناء"
+    });
+  }
+);
+
 
 /* =========================
    TRAIN
@@ -914,18 +1236,23 @@ app.post("/api/player/:id/train", async (req, res) => {
   }
 });
 
+
 /* =========================
    TRAINING SPEEDUP
 ========================= */
 
-app.post("/api/player/:id/speedup-training", async (req, res) => {
+app.post(
+  "/api/player/:id/speedup-training",
+  async (req, res) => {
 
-  res.json({
-    ok: true,
-    message: "Training speedup applied"
-  });
+    res.json({
+      ok: true,
+      message:
+        "تم تسريع التدريب"
+    });
+  }
+);
 
-});
 
 /* =========================
    RESEARCH
@@ -955,7 +1282,7 @@ app.post("/api/player/:id/research", async (req, res) => {
     res.json({
       ok: true,
       research:
-        req.body.name || "Research",
+        req.body.name || req.body.type || "Research",
       player:
         result.rows[0]
     });
@@ -968,18 +1295,23 @@ app.post("/api/player/:id/research", async (req, res) => {
   }
 });
 
+
 /* =========================
    RESEARCH SPEEDUP
 ========================= */
 
-app.post("/api/player/:id/speedup-research", async (req, res) => {
+app.post(
+  "/api/player/:id/speedup-research",
+  async (req, res) => {
 
-  res.json({
-    ok: true,
-    message: "Research speedup applied"
-  });
+    res.json({
+      ok: true,
+      message:
+        "تم تسريع البحث"
+    });
+  }
+);
 
-});
 
 /* =========================
    PROFILE
@@ -1020,6 +1352,7 @@ app.get("/api/player/:id/profile", async (req, res) => {
   }
 });
 
+
 /* =========================
    HEROES
 ========================= */
@@ -1038,7 +1371,10 @@ app.get("/api/player/:id/heroes", async (req, res) => {
       [req.params.id]
     );
 
-    res.json(result.rows);
+    res.json({
+      ok: true,
+      heroes: result.rows
+    });
 
   } catch (error) {
 
@@ -1048,98 +1384,117 @@ app.get("/api/player/:id/heroes", async (req, res) => {
   }
 });
 
-app.post("/api/player/:id/heroes/:heroId/upgrade", async (req, res) => {
 
-  try {
+app.post(
+  "/api/player/:id/heroes/:heroId/upgrade",
+  async (req, res) => {
 
-    const result = await query(
-      `
-      UPDATE heroes
-      SET
-        level = level + 1,
-        power = power + 100,
-        skill_level = skill_level + 1
-      WHERE id = $1
-      AND player_id = $2
-      RETURNING *
-      `,
-      [
-        req.params.heroId,
-        req.params.id
-      ]
-    );
+    try {
 
-    res.json(
-      result.rows[0] || {}
-    );
+      const result = await query(
+        `
+        UPDATE heroes
+        SET
+          level = level + 1,
+          power = power + 100,
+          skill_level = skill_level + 1
+        WHERE id = $1
+        AND player_id = $2
+        RETURNING *
+        `,
+        [
+          req.params.heroId,
+          req.params.id
+        ]
+      );
 
-  } catch (error) {
+      res.json({
+        ok: true,
+        hero: result.rows[0] || null
+      });
 
-    res.status(500).json({
-      error: error.message
-    });
+    } catch (error) {
+
+      res.status(500).json({
+        error: error.message
+      });
+    }
   }
-});
+);
+
 
 /* =========================
-   BEHEMOTHS
+   البهيثومي
 ========================= */
 
-app.get("/api/player/:id/behemoths", async (req, res) => {
+app.get(
+  "/api/player/:id/behemoths",
+  async (req, res) => {
 
-  try {
+    try {
 
-    const result = await query(
-      `
-      SELECT *
-      FROM behemoths
-      WHERE player_id = $1
-      ORDER BY id
-      `,
-      [req.params.id]
-    );
+      const result = await query(
+        `
+        SELECT *
+        FROM behemoths
+        WHERE player_id = $1
+        ORDER BY id
+        `,
+        [req.params.id]
+      );
 
-    res.json(result.rows);
+      res.json({
+        ok: true,
+        behemoths: result.rows
+      });
 
-  } catch (error) {
+    } catch (error) {
 
-    res.status(500).json({
-      error: error.message
-    });
+      res.status(500).json({
+        error: error.message
+      });
+    }
   }
-});
+);
 
-app.post("/api/player/:id/behemoths/:behemothId/upgrade", async (req, res) => {
 
-  try {
+app.post(
+  "/api/player/:id/behemoths/:behemothId/upgrade",
+  async (req, res) => {
 
-    const result = await query(
-      `
-      UPDATE behemoths
-      SET
-        level = level + 1,
-        power = power + 250
-      WHERE id = $1
-      AND player_id = $2
-      RETURNING *
-      `,
-      [
-        req.params.behemothId,
-        req.params.id
-      ]
-    );
+    try {
 
-    res.json(
-      result.rows[0] || {}
-    );
+      const result = await query(
+        `
+        UPDATE behemoths
+        SET
+          level = level + 1,
+          power = power + 250
+        WHERE id = $1
+        AND player_id = $2
+        RETURNING *
+        `,
+        [
+          req.params.behemothId,
+          req.params.id
+        ]
+      );
 
-  } catch (error) {
+      res.json({
+        ok: true,
+        behemoth:
+          result.rows[0] || null
+      });
 
-    res.status(500).json({
-      error: error.message
-    });
+    } catch (error) {
+
+      res.status(500).json({
+        error: error.message
+      });
+    }
   }
-});
+);
+
 
 /* =========================
    ALLIANCES
@@ -1151,13 +1506,21 @@ app.get("/api/alliances", async (req, res) => {
 
     const result = await query(
       `
-      SELECT *
-      FROM alliances
-      ORDER BY power DESC
+      SELECT
+        a.*,
+        COUNT(am.player_id) AS member_count
+      FROM alliances a
+      LEFT JOIN alliance_members am
+      ON a.id = am.alliance_id
+      GROUP BY a.id
+      ORDER BY a.power DESC
       `
     );
 
-    res.json(result.rows);
+    res.json({
+      ok: true,
+      alliances: result.rows
+    });
 
   } catch (error) {
 
@@ -1166,6 +1529,7 @@ app.get("/api/alliances", async (req, res) => {
     });
   }
 });
+
 
 app.post("/api/alliances", async (req, res) => {
 
@@ -1224,7 +1588,10 @@ app.post("/api/alliances", async (req, res) => {
       );
     }
 
-    res.json(alliance);
+    res.json({
+      ok: true,
+      alliance
+    });
 
   } catch (error) {
 
@@ -1233,6 +1600,7 @@ app.post("/api/alliances", async (req, res) => {
     });
   }
 });
+
 
 app.get("/api/alliance/:id", async (req, res) => {
 
@@ -1267,6 +1635,7 @@ app.get("/api/alliance/:id", async (req, res) => {
       );
 
     res.json({
+      ok: true,
       alliance:
         alliance.rows[0] || null,
       members:
@@ -1281,39 +1650,46 @@ app.get("/api/alliance/:id", async (req, res) => {
   }
 });
 
-app.post("/api/player/:id/alliance/join", async (req, res) => {
 
-  try {
+app.post(
+  "/api/player/:id/alliance/join",
+  async (req, res) => {
 
-    await query(
-      `
-      INSERT INTO alliance_members
-      (
-        alliance_id,
-        player_id,
-        rank
-      )
-      VALUES
-      ($1,$2,'member')
-      ON CONFLICT DO NOTHING
-      `,
-      [
-        req.body.allianceId,
-        req.params.id
-      ]
-    );
+    try {
 
-    res.json({
-      ok: true
-    });
+      await query(
+        `
+        INSERT INTO alliance_members
+        (
+          alliance_id,
+          player_id,
+          rank
+        )
+        VALUES
+        ($1,$2,'member')
+        ON CONFLICT DO NOTHING
+        `,
+        [
+          req.body.allianceId,
+          req.params.id
+        ]
+      );
 
-  } catch (error) {
+      res.json({
+        ok: true,
+        message:
+          "تم الانضمام إلى التحالف"
+      });
 
-    res.status(500).json({
-      error: error.message
-    });
+    } catch (error) {
+
+      res.status(500).json({
+        error: error.message
+      });
+    }
   }
-});
+);
+
 
 /* =========================
    RANKINGS
@@ -1373,6 +1749,7 @@ app.get("/api/rankings/all", async (req, res) => {
       `);
 
     res.json({
+      ok: true,
       kingdom: kingdom.rows,
       power: kingdom.rows,
       war: kingdom.rows,
@@ -1391,6 +1768,7 @@ app.get("/api/rankings/all", async (req, res) => {
     });
   }
 });
+
 
 /* =========================
    WORLD
@@ -1436,6 +1814,7 @@ app.get("/api/world", async (req, res) => {
       `);
 
     res.json({
+      ok: true,
       zombies: zombies.rows,
       forts: forts.rows,
       players: players.rows,
@@ -1449,6 +1828,7 @@ app.get("/api/world", async (req, res) => {
     });
   }
 });
+
 
 /* =========================
    MOVE PLAYER
@@ -1490,7 +1870,10 @@ app.post("/api/player/:id/move", async (req, res) => {
       y
     });
 
-    res.json(result.rows[0]);
+    res.json({
+      ok: true,
+      player: result.rows[0]
+    });
 
   } catch (error) {
 
@@ -1499,6 +1882,7 @@ app.post("/api/player/:id/move", async (req, res) => {
     });
   }
 });
+
 
 /* =========================
    MARCH
@@ -1539,12 +1923,16 @@ app.post("/api/player/:id/march", async (req, res) => {
     }
 
     const available =
-      Number(playerResult.rows[0].troops || 0);
+      Number(
+        playerResult.rows[0].troops || 0
+      );
 
     if (available < troops) {
 
       return res.status(400).json({
-        error: "Not enough troops"
+        error: "Not enough troops",
+        message:
+          "عدد القوات غير كافٍ"
       });
     }
 
@@ -1587,9 +1975,10 @@ app.post("/api/player/:id/march", async (req, res) => {
       result.rows[0]
     );
 
-    res.json(
-      result.rows[0]
-    );
+    res.json({
+      ok: true,
+      march: result.rows[0]
+    });
 
   } catch (error) {
 
@@ -1598,35 +1987,43 @@ app.post("/api/player/:id/march", async (req, res) => {
     });
   }
 });
+
 
 /* =========================
    REPORTS
 ========================= */
 
-app.get("/api/reports/:playerId", async (req, res) => {
+app.get(
+  "/api/reports/:playerId",
+  async (req, res) => {
 
-  try {
+    try {
 
-    const result = await query(
-      `
-      SELECT *
-      FROM battle_reports
-      WHERE player_id = $1
-      ORDER BY created_at DESC
-      LIMIT 100
-      `,
-      [req.params.playerId]
-    );
+      const result = await query(
+        `
+        SELECT *
+        FROM battle_reports
+        WHERE player_id = $1
+        ORDER BY created_at DESC
+        LIMIT 100
+        `,
+        [req.params.playerId]
+      );
 
-    res.json(result.rows);
+      res.json({
+        ok: true,
+        reports: result.rows
+      });
 
-  } catch (error) {
+    } catch (error) {
 
-    res.status(500).json({
-      error: error.message
-    });
+      res.status(500).json({
+        error: error.message
+      });
+    }
   }
-});
+);
+
 
 /* =========================
    SOCKET.IO
@@ -1653,6 +2050,7 @@ io.on("connection", socket => {
   });
 
 });
+
 
 /* =========================
    PROCESS MARCHES
@@ -1734,6 +2132,7 @@ async function processMarches() {
     );
   }
 }
+
 
 /* =========================
    START
