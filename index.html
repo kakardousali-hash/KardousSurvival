@@ -3,65 +3,89 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
+
 <title>Kardous Survival</title>
 
 <script src="/socket.io/socket.io.js"></script>
 
 <style>
-*{box-sizing:border-box}
+
+*{
+    box-sizing:border-box;
+}
 
 body{
     margin:0;
     font-family:Arial,Tahoma,sans-serif;
-    background:#10151b;
+    background:#07100b;
     color:white;
+}
+
+button{
+    cursor:pointer;
 }
 
 .app{
     min-height:100vh;
-    padding:15px;
-    background:linear-gradient(135deg,#17251c,#101820);
+    background:
+        radial-gradient(circle at 50% 20%,#29452c,#0b1510 55%,#050806);
+    padding:10px;
 }
+
+/* =========================
+   HEADER
+========================= */
 
 .header{
-    background:#0b1015;
-    border:1px solid #47535c;
-    border-radius:12px;
+    background:rgba(8,13,10,.95);
+    border:1px solid #8d6b2c;
+    border-radius:14px;
     padding:12px;
-    margin-bottom:12px;
+    margin-bottom:10px;
+    box-shadow:0 0 15px #000;
 }
 
-h1{
-    color:#f1ca68;
-    margin:0 0 5px;
+.header h1{
+    margin:0;
+    color:#f4cf6b;
 }
 
 .status{
+    margin-top:5px;
+    color:#aebbb3;
     font-size:13px;
-    color:#aebbc5;
 }
+
+/* =========================
+   LOGIN
+========================= */
 
 .login{
     max-width:450px;
-    margin:40px auto;
-    padding:20px;
-    background:#1b252e;
-    border:2px solid #a67c32;
-    border-radius:14px;
+    margin:45px auto;
+    padding:25px;
     text-align:center;
+    background:#142019;
+    border:2px solid #9b722b;
+    border-radius:18px;
+    box-shadow:0 0 30px #000;
+}
+
+.loginIcon{
+    font-size:90px;
 }
 
 .login h2{
-    color:#f1ca68;
+    color:#f5d16a;
 }
 
 input{
     width:100%;
-    padding:13px;
+    padding:14px;
     margin:8px 0;
-    border-radius:8px;
-    border:1px solid #53616b;
-    background:#0d1318;
+    border-radius:9px;
+    border:1px solid #53645a;
+    background:#08100c;
     color:white;
     font-size:16px;
 }
@@ -69,85 +93,402 @@ input{
 button{
     width:100%;
     padding:12px;
-    margin-top:8px;
+    margin:5px 0;
+    border-radius:9px;
     border:1px solid #d0a54d;
-    border-radius:8px;
-    background:linear-gradient(#8b652a,#4a3518);
+    background:linear-gradient(#876329,#493516);
     color:white;
     font-weight:bold;
-    font-size:15px;
 }
 
-button:disabled{
-    opacity:.5;
+button:hover{
+    filter:brightness(1.2);
 }
+
+.message{
+    min-height:25px;
+    margin-top:8px;
+    color:#f3cf67;
+}
+
+/* =========================
+   GAME
+========================= */
 
 .game{
     display:none;
 }
 
+.topPlayer{
+    background:#111b15;
+    border:1px solid #59665d;
+    border-radius:12px;
+    padding:10px;
+    margin-bottom:10px;
+}
+
+.playerName{
+    color:#f4d06b;
+    font-size:20px;
+    font-weight:bold;
+}
+
+/* =========================
+   RESOURCES
+========================= */
+
 .resources{
     display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:7px;
-    margin-top:10px;
+    grid-template-columns:repeat(4,1fr);
+    gap:6px;
+    margin-bottom:10px;
 }
 
 .resource{
-    padding:10px;
-    background:#1b252e;
-    border:1px solid #394853;
-    border-radius:7px;
+    background:#17231b;
+    border:1px solid #455449;
+    border-radius:9px;
+    padding:8px;
     text-align:center;
 }
 
 .resource b{
+    display:block;
+    margin-top:3px;
+    color:#f4d06b;
+}
+
+/* =========================
+   NAVIGATION
+========================= */
+
+.nav{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:5px;
+    margin-bottom:10px;
+}
+
+.nav button{
+    font-size:13px;
+    padding:10px 4px;
+}
+
+/* =========================
+   PAGES
+========================= */
+
+.page{
+    display:none;
+}
+
+.page.active{
+    display:block;
+}
+
+.panel{
+    background:#121d16;
+    border:1px solid #536158;
+    border-radius:13px;
+    padding:12px;
+    margin-bottom:10px;
+}
+
+.panel h2,
+.panel h3{
+    color:#f4d06b;
+}
+
+/* =========================
+   CASTLE
+========================= */
+
+.castleScene{
+    min-height:430px;
+    position:relative;
+    overflow:hidden;
+
+    background:
+        linear-gradient(
+            rgba(25,45,28,.3),
+            rgba(5,12,7,.8)
+        ),
+        radial-gradient(
+            circle at 50% 45%,
+            #506b43,
+            #1e3823 50%,
+            #0b160d
+        );
+
+    border:2px solid #6f7658;
+    border-radius:16px;
+}
+
+.mountain{
+    position:absolute;
+    bottom:0;
+    width:100%;
+    height:45%;
+    background:
+        linear-gradient(
+            135deg,
+            transparent 25%,
+            #172619 26% 55%,
+            transparent 56%
+        );
+    opacity:.8;
+}
+
+.castleBuilding{
+    position:absolute;
+    left:50%;
+    bottom:35px;
+    transform:translateX(-50%);
+    width:230px;
+    height:190px;
+}
+
+.wall{
+    position:absolute;
+    left:30px;
+    right:30px;
+    bottom:0;
+    height:105px;
+    background:
+        linear-gradient(#a9a28b,#665f4c);
+    border:5px solid #37362f;
+}
+
+.tower{
+    position:absolute;
+    bottom:0;
+    width:55px;
+    height:155px;
+    background:linear-gradient(#aaa48c,#625d4c);
+    border:5px solid #37362f;
+}
+
+.tower.left{
+    left:5px;
+}
+
+.tower.right{
+    right:5px;
+}
+
+.roof{
+    position:absolute;
+    top:-35px;
+    left:-7px;
+    width:59px;
+    height:45px;
+    background:#6e2d27;
+    clip-path:polygon(50% 0,100% 100%,0 100%);
+}
+
+.gate{
+    position:absolute;
+    bottom:0;
+    left:50%;
+    transform:translateX(-50%);
+    width:45px;
+    height:70px;
+    background:#332619;
+    border:4px solid #28221a;
+    border-radius:25px 25px 0 0;
+}
+
+.flag{
+    position:absolute;
+    top:-65px;
+    left:50%;
+    width:5px;
+    height:70px;
+    background:#30281b;
+}
+
+.flag:after{
+    content:"K";
+    position:absolute;
+    top:0;
+    left:5px;
+    background:#b28a36;
+    color:#fff;
+    font-weight:bold;
+    padding:5px 12px;
+    border-radius:2px;
+}
+
+.castleTitle{
+    position:absolute;
+    top:15px;
+    width:100%;
+    text-align:center;
+}
+
+.castleTitle h2{
+    margin:0;
+    color:#f5d36c;
+}
+
+/* =========================
+   BUILDINGS
+========================= */
+
+.buildings{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:8px;
+}
+
+.building{
+    padding:15px;
+    background:#19251d;
+    border:1px solid #4b594e;
+    border-radius:10px;
+    text-align:center;
+}
+
+.buildingIcon{
+    font-size:40px;
+}
+
+/* =========================
+   HEROES
+========================= */
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:8px;
+}
+
+.card{
+    background:#19251d;
+    border:1px solid #4c5c50;
+    border-radius:11px;
+    padding:10px;
+    text-align:center;
+}
+
+.cardIcon{
+    font-size:45px;
+}
+
+.card h3{
+    margin:5px 0;
+    color:#f3d16b;
+}
+
+.small{
+    font-size:12px;
+    color:#aeb9b0;
+}
+
+.power{
+    color:#ffcc58;
+    font-weight:bold;
+}
+
+/* =========================
+   BEHEMOTHS
+========================= */
+
+.behemothIcon{
+    font-size:65px;
+}
+
+/* =========================
+   MAP
+========================= */
+
+.map{
+    position:relative;
+    width:100%;
+    height:520px;
+    overflow:hidden;
+
+    background:
+        radial-gradient(circle,#456b3d 1px,transparent 2px),
+        linear-gradient(135deg,#203d25,#14291a);
+
+    background-size:25px 25px,auto;
+
+    border:2px solid #5c7059;
+    border-radius:15px;
+}
+
+.mapTitle{
+    position:absolute;
+    top:10px;
+    left:10px;
+    right:10px;
+    z-index:10;
+
+    background:rgba(5,10,7,.8);
+    padding:8px;
+    border-radius:8px;
+    text-align:center;
     color:#f5d36d;
 }
 
-.castle{
-    margin-top:12px;
-    min-height:350px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    background:
-        radial-gradient(circle,#435a42 0 2px,transparent 3px),
-        linear-gradient(135deg,#263927,#17251c);
-    background-size:35px 35px,auto;
-    border:2px solid #4a5862;
-    border-radius:14px;
+.mapObject{
+    position:absolute;
+    transform:translate(-50%,-50%);
+    text-align:center;
+    font-size:12px;
 }
 
-.castle-icon{
-    font-size:100px;
+.mapObject span{
+    display:block;
+    font-size:34px;
 }
 
-.info{
-    margin-top:12px;
-    padding:12px;
-    background:#1b252e;
-    border:1px solid #47535c;
-    border-radius:10px;
+.mapObject.player span{
+    font-size:45px;
 }
 
-.message{
-    min-height:25px;
-    margin-top:10px;
-    color:#f1ca68;
+.mapObject.zombie span{
+    font-size:32px;
 }
+
+.mapObject.fort span{
+    font-size:38px;
+}
+
+/* =========================
+   LOGOUT
+========================= */
 
 .logout{
-    background:#542d2d;
-    border-color:#9b5050;
+    background:#542c2c;
+    border-color:#995252;
 }
 
-@media(max-width:500px){
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width:600px){
+
     .resources{
         grid-template-columns:repeat(2,1fr);
     }
+
+    .nav{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .castleScene{
+        min-height:380px;
+    }
+
+    .grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
 }
+
 </style>
 </head>
 
@@ -155,154 +496,400 @@ button:disabled{
 
 <div class="app">
 
+<!-- =========================
+     HEADER
+========================= -->
+
 <header class="header">
+
     <h1>🏰 Kardous Survival</h1>
+
     <div class="status" id="status">
         جاري الاتصال بالسيرفر...
     </div>
+
 </header>
 
-<!-- تسجيل الدخول -->
+
+<!-- =========================
+     LOGIN
+========================= -->
 
 <div class="login" id="loginBox">
 
-    <div style="font-size:70px">🏰</div>
+    <div class="loginIcon">🏰</div>
 
     <h2>ابدأ مملكتك</h2>
 
-    <p>اكتب اسم اللاعب للدخول إلى اللعبة.</p>
+    <p>
+        اختر اسم قائدك وابدأ رحلة البقاء.
+    </p>
 
     <input
         id="playerName"
-        type="text"
         maxlength="20"
-        placeholder="اسم اللاعب"
+        placeholder="اسم القائد"
         autocomplete="off"
     >
 
-    <button id="loginButton" onclick="registerPlayer()">
+    <button
+        id="loginButton"
+        onclick="registerPlayer()"
+    >
         🚀 دخول اللعبة
     </button>
 
-    <div class="message" id="loginMessage"></div>
+    <div
+        class="message"
+        id="loginMessage"
+    ></div>
 
 </div>
 
-<!-- اللعبة -->
+
+<!-- =========================
+     GAME
+========================= -->
 
 <div class="game" id="gameBox">
 
-    <div class="info">
 
-        <h2>👑 القائد <span id="name"></span></h2>
+<!-- PLAYER -->
 
-        <p>
-            🏰 مستوى القلعة:
-            <b id="castle">1</b>
-        </p>
+<div class="topPlayer">
 
-        <p>
-            ⚡ القوة:
-            <b id="power">0</b>
-        </p>
+    👑 القائد:
 
-        <p>
-            ⚔️ الجنود:
-            <b id="troops">0</b>
-        </p>
+    <span
+        class="playerName"
+        id="name"
+    ></span>
 
+    <br>
+
+    🏰 القلعة:
+
+    <b id="castle">1</b>
+
+    ⭐ النجوم:
+
+    <b id="stars">0</b>
+
+    <br>
+
+    ⚡ القوة:
+
+    <b id="power">0</b>
+
+    <br>
+
+    ⚔️ الجنود:
+
+    <b id="troops">0</b>
+
+</div>
+
+
+<!-- RESOURCES -->
+
+<div class="resources">
+
+    <div class="resource">
+        🍎 الطعام
+        <b id="food">0</b>
     </div>
 
-    <div class="resources">
-
-        <div class="resource">
-            🍎 الطعام
-            <br>
-            <b id="food">0</b>
-        </div>
-
-        <div class="resource">
-            🪵 الخشب
-            <br>
-            <b id="wood">0</b>
-        </div>
-
-        <div class="resource">
-            ⛓️ الحديد
-            <br>
-            <b id="iron">0</b>
-        </div>
-
-        <div class="resource">
-            🪙 الذهب
-            <br>
-            <b id="gold">0</b>
-        </div>
-
+    <div class="resource">
+        🪵 الخشب
+        <b id="wood">0</b>
     </div>
 
-    <div class="castle">
+    <div class="resource">
+        ⛓️ الحديد
+        <b id="iron">0</b>
+    </div>
 
-        <div class="castle-icon">🏰</div>
+    <div class="resource">
+        🪙 الذهب
+        <b id="gold">0</b>
+    </div>
 
-        <h2>
-            قلعة Kardous
-        </h2>
+</div>
 
-        <p>
+
+<!-- NAVIGATION -->
+
+<div class="nav">
+
+    <button onclick="showPage('castlePage')">
+        🏰 القلعة
+    </button>
+
+    <button onclick="showPage('heroesPage')">
+        🦸 الأبطال
+    </button>
+
+    <button onclick="showPage('behemothsPage')">
+        🐲 الوحوش
+    </button>
+
+    <button onclick="showPage('mapPage')">
+        🗺️ الخريطة
+    </button>
+
+</div>
+
+
+<!-- =========================
+     CASTLE PAGE
+========================= -->
+
+<div
+    class="page active"
+    id="castlePage"
+>
+
+<div class="castleScene">
+
+    <div class="castleTitle">
+
+        <h2>🏰 قلعة Kardous</h2>
+
+        <div>
             المستوى
             <b id="castleLevel">1</b>
-        </p>
+        </div>
 
     </div>
 
-    <div class="info">
+    <div class="mountain"></div>
 
-        <h3>🎁 الموارد</h3>
+    <div class="castleBuilding">
 
-        <button onclick="collectResources()">
-            جمع الموارد
-        </button>
+        <div class="tower left">
+            <div class="roof"></div>
+        </div>
 
-        <button onclick="trainTroops()">
-            ⚔️ تدريب 100 جندي
-        </button>
+        <div class="tower right">
+            <div class="roof"></div>
+        </div>
 
-        <button onclick="upgradeCastle()">
-            🏗️ تطوير القلعة
-        </button>
+        <div class="wall">
 
-        <button class="logout" onclick="logout()">
-            🚪 خروج
-        </button>
+            <div class="gate"></div>
 
-        <div class="message" id="gameMessage"></div>
+        </div>
+
+        <div class="flag"></div>
+
+    </div>
+
+</div>
+
+
+<div class="panel">
+
+    <h2>🏗️ تطوير القلعة</h2>
+
+    <p>
+        تطوير القلعة يزيد قوة مملكتك.
+    </p>
+
+    <button onclick="upgradeCastle()">
+        🏗️ تطوير القلعة
+    </button>
+
+    <button onclick="collectResources()">
+        🎁 جمع الموارد
+    </button>
+
+</div>
+
+
+<div class="panel">
+
+    <h2>🏛️ مباني المملكة</h2>
+
+    <div class="buildings">
+
+        <div class="building">
+            <div class="buildingIcon">🏛️</div>
+            مبنى القائد
+        </div>
+
+        <div class="building">
+            <div class="buildingIcon">⚔️</div>
+            الثكنة
+        </div>
+
+        <div class="building">
+            <div class="buildingIcon">🔬</div>
+            مركز الأبحاث
+        </div>
+
+        <div class="building">
+            <div class="buildingIcon">🏥</div>
+            المستشفى
+        </div>
+
+        <div class="building">
+            <div class="buildingIcon">🌾</div>
+            مزرعة
+        </div>
+
+        <div class="building">
+            <div class="buildingIcon">🪵</div>
+            مصنع الخشب
+        </div>
 
     </div>
 
 </div>
 
 </div>
+
+
+<!-- =========================
+     HEROES PAGE
+========================= -->
+
+<div
+    class="page"
+    id="heroesPage"
+>
+
+<div class="panel">
+
+    <h2>🦸 أبطال المملكة</h2>
+
+    <p class="small">
+        اختر بطلاً وشاهد مستواه وقوته.
+    </p>
+
+    <div
+        class="grid"
+        id="heroesList"
+    >
+
+        جاري تحميل الأبطال...
+
+    </div>
+
+</div>
+
+</div>
+
+
+<!-- =========================
+     BEHEMOTHS PAGE
+========================= -->
+
+<div
+    class="page"
+    id="behemothsPage"
+>
+
+<div class="panel">
+
+    <h2>🐲 الوحوش العملاقة</h2>
+
+    <div
+        class="grid"
+        id="behemothsList"
+    >
+
+        جاري تحميل الوحوش...
+
+    </div>
+
+</div>
+
+</div>
+
+
+<!-- =========================
+     MAP PAGE
+========================= -->
+
+<div
+    class="page"
+    id="mapPage"
+>
+
+<div class="panel">
+
+    <h2>🗺️ خريطة العالم</h2>
+
+    <p class="small">
+        استكشف الزومبي والحصون واللاعبين.
+    </p>
+
+    <div
+        class="map"
+        id="worldMap"
+    >
+
+        <div class="mapTitle">
+            🌍 عالم Kardous Survival
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+
+<!-- =========================
+     MESSAGE
+========================= -->
+
+<div
+    class="panel"
+    id="messagePanel"
+>
+
+    <div
+        class="message"
+        id="gameMessage"
+    ></div>
+
+    <button
+        class="logout"
+        onclick="logout()"
+    >
+        🚪 خروج
+    </button>
+
+</div>
+
+
+</div>
+
+</div>
+
 
 <script>
 
 /* =========================
-   المتغيرات
+   VARIABLES
 ========================= */
 
 let player = null;
+
 let socket = null;
 
 
 /* =========================
-   عناصر الصفحة
+   ELEMENT
 ========================= */
 
-const $ = id => document.getElementById(id);
+const $ = id =>
+    document.getElementById(id);
 
 
 /* =========================
-   رسالة
+   MESSAGE
 ========================= */
 
 function message(text){
@@ -318,29 +905,38 @@ function message(text){
 
 async function api(url, options = {}){
 
-    const response = await fetch(url, {
-        headers:{
-            "Content-Type":"application/json"
-        },
-        ...options
-    });
+    const response = await fetch(
+        url,
+        {
+            headers:{
+                "Content-Type":"application/json"
+            },
+            ...options
+        }
+    );
 
-    const text = await response.text();
+    const text =
+        await response.text();
 
     let data;
 
     try{
+
         data = JSON.parse(text);
+
     }catch{
+
         throw new Error(
             "السيرفر أرسل ردًا غير صحيح."
         );
+
     }
 
     if(!response.ok){
 
         throw new Error(
-            data.error || "حدث خطأ في السيرفر."
+            data.error ||
+            "حدث خطأ في السيرفر."
         );
 
     }
@@ -351,56 +947,57 @@ async function api(url, options = {}){
 
 
 /* =========================
-   تسجيل اللاعب
+   REGISTER
 ========================= */
 
 async function registerPlayer(){
 
-    const input = $("playerName");
+    const input =
+        $("playerName");
 
-    const name = input.value.trim();
+    const name =
+        input.value.trim();
 
     if(!name){
 
         $("loginMessage").textContent =
-            "⚠️ اكتب اسم اللاعب أولًا.";
+            "⚠️ اكتب اسم القائد أولًا.";
 
         return;
 
     }
 
-    const button = $("loginButton");
+    const button =
+        $("loginButton");
 
     button.disabled = true;
 
     $("loginMessage").textContent =
-        "⏳ جاري إنشاء اللاعب...";
+        "⏳ جاري إنشاء المملكة...";
 
     try{
 
-        console.log("Sending register:", name);
-
-        const data = await api(
-            "/api/register",
-            {
-                method:"POST",
-                body:JSON.stringify({
-                    name:name
-                })
-            }
-        );
-
-        console.log("Register response:", data);
+        const data =
+            await api(
+                "/api/register",
+                {
+                    method:"POST",
+                    body:JSON.stringify({
+                        name:name
+                    })
+                }
+            );
 
         if(!data.player){
 
             throw new Error(
-                "السيرفر لم يُرجع بيانات اللاعب."
+                "لم تصل بيانات اللاعب."
             );
 
         }
 
-        player = data.player;
+        player =
+            data.player;
 
         localStorage.setItem(
             "kardousPlayerId",
@@ -410,6 +1007,12 @@ async function registerPlayer(){
         showGame();
 
         connectSocket();
+
+        await loadHeroes();
+
+        await loadBehemoths();
+
+        await loadWorld();
 
     }catch(error){
 
@@ -428,14 +1031,16 @@ async function registerPlayer(){
 
 
 /* =========================
-   عرض اللعبة
+   SHOW GAME
 ========================= */
 
 function showGame(){
 
-    $("loginBox").style.display = "none";
+    $("loginBox").style.display =
+        "none";
 
-    $("gameBox").style.display = "block";
+    $("gameBox").style.display =
+        "block";
 
     updateUI();
 
@@ -443,7 +1048,7 @@ function showGame(){
 
 
 /* =========================
-   تحديث البيانات
+   UPDATE UI
 ========================= */
 
 function updateUI(){
@@ -454,10 +1059,13 @@ function updateUI(){
         player.name || "";
 
     $("castle").textContent =
-        player.castle || 1;
+        player.castle_level || 1;
 
     $("castleLevel").textContent =
-        player.castle || 1;
+        player.castle_level || 1;
+
+    $("stars").textContent =
+        player.castle_stars || 0;
 
     $("power").textContent =
         formatNumber(player.power);
@@ -481,29 +1089,68 @@ function updateUI(){
 
 
 /* =========================
-   تنسيق الأرقام
+   NUMBER
 ========================= */
 
 function formatNumber(value){
 
-    value = Number(value || 0);
+    value =
+        Number(value || 0);
 
     if(value >= 1000000000)
-        return (value/1000000000).toFixed(1)+"B";
+        return (
+            value / 1000000000
+        ).toFixed(1) + "B";
 
     if(value >= 1000000)
-        return (value/1000000).toFixed(1)+"M";
+        return (
+            value / 1000000
+        ).toFixed(1) + "M";
 
     if(value >= 1000)
-        return (value/1000).toFixed(1)+"K";
+        return (
+            value / 1000
+        ).toFixed(1) + "K";
 
-    return Math.floor(value).toLocaleString();
+    return Math.floor(value)
+        .toLocaleString();
 
 }
 
 
 /* =========================
-   جمع الموارد
+   PAGE
+========================= */
+
+function showPage(pageId){
+
+    document
+        .querySelectorAll(".page")
+        .forEach(page => {
+
+            page.classList.remove(
+                "active"
+            );
+
+        });
+
+    $(pageId)
+        .classList.add("active");
+
+    if(pageId === "heroesPage")
+        loadHeroes();
+
+    if(pageId === "behemothsPage")
+        loadBehemoths();
+
+    if(pageId === "mapPage")
+        loadWorld();
+
+}
+
+
+/* =========================
+   COLLECT
 ========================= */
 
 async function collectResources(){
@@ -512,22 +1159,28 @@ async function collectResources(){
 
     try{
 
-        const data = await api(
-            `/api/player/${player.id}/collect`,
-            {
-                method:"POST"
-            }
-        );
+        const data =
+            await api(
+                `/api/player/${player.id}/collect`,
+                {
+                    method:"POST"
+                }
+            );
 
-        player = data.player;
+        player =
+            data.player;
 
         updateUI();
 
-        message("🎁 تم جمع الموارد!");
+        message(
+            "🎁 تم جمع الموارد!"
+        );
 
     }catch(error){
 
-        message("❌ " + error.message);
+        message(
+            "❌ " + error.message
+        );
 
     }
 
@@ -535,7 +1188,7 @@ async function collectResources(){
 
 
 /* =========================
-   تدريب الجنود
+   TRAIN
 ========================= */
 
 async function trainTroops(){
@@ -544,22 +1197,31 @@ async function trainTroops(){
 
     try{
 
-        const data = await api(
-            `/api/player/${player.id}/train`,
-            {
-                method:"POST"
-            }
-        );
+        const data =
+            await api(
+                `/api/player/${player.id}/train`,
+                {
+                    method:"POST",
+                    body:JSON.stringify({
+                        troops:100
+                    })
+                }
+            );
 
-        player = data.player;
+        player =
+            data.player;
 
         updateUI();
 
-        message("⚔️ بدأ تدريب 100 جندي!");
+        message(
+            "⚔️ تم تدريب 100 جندي!"
+        );
 
     }catch(error){
 
-        message("❌ " + error.message);
+        message(
+            "❌ " + error.message
+        );
 
     }
 
@@ -567,7 +1229,7 @@ async function trainTroops(){
 
 
 /* =========================
-   تطوير القلعة
+   CASTLE
 ========================= */
 
 async function upgradeCastle(){
@@ -576,22 +1238,28 @@ async function upgradeCastle(){
 
     try{
 
-        const data = await api(
-            `/api/player/${player.id}/upgrade-castle`,
-            {
-                method:"POST"
-            }
-        );
+        const data =
+            await api(
+                `/api/player/${player.id}/upgrade-castle`,
+                {
+                    method:"POST"
+                }
+            );
 
-        player = data.player;
+        player =
+            data.player;
 
         updateUI();
 
-        message("🏗️ بدأت ترقية القلعة!");
+        message(
+            "🏗️ تم تطوير القلعة!"
+        );
 
     }catch(error){
 
-        message("❌ " + error.message);
+        message(
+            "❌ " + error.message
+        );
 
     }
 
@@ -599,7 +1267,357 @@ async function upgradeCastle(){
 
 
 /* =========================
-   Socket.IO
+   HEROES
+========================= */
+
+async function loadHeroes(){
+
+    if(!player) return;
+
+    try{
+
+        const heroes =
+            await api(
+                `/api/player/${player.id}/heroes`
+            );
+
+        const list =
+            $("heroesList");
+
+        list.innerHTML = "";
+
+        heroes.forEach(
+            hero => {
+
+                const card =
+                    document.createElement(
+                        "div"
+                    );
+
+                card.className =
+                    "card";
+
+                card.innerHTML = `
+                    <div class="cardIcon">🦸</div>
+
+                    <h3>${escapeHTML(hero.name)}</h3>
+
+                    <div class="small">
+                        المستوى:
+                        ${hero.level}
+                    </div>
+
+                    <div class="power">
+                        ⚡ القوة:
+                        ${formatNumber(hero.power)}
+                    </div>
+
+                    <div class="small">
+                        ⭐ المهارة:
+                        ${hero.skill_level}
+                    </div>
+
+                    <button
+                        onclick="upgradeHero(${hero.id})"
+                    >
+                        ⬆️ ترقية
+                    </button>
+                `;
+
+                list.appendChild(card);
+
+            }
+        );
+
+    }catch(error){
+
+        $("heroesList").textContent =
+            "❌ " + error.message;
+
+    }
+
+}
+
+
+/* =========================
+   UPGRADE HERO
+========================= */
+
+async function upgradeHero(heroId){
+
+    try{
+
+        await api(
+            `/api/player/${player.id}/heroes/${heroId}/upgrade`,
+            {
+                method:"POST"
+            }
+        );
+
+        message(
+            "🦸 تم تطوير البطل!"
+        );
+
+        await loadHeroes();
+
+    }catch(error){
+
+        message(
+            "❌ " + error.message
+        );
+
+    }
+
+}
+
+
+/* =========================
+   BEHEMOTHS
+========================= */
+
+async function loadBehemoths(){
+
+    if(!player) return;
+
+    try{
+
+        const beasts =
+            await api(
+                `/api/player/${player.id}/behemoths`
+            );
+
+        const list =
+            $("behemothsList");
+
+        list.innerHTML = "";
+
+        beasts.forEach(
+            beast => {
+
+                const card =
+                    document.createElement(
+                        "div"
+                    );
+
+                card.className =
+                    "card";
+
+                let icon = "🐲";
+
+                if(
+                    beast.name === "T-Rex"
+                )
+                    icon = "🦖";
+
+                if(
+                    beast.name === "Giant Monkey"
+                )
+                    icon = "🦍";
+
+                if(
+                    beast.name === "Lion"
+                )
+                    icon = "🦁";
+
+                if(
+                    beast.name === "Thunder Bird"
+                )
+                    icon = "🦅";
+
+                card.innerHTML = `
+                    <div class="behemothIcon">
+                        ${icon}
+                    </div>
+
+                    <h3>
+                        ${escapeHTML(beast.name)}
+                    </h3>
+
+                    <div class="small">
+                        المستوى:
+                        ${beast.level}
+                    </div>
+
+                    <div class="power">
+                        ⚡ القوة:
+                        ${formatNumber(beast.power)}
+                    </div>
+
+                    <button
+                        onclick="upgradeBehemoth(${beast.id})"
+                    >
+                        ⬆️ ترقية الوحش
+                    </button>
+                `;
+
+                list.appendChild(card);
+
+            }
+        );
+
+    }catch(error){
+
+        $("behemothsList").textContent =
+            "❌ " + error.message;
+
+    }
+
+}
+
+
+/* =========================
+   UPGRADE BEHEMOTH
+========================= */
+
+async function upgradeBehemoth(id){
+
+    try{
+
+        await api(
+            `/api/player/${player.id}/behemoths/${id}/upgrade`,
+            {
+                method:"POST"
+            }
+        );
+
+        message(
+            "🐲 تم تطوير الوحش!"
+        );
+
+        await loadBehemoths();
+
+    }catch(error){
+
+        message(
+            "❌ " + error.message
+        );
+
+    }
+
+}
+
+
+/* =========================
+   WORLD
+========================= */
+
+async function loadWorld(){
+
+    try{
+
+        const world =
+            await api("/api/world");
+
+        const map =
+            $("worldMap");
+
+        map.innerHTML = `
+            <div class="mapTitle">
+                🌍 عالم Kardous Survival
+            </div>
+        `;
+
+        const objects = [];
+
+        world.zombies.forEach(
+            zombie => {
+
+                objects.push({
+                    type:"zombie",
+                    icon:"🧟",
+                    name:"زومبي",
+                    x:zombie.x,
+                    y:zombie.y
+                });
+
+            }
+        );
+
+        world.forts.forEach(
+            fort => {
+
+                objects.push({
+                    type:"fort",
+                    icon:"🏯",
+                    name:"حصن",
+                    x:fort.x,
+                    y:fort.y
+                });
+
+            }
+        );
+
+        world.players.forEach(
+            p => {
+
+                objects.push({
+                    type:"player",
+                    icon:"🏰",
+                    name:p.name,
+                    x:p.x,
+                    y:p.y
+                });
+
+            }
+        );
+
+        objects.forEach(
+            object => {
+
+                const element =
+                    document.createElement(
+                        "div"
+                    );
+
+                element.className =
+                    "mapObject " +
+                    object.type;
+
+                const x =
+                    Math.max(
+                        5,
+                        Math.min(
+                            95,
+                            Number(object.x) * 2
+                        )
+                    );
+
+                const y =
+                    Math.max(
+                        10,
+                        Math.min(
+                            92,
+                            Number(object.y) * 2
+                        )
+                    );
+
+                element.style.left =
+                    x + "%";
+
+                element.style.top =
+                    y + "%";
+
+                element.innerHTML = `
+                    <span>${object.icon}</span>
+                    ${escapeHTML(object.name)}
+                `;
+
+                map.appendChild(element);
+
+            }
+        );
+
+    }catch(error){
+
+        console.error(error);
+
+    }
+
+}
+
+
+/* =========================
+   SOCKET
 ========================= */
 
 function connectSocket(){
@@ -610,42 +1628,66 @@ function connectSocket(){
 
         socket = io();
 
-        socket.on("connect", () => {
+        socket.on(
+            "connect",
+            () => {
 
-            $("status").textContent =
-                "🟢 متصل بالسيرفر";
+                $("status").textContent =
+                    "🟢 متصل بالسيرفر";
 
-        });
-
-        socket.on("disconnect", () => {
-
-            $("status").textContent =
-                "🔴 انقطع الاتصال بالسيرفر";
-
-        });
-
-        socket.on("playerUpdated", data => {
-
-            if(
-                player &&
-                Number(data.id) ===
-                Number(player.id)
-            ){
-
-                player = data;
-
-                updateUI();
+                socket.emit(
+                    "joinGame",
+                    {
+                        playerId:
+                            player.id
+                    }
+                );
 
             }
+        );
 
-        });
+        socket.on(
+            "disconnect",
+            () => {
+
+                $("status").textContent =
+                    "🔴 انقطع الاتصال بالسيرفر";
+
+            }
+        );
+
+        socket.on(
+            "battleFinished",
+            data => {
+
+                message(
+                    data.result === "victory"
+                    ? "🏆 انتصرت في المعركة!"
+                    : "⚠️ انتهت المعركة."
+                );
+
+            }
+        );
+
+        socket.on(
+            "playerMoved",
+            () => {
+
+                if(
+                    $("mapPage")
+                    .classList.contains("active")
+                ){
+
+                    loadWorld();
+
+                }
+
+            }
+        );
 
     }catch(error){
 
-        console.error(
-            "Socket error:",
-            error
-        );
+        console.error(error);
 
     }
 
@@ -653,7 +1695,7 @@ function connectSocket(){
 
 
 /* =========================
-   تحميل اللاعب المحفوظ
+   LOAD SAVED PLAYER
 ========================= */
 
 async function loadSavedPlayer(){
@@ -666,7 +1708,7 @@ async function loadSavedPlayer(){
     if(!id){
 
         $("status").textContent =
-            "🟡 جاهز لتسجيل لاعب جديد";
+            "🟡 جاهز لبدء المملكة";
 
         return;
 
@@ -674,16 +1716,20 @@ async function loadSavedPlayer(){
 
     try{
 
-        const data =
+        player =
             await api(
                 `/api/player/${id}`
             );
 
-        player = data;
-
         showGame();
 
         connectSocket();
+
+        await loadHeroes();
+
+        await loadBehemoths();
+
+        await loadWorld();
 
     }catch(error){
 
@@ -692,7 +1738,7 @@ async function loadSavedPlayer(){
         );
 
         $("status").textContent =
-            "🟡 جاهز لتسجيل لاعب جديد";
+            "🟡 جاهز لبدء المملكة";
 
     }
 
@@ -700,7 +1746,7 @@ async function loadSavedPlayer(){
 
 
 /* =========================
-   خروج
+   LOGOUT
 ========================= */
 
 function logout(){
@@ -717,7 +1763,23 @@ function logout(){
 
 
 /* =========================
-   تشغيل اللعبة
+   ESCAPE HTML
+========================= */
+
+function escapeHTML(value){
+
+    return String(value)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+
+}
+
+
+/* =========================
+   START
 ========================= */
 
 loadSavedPlayer();
