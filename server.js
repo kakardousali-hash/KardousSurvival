@@ -11,6 +11,8 @@ const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 const DATABASE_URL = process.env.DATABASE_URL;
 
+const GAME_VERSION = "17.0";
+
 if (!DATABASE_URL) {
   console.error("DATABASE_URL is missing");
   process.exit(1);
@@ -45,42 +47,52 @@ const BUILDINGS = {
     name: "المزرعة",
     basePower: 100
   },
+
   lumber_mill: {
     name: "منشرة الخشب",
     basePower: 100
   },
+
   iron_mine: {
     name: "منجم الحديد",
     basePower: 150
   },
+
   gold_mine: {
     name: "منجم الذهب",
     basePower: 200
   },
+
   barracks: {
     name: "الثكنة",
     basePower: 250
   },
+
   hospital: {
     name: "المستشفى",
     basePower: 250
   },
+
   research_center: {
     name: "مركز الأبحاث",
     basePower: 300
   },
+
   warehouse: {
     name: "المخزن",
     basePower: 200
   },
+
   watchtower: {
     name: "برج المراقبة",
     basePower: 300
   },
+
   alliance_center: {
     name: "مركز التحالف",
     basePower: 300
   },
+
   airfield: {
     name: "المطار",
     basePower: 500
@@ -103,6 +115,68 @@ const TALENT_TYPES = [
 ];
 
 /* =========================================================
+   CASTLE SYSTEM
+========================================================= */
+
+const MAX_CASTLE_LEVEL = 30;
+const MAX_CASTLE_STARS = 5;
+
+/*
+  تكلفة تطوير القلعة.
+  level = المستوى الحالي.
+  عند المستوى 1 يتم دفع تكلفة المستوى 1 للوصول إلى 2.
+*/
+
+function getCastleUpgradeCost(level, stars) {
+
+  if (level < MAX_CASTLE_LEVEL) {
+
+    return {
+      type: "level",
+      nextLevel: level + 1,
+
+      food: level * 1000,
+      wood: level * 1000,
+      iron: level * 250,
+      gold: Math.floor(level * 100),
+
+      power: 100 + level * 25
+    };
+  }
+
+  if (stars < MAX_CASTLE_STARS) {
+
+    return {
+      type: "star",
+      nextStars: stars + 1,
+
+      food: 30000 + stars * 15000,
+      wood: 30000 + stars * 15000,
+      iron: 10000 + stars * 7500,
+      gold: 5000 + stars * 2500,
+
+      power: 1000 + stars * 500
+    };
+  }
+
+  return null;
+}
+
+/* =========================================================
+   BUILDING COST
+========================================================= */
+
+function getBuildingUpgradeCost(level) {
+
+  return {
+    food: level * 1200,
+    wood: level * 1200,
+    iron: level * 300,
+    gold: Math.floor(level * 120)
+  };
+}
+
+/* =========================================================
    DATABASE HELPERS
 ========================================================= */
 
@@ -110,60 +184,38 @@ function quoteIdentifier(identifier) {
   return '"' + String(identifier).replace(/"/g, '""') + '"';
 }
 
-async function columnExists(table, column) {
-  const result = await pool.query(
-    `
-    SELECT EXISTS (
-      SELECT 1
-      FROM information_schema.columns
-      WHERE table_schema = 'public'
-      AND table_name = $1
-      AND column_name = $2
-    ) AS exists
-    `,
-    [table, column]
-  );
+/*
+  PostgreSQL يسمح باستخدام:
+  ALTER TABLE ... ADD COLUMN IF NOT EXISTS
 
-  return result.rows[0].exists;
-}
+  لذلك لا نعتمد فقط على CREATE TABLE IF NOT EXISTS.
+  هذا مهم جدًا مع قاعدة البيانات القديمة.
+*/
 
 async function addColumnIfMissing(table, column, definition) {
-  const exists = await columnExists(table, column);
 
-  if (!exists) {
-    const sql = `
-      ALTER TABLE ${quoteIdentifier(table)}
-      ADD COLUMN ${quoteIdentifier(column)} ${definition}
-    `;
+  const sql = `
+    ALTER TABLE ${quoteIdentifier(table)}
+    ADD COLUMN IF NOT EXISTS ${quoteIdentifier(column)} ${definition}
+  `;
 
-    await pool.query(sql);
+  await pool.query(sql);
 
-    console.log(`Added missing column: ${table}.${column}`);
-  }
-}
-
-async function createUniqueIndexIfMissing(indexName, table, columns) {
-  const safeIndex = quoteIdentifier(indexName);
-  const safeTable = quoteIdentifier(table);
-  const safeColumns = columns
-    .map(column => quoteIdentifier(column))
-    .join(", ");
-
-  await pool.query(`
-    CREATE UNIQUE INDEX IF NOT EXISTS ${safeIndex}
-    ON ${safeTable} (${safeColumns})
-  `);
+  console.log(
+    `Checked column: ${table}.${column}`
+  );
 }
 
 /* =========================================================
-   DATABASE INITIALIZATION
+   DATABASE TABLES
 ========================================================= */
 
 async function createTables() {
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS players (
       id SERIAL PRIMARY KEY,
-      name TEXT NOT NULL,
+      name TEXT,
       power BIGINT DEFAULT 1000,
       castle_level INTEGER DEFAULT 1,
       castle_stars INTEGER DEFAULT 0,
@@ -183,8 +235,8 @@ async function createTables() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS heroes (
       id SERIAL PRIMARY KEY,
-      player_id INTEGER REFERENCES players(id) ON DELETE CASCADE,
-      name TEXT NOT NULL,
+      player_id INTEGER,
+      name TEXT,
       level INTEGER DEFAULT 1,
       power BIGINT DEFAULT 100,
       rarity TEXT DEFAULT 'عادي',
@@ -195,8 +247,8 @@ async function createTables() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS behemoths (
       id SERIAL PRIMARY KEY,
-      player_id INTEGER REFERENCES players(id) ON DELETE CASCADE,
-      name TEXT NOT NULL,
+      player_id INTEGER,
+      name TEXT,
       level INTEGER DEFAULT 1,
       power BIGINT DEFAULT 500,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -206,8 +258,8 @@ async function createTables() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS alliances (
       id SERIAL PRIMARY KEY,
-      name TEXT NOT NULL,
-      leader_id INTEGER REFERENCES players(id),
+      name TEXT,
+      leader_id INTEGER,
       power BIGINT DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
@@ -216,8 +268,8 @@ async function createTables() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS alliance_members (
       id SERIAL PRIMARY KEY,
-      alliance_id INTEGER REFERENCES alliances(id) ON DELETE CASCADE,
-      player_id INTEGER REFERENCES players(id) ON DELETE CASCADE,
+      alliance_id INTEGER,
+      player_id INTEGER,
       role TEXT DEFAULT 'member'
     )
   `);
@@ -246,7 +298,7 @@ async function createTables() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS marches (
       id SERIAL PRIMARY KEY,
-      player_id INTEGER REFERENCES players(id) ON DELETE CASCADE,
+      player_id INTEGER,
       target_type TEXT DEFAULT 'zombie',
       target_id INTEGER,
       troops INTEGER DEFAULT 0,
@@ -258,7 +310,7 @@ async function createTables() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS battle_reports (
       id SERIAL PRIMARY KEY,
-      player_id INTEGER REFERENCES players(id) ON DELETE CASCADE,
+      player_id INTEGER,
       result TEXT,
       enemy_type TEXT,
       enemy_id INTEGER,
@@ -271,9 +323,9 @@ async function createTables() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS buildings (
       id SERIAL PRIMARY KEY,
-      player_id INTEGER REFERENCES players(id) ON DELETE CASCADE,
-      type TEXT NOT NULL,
-      name TEXT NOT NULL,
+      player_id INTEGER,
+      type TEXT,
+      name TEXT,
       level INTEGER DEFAULT 1,
       power BIGINT DEFAULT 100
     )
@@ -282,8 +334,8 @@ async function createTables() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS research (
       id SERIAL PRIMARY KEY,
-      player_id INTEGER REFERENCES players(id) ON DELETE CASCADE,
-      type TEXT NOT NULL,
+      player_id INTEGER,
+      type TEXT,
       level INTEGER DEFAULT 1,
       power BIGINT DEFAULT 100
     )
@@ -292,8 +344,8 @@ async function createTables() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS talents (
       id SERIAL PRIMARY KEY,
-      player_id INTEGER REFERENCES players(id) ON DELETE CASCADE,
-      type TEXT NOT NULL,
+      player_id INTEGER,
+      type TEXT,
       level INTEGER DEFAULT 1
     )
   `);
@@ -301,8 +353,8 @@ async function createTables() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS aircraft (
       id SERIAL PRIMARY KEY,
-      player_id INTEGER REFERENCES players(id) ON DELETE CASCADE,
-      name TEXT NOT NULL,
+      player_id INTEGER,
+      name TEXT,
       level INTEGER DEFAULT 1,
       power BIGINT DEFAULT 500,
       fuel INTEGER DEFAULT 100
@@ -311,14 +363,17 @@ async function createTables() {
 }
 
 /* =========================================================
-   FULL DATABASE MIGRATION
-   DOES NOT DELETE OLD DATA
+   FULL SAFE MIGRATION
 ========================================================= */
 
 async function migrateDatabase() {
-  console.log("Starting database migration...");
 
-  /* ---------------- PLAYERS ---------------- */
+  console.log("======================================");
+  console.log("Starting SAFE database migration...");
+  console.log("Game version:", GAME_VERSION);
+  console.log("======================================");
+
+  /* PLAYERS */
 
   await addColumnIfMissing(
     "players",
@@ -404,7 +459,7 @@ async function migrateDatabase() {
     "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
   );
 
-  /* ---------------- HEROES ---------------- */
+  /* HEROES */
 
   await addColumnIfMissing(
     "heroes",
@@ -415,7 +470,7 @@ async function migrateDatabase() {
   await addColumnIfMissing(
     "heroes",
     "name",
-    "TEXT DEFAULT 'بطل'"
+    "TEXT"
   );
 
   await addColumnIfMissing(
@@ -442,7 +497,7 @@ async function migrateDatabase() {
     "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
   );
 
-  /* ---------------- BEHEMOTHS ---------------- */
+  /* BEHEMOTHS */
 
   await addColumnIfMissing(
     "behemoths",
@@ -453,7 +508,7 @@ async function migrateDatabase() {
   await addColumnIfMissing(
     "behemoths",
     "name",
-    "TEXT DEFAULT 'البھيثومي'"
+    "TEXT"
   );
 
   await addColumnIfMissing(
@@ -474,12 +529,12 @@ async function migrateDatabase() {
     "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
   );
 
-  /* ---------------- ALLIANCES ---------------- */
+  /* ALLIANCES */
 
   await addColumnIfMissing(
     "alliances",
     "name",
-    "TEXT DEFAULT 'تحالف'"
+    "TEXT"
   );
 
   await addColumnIfMissing(
@@ -500,7 +555,7 @@ async function migrateDatabase() {
     "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
   );
 
-  /* ---------------- ALLIANCE MEMBERS ---------------- */
+  /* ALLIANCE MEMBERS */
 
   await addColumnIfMissing(
     "alliance_members",
@@ -520,7 +575,7 @@ async function migrateDatabase() {
     "TEXT DEFAULT 'member'"
   );
 
-  /* ---------------- ZOMBIES ---------------- */
+  /* ZOMBIES */
 
   await addColumnIfMissing(
     "zombies",
@@ -546,7 +601,7 @@ async function migrateDatabase() {
     "INTEGER DEFAULT 0"
   );
 
-  /* ---------------- FORTS ---------------- */
+  /* FORTS */
 
   await addColumnIfMissing(
     "forts",
@@ -578,7 +633,7 @@ async function migrateDatabase() {
     "INTEGER DEFAULT 0"
   );
 
-  /* ---------------- MARCHES ---------------- */
+  /* MARCHES */
 
   await addColumnIfMissing(
     "marches",
@@ -616,7 +671,7 @@ async function migrateDatabase() {
     "TEXT DEFAULT 'marching'"
   );
 
-  /* ---------------- BATTLE REPORTS ---------------- */
+  /* BATTLE REPORTS */
 
   await addColumnIfMissing(
     "battle_reports",
@@ -660,7 +715,7 @@ async function migrateDatabase() {
     "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
   );
 
-  /* ---------------- BUILDINGS ---------------- */
+  /* BUILDINGS */
 
   await addColumnIfMissing(
     "buildings",
@@ -671,13 +726,13 @@ async function migrateDatabase() {
   await addColumnIfMissing(
     "buildings",
     "type",
-    "TEXT DEFAULT 'farm'"
+    "TEXT"
   );
 
   await addColumnIfMissing(
     "buildings",
     "name",
-    "TEXT DEFAULT 'مبنى'"
+    "TEXT"
   );
 
   await addColumnIfMissing(
@@ -692,7 +747,7 @@ async function migrateDatabase() {
     "BIGINT DEFAULT 100"
   );
 
-  /* ---------------- RESEARCH ---------------- */
+  /* RESEARCH */
 
   await addColumnIfMissing(
     "research",
@@ -703,7 +758,7 @@ async function migrateDatabase() {
   await addColumnIfMissing(
     "research",
     "type",
-    "TEXT DEFAULT 'economy'"
+    "TEXT"
   );
 
   await addColumnIfMissing(
@@ -718,7 +773,7 @@ async function migrateDatabase() {
     "BIGINT DEFAULT 100"
   );
 
-  /* ---------------- TALENTS ---------------- */
+  /* TALENTS */
 
   await addColumnIfMissing(
     "talents",
@@ -729,7 +784,7 @@ async function migrateDatabase() {
   await addColumnIfMissing(
     "talents",
     "type",
-    "TEXT DEFAULT 'war'"
+    "TEXT"
   );
 
   await addColumnIfMissing(
@@ -738,7 +793,7 @@ async function migrateDatabase() {
     "INTEGER DEFAULT 1"
   );
 
-  /* ---------------- AIRCRAFT ---------------- */
+  /* AIRCRAFT */
 
   await addColumnIfMissing(
     "aircraft",
@@ -749,7 +804,7 @@ async function migrateDatabase() {
   await addColumnIfMissing(
     "aircraft",
     "name",
-    "TEXT DEFAULT 'Kardous Airship'"
+    "TEXT"
   );
 
   await addColumnIfMissing(
@@ -770,17 +825,23 @@ async function migrateDatabase() {
     "INTEGER DEFAULT 100"
   );
 
-  /* =========================================================
-     FIX NULL VALUES
-  ========================================================= */
+  /* =====================================================
+     NORMALIZE OLD DATA
+  ===================================================== */
 
   await pool.query(`
     UPDATE players
     SET
-      name = COALESCE(name, 'مملكة'),
+      name = COALESCE(NULLIF(TRIM(name), ''), 'مملكة-' || id),
       power = COALESCE(power, 1000),
-      castle_level = COALESCE(castle_level, 1),
-      castle_stars = COALESCE(castle_stars, 0),
+      castle_level = GREATEST(
+        1,
+        LEAST(COALESCE(castle_level, 1), 30)
+      ),
+      castle_stars = GREATEST(
+        0,
+        LEAST(COALESCE(castle_stars, 0), 5)
+      ),
       food = COALESCE(food, 5000),
       wood = COALESCE(wood, 5000),
       iron = COALESCE(iron, 1000),
@@ -796,18 +857,18 @@ async function migrateDatabase() {
   await pool.query(`
     UPDATE heroes
     SET
-      name = COALESCE(name, 'بطل'),
-      level = COALESCE(level, 1),
+      name = COALESCE(NULLIF(TRIM(name), ''), 'بطل-' || id),
+      level = GREATEST(1, COALESCE(level, 1)),
       power = COALESCE(power, 100),
-      rarity = COALESCE(rarity, 'عادي'),
+      rarity = COALESCE(NULLIF(TRIM(rarity), ''), 'عادي'),
       created_at = COALESCE(created_at, CURRENT_TIMESTAMP)
   `);
 
   await pool.query(`
     UPDATE behemoths
     SET
-      name = COALESCE(name, 'البھيثومي'),
-      level = COALESCE(level, 1),
+      name = COALESCE(NULLIF(TRIM(name), ''), 'البيهيومي-' || id),
+      level = GREATEST(1, COALESCE(level, 1)),
       power = COALESCE(power, 500),
       created_at = COALESCE(created_at, CURRENT_TIMESTAMP)
   `);
@@ -815,21 +876,20 @@ async function migrateDatabase() {
   await pool.query(`
     UPDATE alliances
     SET
-      name = COALESCE(name, 'تحالف'),
+      name = COALESCE(NULLIF(TRIM(name), ''), 'تحالف-' || id),
       power = COALESCE(power, 0),
       created_at = COALESCE(created_at, CURRENT_TIMESTAMP)
   `);
 
   await pool.query(`
     UPDATE alliance_members
-    SET
-      role = COALESCE(role, 'member')
+    SET role = COALESCE(NULLIF(TRIM(role), ''), 'member')
   `);
 
   await pool.query(`
     UPDATE zombies
     SET
-      level = COALESCE(level, 1),
+      level = GREATEST(1, COALESCE(level, 1)),
       power = COALESCE(power, 100),
       x = COALESCE(x, 0),
       y = COALESCE(y, 0)
@@ -838,8 +898,8 @@ async function migrateDatabase() {
   await pool.query(`
     UPDATE forts
     SET
-      name = COALESCE(name, 'حصن'),
-      level = COALESCE(level, 1),
+      name = COALESCE(NULLIF(TRIM(name), ''), 'حصن-' || id),
+      level = GREATEST(1, COALESCE(level, 1)),
       power = COALESCE(power, 1000),
       x = COALESCE(x, 0),
       y = COALESCE(y, 0)
@@ -848,10 +908,19 @@ async function migrateDatabase() {
   await pool.query(`
     UPDATE marches
     SET
-      target_type = COALESCE(target_type, 'zombie'),
+      target_type = COALESCE(
+        NULLIF(TRIM(target_type), ''),
+        'zombie'
+      ),
       troops = COALESCE(troops, 0),
-      started_at = COALESCE(started_at, CURRENT_TIMESTAMP),
-      status = COALESCE(status, 'marching')
+      started_at = COALESCE(
+        started_at,
+        CURRENT_TIMESTAMP
+      ),
+      status = COALESCE(
+        NULLIF(TRIM(status), ''),
+        'marching'
+      )
   `);
 
   await pool.query(`
@@ -862,138 +931,92 @@ async function migrateDatabase() {
       created_at = COALESCE(created_at, CURRENT_TIMESTAMP)
   `);
 
+  /*
+    Buildings:
+    إذا كان النوع مفقودًا نعطيه اسمًا قديمًا
+    بدل وضع farm للجميع.
+  */
+
   await pool.query(`
     UPDATE buildings
     SET
-      type = COALESCE(type, 'farm'),
-      level = COALESCE(level, 1),
+      type = COALESCE(
+        NULLIF(TRIM(type), ''),
+        'legacy_' || id
+      ),
+      name = COALESCE(
+        NULLIF(TRIM(name), ''),
+        'مبنى-' || id
+      ),
+      level = GREATEST(1, COALESCE(level, 1)),
       power = COALESCE(power, 100)
   `);
 
-  /* إعطاء المباني القديمة أسماء صحيحة حسب النوع */
+  for (const [type, config] of Object.entries(BUILDINGS)) {
 
-  for (const [type, data] of Object.entries(BUILDINGS)) {
     await pool.query(
       `
       UPDATE buildings
       SET name = $1
       WHERE type = $2
       `,
-      [data.name, type]
+      [
+        config.name,
+        type
+      ]
     );
   }
 
   await pool.query(`
-    UPDATE buildings
-    SET name = COALESCE(name, 'مبنى')
-  `);
-
-  await pool.query(`
     UPDATE research
     SET
-      type = COALESCE(type, 'economy'),
-      level = COALESCE(level, 1),
+      type = COALESCE(
+        NULLIF(TRIM(type), ''),
+        'legacy_' || id
+      ),
+      level = GREATEST(1, COALESCE(level, 1)),
       power = COALESCE(power, 100)
   `);
 
   await pool.query(`
     UPDATE talents
     SET
-      type = COALESCE(type, 'war'),
-      level = COALESCE(level, 1)
+      type = COALESCE(
+        NULLIF(TRIM(type), ''),
+        'legacy_' || id
+      ),
+      level = GREATEST(1, COALESCE(level, 1))
   `);
 
   await pool.query(`
     UPDATE aircraft
     SET
-      name = COALESCE(name, 'Kardous Airship'),
-      level = COALESCE(level, 1),
+      name = COALESCE(
+        NULLIF(TRIM(name), ''),
+        'Kardous Airship'
+      ),
+      level = GREATEST(1, COALESCE(level, 1)),
       power = COALESCE(power, 500),
-      fuel = COALESCE(fuel, 100)
+      fuel = GREATEST(
+        0,
+        LEAST(COALESCE(fuel, 100), 100)
+      )
   `);
 
-  /* =========================================================
-     UNIQUE INDEXES
-  ========================================================= */
-
-  await createUniqueIndexIfMissing(
-    "idx_players_name_lower_unique",
-    "players",
-    ["name"]
-  ).catch(error => {
-    console.log(
-      "Players name unique index skipped:",
-      error.message
-    );
-  });
-
-  await createUniqueIndexIfMissing(
-    "idx_buildings_player_type_unique",
-    "buildings",
-    ["player_id", "type"]
-  ).catch(error => {
-    console.log(
-      "Buildings unique index skipped:",
-      error.message
-    );
-  });
-
-  await createUniqueIndexIfMissing(
-    "idx_research_player_type_unique",
-    "research",
-    ["player_id", "type"]
-  ).catch(error => {
-    console.log(
-      "Research unique index skipped:",
-      error.message
-    );
-  });
-
-  await createUniqueIndexIfMissing(
-    "idx_talents_player_type_unique",
-    "talents",
-    ["player_id", "type"]
-  ).catch(error => {
-    console.log(
-      "Talents unique index skipped:",
-      error.message
-    );
-  });
-
-  await createUniqueIndexIfMissing(
-    "idx_aircraft_player_unique",
-    "aircraft",
-    ["player_id"]
-  ).catch(error => {
-    console.log(
-      "Aircraft unique index skipped:",
-      error.message
-    );
-  });
-
-  await createUniqueIndexIfMissing(
-    "idx_alliance_members_unique",
-    "alliance_members",
-    ["alliance_id", "player_id"]
-  ).catch(error => {
-    console.log(
-      "Alliance member unique index skipped:",
-      error.message
-    );
-  });
-
-  console.log("Database migration completed successfully.");
+  console.log("Old database data normalized.");
 }
 
 /* =========================================================
-   CREATE STARTER DATA
+   SAFE PLAYER DATA SEED
 ========================================================= */
 
-async function seedPlayerData(playerId) {
+async function seedPlayerData(playerId, db = pool) {
 
-  for (const [type, data] of Object.entries(BUILDINGS)) {
+  /* BUILDINGS */
 
-    const existing = await pool.query(
+  for (const [type, config] of Object.entries(BUILDINGS)) {
+
+    const existing = await db.query(
       `
       SELECT id
       FROM buildings
@@ -1001,31 +1024,42 @@ async function seedPlayerData(playerId) {
       AND type = $2
       LIMIT 1
       `,
-      [playerId, type]
+      [
+        playerId,
+        type
+      ]
     );
 
     if (existing.rows.length === 0) {
 
-      await pool.query(
+      await db.query(
         `
         INSERT INTO buildings
-        (player_id, type, name, level, power)
-        VALUES ($1, $2, $3, 1, $4)
+        (
+          player_id,
+          type,
+          name,
+          level,
+          power
+        )
+        VALUES
+        ($1, $2, $3, 1, $4)
         `,
         [
           playerId,
           type,
-          data.name,
-          data.basePower
+          config.name,
+          config.basePower
         ]
       );
-
     }
   }
 
+  /* RESEARCH */
+
   for (const type of RESEARCH_TYPES) {
 
-    const existing = await pool.query(
+    const existing = await db.query(
       `
       SELECT id
       FROM research
@@ -1033,26 +1067,39 @@ async function seedPlayerData(playerId) {
       AND type = $2
       LIMIT 1
       `,
-      [playerId, type]
+      [
+        playerId,
+        type
+      ]
     );
 
     if (existing.rows.length === 0) {
 
-      await pool.query(
+      await db.query(
         `
         INSERT INTO research
-        (player_id, type, level, power)
-        VALUES ($1, $2, 1, 100)
+        (
+          player_id,
+          type,
+          level,
+          power
+        )
+        VALUES
+        ($1, $2, 1, 100)
         `,
-        [playerId, type]
+        [
+          playerId,
+          type
+        ]
       );
-
     }
   }
 
+  /* TALENTS */
+
   for (const type of TALENT_TYPES) {
 
-    const existing = await pool.query(
+    const existing = await db.query(
       `
       SELECT id
       FROM talents
@@ -1060,24 +1107,36 @@ async function seedPlayerData(playerId) {
       AND type = $2
       LIMIT 1
       `,
-      [playerId, type]
+      [
+        playerId,
+        type
+      ]
     );
 
     if (existing.rows.length === 0) {
 
-      await pool.query(
+      await db.query(
         `
         INSERT INTO talents
-        (player_id, type, level)
-        VALUES ($1, $2, 1)
+        (
+          player_id,
+          type,
+          level
+        )
+        VALUES
+        ($1, $2, 1)
         `,
-        [playerId, type]
+        [
+          playerId,
+          type
+        ]
       );
-
     }
   }
 
-  const aircraft = await pool.query(
+  /* AIRCRAFT */
+
+  const aircraft = await db.query(
     `
     SELECT id
     FROM aircraft
@@ -1089,15 +1148,21 @@ async function seedPlayerData(playerId) {
 
   if (aircraft.rows.length === 0) {
 
-    await pool.query(
+    await db.query(
       `
       INSERT INTO aircraft
-      (player_id, name, level, power, fuel)
-      VALUES ($1, 'Kardous Airship', 1, 500, 100)
+      (
+        player_id,
+        name,
+        level,
+        power,
+        fuel
+      )
+      VALUES
+      ($1, 'Kardous Airship', 1, 500, 100)
       `,
       [playerId]
     );
-
   }
 }
 
@@ -1107,7 +1172,22 @@ async function seedPlayerData(playerId) {
 
 async function ensurePlayerData(playerId) {
 
+  const player = await pool.query(
+    `
+    SELECT id
+    FROM players
+    WHERE id = $1
+    `,
+    [playerId]
+  );
+
+  if (player.rows.length === 0) {
+    return false;
+  }
+
   await seedPlayerData(playerId);
+
+  /* HEROES */
 
   const heroCount = await pool.query(
     `
@@ -1125,17 +1205,25 @@ async function ensurePlayerData(playerId) {
       await pool.query(
         `
         INSERT INTO heroes
-        (player_id, name, level, power, rarity)
-        VALUES ($1, $2, 1, 100, 'عادي')
+        (
+          player_id,
+          name,
+          level,
+          power,
+          rarity
+        )
+        VALUES
+        ($1, $2, 1, 100, 'عادي')
         `,
         [
           playerId,
           `البطل ${i}`
         ]
       );
-
     }
   }
+
+  /* BEHEMOTHS */
 
   const behemothCount = await pool.query(
     `
@@ -1149,10 +1237,10 @@ async function ensurePlayerData(playerId) {
   if (Number(behemothCount.rows[0].count) === 0) {
 
     const names = [
-      "البھيثومي الأول",
-      "البھيثومي الثاني",
-      "البھيثومي الثالث",
-      "البھيثومي الرابع"
+      "البيهيومي الأول",
+      "البيهيومي الثاني",
+      "البيهيومي الثالث",
+      "البيهيومي الرابع"
     ];
 
     for (const name of names) {
@@ -1160,17 +1248,24 @@ async function ensurePlayerData(playerId) {
       await pool.query(
         `
         INSERT INTO behemoths
-        (player_id, name, level, power)
-        VALUES ($1, $2, 1, 500)
+        (
+          player_id,
+          name,
+          level,
+          power
+        )
+        VALUES
+        ($1, $2, 1, 500)
         `,
         [
           playerId,
           name
         ]
       );
-
     }
   }
+
+  return true;
 }
 
 /* =========================================================
@@ -1180,12 +1275,16 @@ async function ensurePlayerData(playerId) {
 app.get("/api/status", (req, res) => {
 
   res.json({
+    success: true,
     game: "Kardous Survival",
-    version: "16.0",
+    version: GAME_VERSION,
     server: "online",
-    database: "connected"
+    database: "connected",
+    castle: {
+      maxLevel: MAX_CASTLE_LEVEL,
+      maxStars: MAX_CASTLE_STARS
+    }
   });
-
 });
 
 /* =========================================================
@@ -1195,6 +1294,8 @@ app.get("/api/status", (req, res) => {
 app.post("/api/register", async (req, res) => {
 
   const client = await pool.connect();
+
+  let transactionStarted = false;
 
   try {
 
@@ -1208,7 +1309,6 @@ app.post("/api/register", async (req, res) => {
         success: false,
         message: "اكتب اسم المملكة"
       });
-
     }
 
     if (name.length < 2) {
@@ -1217,7 +1317,6 @@ app.post("/api/register", async (req, res) => {
         success: false,
         message: "اسم المملكة قصير جدًا"
       });
-
     }
 
     if (name.length > 30) {
@@ -1226,10 +1325,10 @@ app.post("/api/register", async (req, res) => {
         success: false,
         message: "اسم المملكة طويل جدًا"
       });
-
     }
 
     await client.query("BEGIN");
+    transactionStarted = true;
 
     const existing = await client.query(
       `
@@ -1244,12 +1343,12 @@ app.post("/api/register", async (req, res) => {
     if (existing.rows.length > 0) {
 
       await client.query("ROLLBACK");
+      transactionStarted = false;
 
       return res.status(409).json({
         success: false,
         message: "اسم المملكة مستخدم بالفعل"
       });
-
     }
 
     const playerResult = await client.query(
@@ -1300,78 +1399,77 @@ app.post("/api/register", async (req, res) => {
       await client.query(
         `
         INSERT INTO heroes
-        (player_id, name, level, power, rarity)
-        VALUES ($1, $2, 1, 100, 'عادي')
+        (
+          player_id,
+          name,
+          level,
+          power,
+          rarity
+        )
+        VALUES
+        ($1, $2, 1, 100, 'عادي')
         `,
         [
           player.id,
           `البطل ${i}`
         ]
       );
-
     }
 
     /* BEHEMOTHS */
 
     const behemothNames = [
-      "البھيثومي الأول",
-      "البھيثومي الثاني",
-      "البھيثومي الثالث",
-      "البھيثومي الرابع"
+      "البيهيومي الأول",
+      "البيهيومي الثاني",
+      "البيهيومي الثالث",
+      "البيهيومي الرابع"
     ];
 
-    for (const behemothName of behemothNames) {
+    for (const name of behemothNames) {
 
       await client.query(
         `
         INSERT INTO behemoths
-        (player_id, name, level, power)
-        VALUES ($1, $2, 1, 500)
+        (
+          player_id,
+          name,
+          level,
+          power
+        )
+        VALUES
+        ($1, $2, 1, 500)
         `,
         [
           player.id,
-          behemothName
+          name
         ]
       );
-
     }
 
     /* BUILDINGS */
 
-    for (const [type, data] of Object.entries(BUILDINGS)) {
+    for (const [type, config] of Object.entries(BUILDINGS)) {
 
-      const existingBuilding = await client.query(
+      await client.query(
         `
-        SELECT id
-        FROM buildings
-        WHERE player_id = $1
-        AND type = $2
-        LIMIT 1
+        INSERT INTO buildings
+        (
+          player_id,
+          type,
+          name,
+          level,
+          power
+        )
+        VALUES
+        ($1, $2, $3, 1, $4)
         `,
         [
           player.id,
-          type
+          type,
+          config.name,
+          config.basePower
         ]
       );
-
-      if (existingBuilding.rows.length === 0) {
-
-        await client.query(
-          `
-          INSERT INTO buildings
-          (player_id, type, name, level, power)
-          VALUES ($1, $2, $3, 1, $4)
-          `,
-          [
-            player.id,
-            type,
-            data.name,
-            data.basePower
-          ]
-        );
-
-      }
-
     }
 
     /* RESEARCH */
@@ -1381,15 +1479,20 @@ app.post("/api/register", async (req, res) => {
       await client.query(
         `
         INSERT INTO research
-        (player_id, type, level, power)
-        VALUES ($1, $2, 1, 100)
+        (
+          player_id,
+          type,
+          level,
+          power
+        )
+        VALUES
+        ($1, $2, 1, 100)
         `,
         [
           player.id,
           type
         ]
       );
-
     }
 
     /* TALENTS */
@@ -1399,15 +1502,19 @@ app.post("/api/register", async (req, res) => {
       await client.query(
         `
         INSERT INTO talents
-        (player_id, type, level)
-        VALUES ($1, $2, 1)
+        (
+          player_id,
+          type,
+          level
+        )
+        VALUES
+        ($1, $2, 1)
         `,
         [
           player.id,
           type
         ]
       );
-
     }
 
     /* AIRCRAFT */
@@ -1415,13 +1522,21 @@ app.post("/api/register", async (req, res) => {
     await client.query(
       `
       INSERT INTO aircraft
-      (player_id, name, level, power, fuel)
-      VALUES ($1, 'Kardous Airship', 1, 500, 100)
+      (
+        player_id,
+        name,
+        level,
+        power,
+        fuel
+      )
+      VALUES
+      ($1, 'Kardous Airship', 1, 500, 100)
       `,
       [player.id]
     );
 
     await client.query("COMMIT");
+    transactionStarted = false;
 
     console.log(
       `New player registered: ${player.name} (${player.id})`
@@ -1434,11 +1549,17 @@ app.post("/api/register", async (req, res) => {
 
   } catch (error) {
 
-    try {
-      await client.query("ROLLBACK");
-    } catch {}
+    if (transactionStarted) {
 
-    console.error("Register error:", error);
+      try {
+        await client.query("ROLLBACK");
+      } catch {}
+    }
+
+    console.error(
+      "Register error:",
+      error
+    );
 
     res.status(500).json({
       success: false,
@@ -1449,9 +1570,7 @@ app.post("/api/register", async (req, res) => {
   } finally {
 
     client.release();
-
   }
-
 });
 
 /* =========================================================
@@ -1464,13 +1583,12 @@ app.get("/api/player/:id", async (req, res) => {
 
     const id = Number(req.params.id);
 
-    if (!Number.isInteger(id)) {
+    if (!Number.isInteger(id) || id <= 0) {
 
       return res.status(400).json({
         success: false,
         message: "معرف اللاعب غير صحيح"
       });
-
     }
 
     const exists = await pool.query(
@@ -1488,7 +1606,6 @@ app.get("/api/player/:id", async (req, res) => {
         success: false,
         message: "المملكة غير موجودة"
       });
-
     }
 
     await ensurePlayerData(id);
@@ -1506,429 +1623,516 @@ app.get("/api/player/:id", async (req, res) => {
 
   } catch (error) {
 
-    console.error("Player error:", error);
+    console.error(
+      "Player error:",
+      error
+    );
 
     res.status(500).json({
       success: false,
       message: "حدث خطأ في السيرفر"
     });
-
   }
-
 });
 
 /* =========================================================
    COLLECT RESOURCES
 ========================================================= */
 
-app.post("/api/player/:id/collect", async (req, res) => {
+app.post(
+  "/api/player/:id/collect",
+  async (req, res) => {
 
-  try {
+    try {
 
-    const id = Number(req.params.id);
+      const id = Number(req.params.id);
 
-    await ensurePlayerData(id);
+      const exists = await ensurePlayerData(id);
 
-    const buildingsResult = await pool.query(
-      `
-      SELECT type, level
-      FROM buildings
-      WHERE player_id = $1
-      `,
-      [id]
-    );
+      if (!exists) {
 
-    let food = 500;
-    let wood = 500;
-    let iron = 100;
-    let gold = 50;
-
-    for (const building of buildingsResult.rows) {
-
-      const level = Number(building.level);
-
-      if (building.type === "farm") {
-        food += level * 100;
+        return res.status(404).json({
+          success: false,
+          message: "المملكة غير موجودة"
+        });
       }
 
-      if (building.type === "lumber_mill") {
-        wood += level * 100;
+      const buildingsResult = await pool.query(
+        `
+        SELECT type, level
+        FROM buildings
+        WHERE player_id = $1
+        `,
+        [id]
+      );
+
+      let food = 500;
+      let wood = 500;
+      let iron = 100;
+      let gold = 50;
+
+      for (const building of buildingsResult.rows) {
+
+        const level = Number(
+          building.level
+        );
+
+        if (building.type === "farm") {
+          food += level * 100;
+        }
+
+        if (building.type === "lumber_mill") {
+          wood += level * 100;
+        }
+
+        if (building.type === "iron_mine") {
+          iron += level * 25;
+        }
+
+        if (building.type === "gold_mine") {
+          gold += level * 10;
+        }
       }
 
-      if (building.type === "iron_mine") {
-        iron += level * 25;
-      }
+      const result = await pool.query(
+        `
+        UPDATE players
+        SET
+          food = food + $1,
+          wood = wood + $2,
+          iron = iron + $3,
+          gold = gold + $4
+        WHERE id = $5
+        RETURNING *
+        `,
+        [
+          food,
+          wood,
+          iron,
+          gold,
+          id
+        ]
+      );
 
-      if (building.type === "gold_mine") {
-        gold += level * 10;
-      }
+      res.json({
+        success: true,
 
+        gained: {
+          food,
+          wood,
+          iron,
+          gold
+        },
+
+        player: result.rows[0]
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Collect error:",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message: "فشل جمع الموارد"
+      });
     }
-
-    const result = await pool.query(
-      `
-      UPDATE players
-      SET
-        food = food + $1,
-        wood = wood + $2,
-        iron = iron + $3,
-        gold = gold + $4
-      WHERE id = $5
-      RETURNING *
-      `,
-      [
-        food,
-        wood,
-        iron,
-        gold,
-        id
-      ]
-    );
-
-    res.json({
-      success: true,
-      gained: {
-        food,
-        wood,
-        iron,
-        gold
-      },
-      player: result.rows[0]
-    });
-
-  } catch (error) {
-
-    console.error("Collect error:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "فشل جمع الموارد"
-    });
-
   }
-
-});
+);
 
 /* =========================================================
    CASTLE INFO
 ========================================================= */
 
-app.get("/api/player/:id/castle", async (req, res) => {
+app.get(
+  "/api/player/:id/castle",
+  async (req, res) => {
 
-  try {
+    try {
 
-    const id = Number(req.params.id);
+      const id = Number(req.params.id);
 
-    const result = await pool.query(
-      `
-      SELECT
-        castle_level,
-        castle_stars,
-        power,
-        food,
-        wood,
-        iron,
-        gold
-      FROM players
-      WHERE id = $1
-      `,
-      [id]
-    );
+      const result = await pool.query(
+        `
+        SELECT
+          id,
+          name,
+          castle_level,
+          castle_stars,
+          power,
+          food,
+          wood,
+          iron,
+          gold
+        FROM players
+        WHERE id = $1
+        `,
+        [id]
+      );
 
-    if (result.rows.length === 0) {
+      if (result.rows.length === 0) {
 
-      return res.status(404).json({
-        success: false,
-        message: "المملكة غير موجودة"
+        return res.status(404).json({
+          success: false,
+          message: "المملكة غير موجودة"
+        });
+      }
+
+      const player = result.rows[0];
+
+      const level = Number(
+        player.castle_level
+      );
+
+      const stars = Number(
+        player.castle_stars
+      );
+
+      const next = getCastleUpgradeCost(
+        level,
+        stars
+      );
+
+      res.json({
+        success: true,
+
+        castle: {
+          level,
+          stars,
+          power: Number(player.power)
+        },
+
+        resources: {
+          food: Number(player.food),
+          wood: Number(player.wood),
+          iron: Number(player.iron),
+          gold: Number(player.gold)
+        },
+
+        next,
+
+        maximum: {
+          level: MAX_CASTLE_LEVEL,
+          stars: MAX_CASTLE_STARS
+        }
       });
 
+    } catch (error) {
+
+      console.error(
+        "Castle info error:",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message: "فشل تحميل القلعة"
+      });
     }
-
-    const player = result.rows[0];
-
-    const level = Number(player.castle_level);
-    const stars = Number(player.castle_stars);
-
-    let next = null;
-
-    if (level < 30) {
-
-      const nextLevel = level + 1;
-
-      next = {
-        type: "level",
-        level: nextLevel,
-        food: level * 1000,
-        wood: level * 1000,
-        iron: level * 250,
-        gold: Math.floor(level * 100),
-        power: 500 + nextLevel * 100
-      };
-
-    } else if (stars < 5) {
-
-      const nextStar = stars + 1;
-
-      next = {
-        type: "star",
-        stars: nextStar,
-        food: 30000 + stars * 15000,
-        wood: 30000 + stars * 15000,
-        iron: 10000 + stars * 7500,
-        gold: 5000 + stars * 2500,
-        power: 5000 + stars * 1000
-      };
-
-    }
-
-    res.json({
-      success: true,
-      current: {
-        level,
-        stars,
-        power: Number(player.power)
-      },
-      next,
-      maximum: {
-        level: 30,
-        stars: 5
-      }
-    });
-
-  } catch (error) {
-
-    console.error("Castle info error:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "فشل تحميل القلعة"
-    });
-
   }
-
-});
+);
 
 /* =========================================================
    UPGRADE CASTLE
 ========================================================= */
 
-app.post("/api/player/:id/upgrade-castle", async (req, res) => {
+app.post(
+  "/api/player/:id/upgrade-castle",
+  async (req, res) => {
 
-  const client = await pool.connect();
+    const client = await pool.connect();
 
-  try {
-
-    const id = Number(req.params.id);
-
-    await client.query("BEGIN");
-
-    const result = await client.query(
-      `
-      SELECT *
-      FROM players
-      WHERE id = $1
-      FOR UPDATE
-      `,
-      [id]
-    );
-
-    if (result.rows.length === 0) {
-
-      await client.query("ROLLBACK");
-
-      return res.status(404).json({
-        success: false,
-        message: "المملكة غير موجودة"
-      });
-
-    }
-
-    const player = result.rows[0];
-
-    const level = Number(player.castle_level);
-    const stars = Number(player.castle_stars);
-
-    let foodCost;
-    let woodCost;
-    let ironCost;
-    let goldCost;
-    let powerGain;
-
-    let newLevel = level;
-    let newStars = stars;
-
-    if (level < 30) {
-
-      foodCost = level * 1000;
-      woodCost = level * 1000;
-      ironCost = level * 250;
-      goldCost = Math.floor(level * 100);
-      powerGain = 100;
-
-      newLevel = level + 1;
-
-    } else if (stars < 5) {
-
-      foodCost = 30000 + stars * 15000;
-      woodCost = 30000 + stars * 15000;
-      ironCost = 10000 + stars * 7500;
-      goldCost = 5000 + stars * 2500;
-      powerGain = 1000;
-
-      newStars = stars + 1;
-
-    } else {
-
-      await client.query("ROLLBACK");
-
-      return res.status(400).json({
-        success: false,
-        message: "وصلت القلعة إلى الحد الأقصى"
-      });
-
-    }
-
-    if (
-      Number(player.food) < foodCost ||
-      Number(player.wood) < woodCost ||
-      Number(player.iron) < ironCost ||
-      Number(player.gold) < goldCost
-    ) {
-
-      await client.query("ROLLBACK");
-
-      return res.status(400).json({
-        success: false,
-        message: "الموارد غير كافية",
-        cost: {
-          food: foodCost,
-          wood: woodCost,
-          iron: ironCost,
-          gold: goldCost
-        }
-      });
-
-    }
-
-    const updated = await client.query(
-      `
-      UPDATE players
-      SET
-        castle_level = $1,
-        castle_stars = $2,
-        food = food - $3,
-        wood = wood - $4,
-        iron = iron - $5,
-        gold = gold - $6,
-        power = power + $7
-      WHERE id = $8
-      RETURNING *
-      `,
-      [
-        newLevel,
-        newStars,
-        foodCost,
-        woodCost,
-        ironCost,
-        goldCost,
-        powerGain,
-        id
-      ]
-    );
-
-    await client.query("COMMIT");
-
-    res.json({
-      success: true,
-      player: updated.rows[0]
-    });
-
-  } catch (error) {
+    let transactionStarted = false;
 
     try {
-      await client.query("ROLLBACK");
-    } catch {}
 
-    console.error("Castle upgrade error:", error);
+      const id = Number(req.params.id);
 
-    res.status(500).json({
-      success: false,
-      message: "فشل تطوير القلعة"
-    });
+      if (!Number.isInteger(id) || id <= 0) {
 
-  } finally {
+        return res.status(400).json({
+          success: false,
+          message: "معرف المملكة غير صحيح"
+        });
+      }
 
-    client.release();
+      await client.query("BEGIN");
+      transactionStarted = true;
 
+      const result = await client.query(
+        `
+        SELECT *
+        FROM players
+        WHERE id = $1
+        FOR UPDATE
+        `,
+        [id]
+      );
+
+      if (result.rows.length === 0) {
+
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+
+        return res.status(404).json({
+          success: false,
+          message: "المملكة غير موجودة"
+        });
+      }
+
+      const player = result.rows[0];
+
+      const level = Number(
+        player.castle_level
+      );
+
+      const stars = Number(
+        player.castle_stars
+      );
+
+      const upgrade = getCastleUpgradeCost(
+        level,
+        stars
+      );
+
+      if (!upgrade) {
+
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+
+        return res.status(400).json({
+          success: false,
+          message: "وصلت القلعة إلى الحد الأقصى: المستوى 30 و5 نجوم"
+        });
+      }
+
+      const food = Number(player.food);
+      const wood = Number(player.wood);
+      const iron = Number(player.iron);
+      const gold = Number(player.gold);
+
+      if (
+        food < upgrade.food ||
+        wood < upgrade.wood ||
+        iron < upgrade.iron ||
+        gold < upgrade.gold
+      ) {
+
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+
+        return res.status(400).json({
+          success: false,
+          message: "الموارد غير كافية",
+
+          cost: {
+            food: upgrade.food,
+            wood: upgrade.wood,
+            iron: upgrade.iron,
+            gold: upgrade.gold
+          },
+
+          resources: {
+            food,
+            wood,
+            iron,
+            gold
+          }
+        });
+      }
+
+      let newLevel = level;
+      let newStars = stars;
+
+      if (upgrade.type === "level") {
+        newLevel = upgrade.nextLevel;
+      }
+
+      if (upgrade.type === "star") {
+        newStars = upgrade.nextStars;
+      }
+
+      const updated = await client.query(
+        `
+        UPDATE players
+        SET
+          castle_level = $1,
+          castle_stars = $2,
+
+          food = food - $3,
+          wood = wood - $4,
+          iron = iron - $5,
+          gold = gold - $6,
+
+          power = power + $7
+
+        WHERE id = $8
+
+        RETURNING *
+        `,
+        [
+          newLevel,
+          newStars,
+
+          upgrade.food,
+          upgrade.wood,
+          upgrade.iron,
+          upgrade.gold,
+
+          upgrade.power,
+
+          id
+        ]
+      );
+
+      await client.query("COMMIT");
+      transactionStarted = false;
+
+      io.emit(
+        "castleUpgraded",
+        {
+          playerId: id,
+
+          castle: {
+            level: newLevel,
+            stars: newStars
+          }
+        }
+      );
+
+      res.json({
+        success: true,
+
+        message:
+          upgrade.type === "level"
+            ? `تم تطوير القلعة إلى المستوى ${newLevel}`
+            : `تم الحصول على النجمة ${newStars} ⭐`,
+
+        upgrade,
+
+        player: updated.rows[0]
+      });
+
+    } catch (error) {
+
+      if (transactionStarted) {
+
+        try {
+          await client.query("ROLLBACK");
+        } catch {}
+      }
+
+      console.error(
+        "Castle upgrade error:",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message: "فشل تطوير القلعة",
+        error: error.message
+      });
+
+    } finally {
+
+      client.release();
+    }
   }
-
-});
+);
 
 /* =========================================================
    BUILDINGS
 ========================================================= */
 
-app.get("/api/player/:id/buildings", async (req, res) => {
+app.get(
+  "/api/player/:id/buildings",
+  async (req, res) => {
 
-  try {
+    try {
 
-    const id = Number(req.params.id);
+      const id = Number(req.params.id);
 
-    await ensurePlayerData(id);
+      const exists = await ensurePlayerData(id);
 
-    const result = await pool.query(
-      `
-      SELECT *
-      FROM buildings
-      WHERE player_id = $1
-      ORDER BY id
-      `,
-      [id]
-    );
+      if (!exists) {
 
-    const buildings = result.rows.map(building => {
+        return res.status(404).json({
+          success: false,
+          message: "المملكة غير موجودة"
+        });
+      }
 
-      const level = Number(building.level);
+      const result = await pool.query(
+        `
+        SELECT *
+        FROM buildings
+        WHERE player_id = $1
+        ORDER BY id
+        `,
+        [id]
+      );
 
-      const config = BUILDINGS[building.type];
+      const buildings = result.rows.map(
+        building => {
 
-      return {
-        ...building,
-        level,
-        power: Number(building.power),
-        next: level < 30
-          ? {
-              level: level + 1,
-              food: level * 1200,
-              wood: level * 1200,
-              iron: level * 300,
-              gold: Math.floor(level * 120),
-              power: config
-                ? config.basePower * (level + 1)
-                : 100 * (level + 1)
-            }
-          : null
-      };
+          const level = Number(
+            building.level
+          );
 
-    });
+          const config =
+            BUILDINGS[building.type];
 
-    res.json({
-      success: true,
-      buildings
-    });
+          return {
+            ...building,
 
-  } catch (error) {
+            level,
 
-    console.error("Buildings error:", error);
+            power: Number(
+              building.power
+            ),
 
-    res.status(500).json({
-      success: false,
-      message: "فشل تحميل المباني"
-    });
+            next:
+              level < 30
+                ? {
+                    level: level + 1,
 
+                    ...getBuildingUpgradeCost(
+                      level
+                    ),
+
+                    power:
+                      config
+                        ? config.basePower *
+                          (level + 1)
+                        : 100 *
+                          (level + 1)
+                  }
+                : null
+          };
+        }
+      );
+
+      res.json({
+        success: true,
+        buildings
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Buildings error:",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message: "فشل تحميل المباني"
+      });
+    }
   }
-
-});
+);
 
 /* =========================================================
    UPGRADE BUILDING
@@ -1940,10 +2144,14 @@ app.post(
 
     const client = await pool.connect();
 
+    let transactionStarted = false;
+
     try {
 
       const id = Number(req.params.id);
-      const type = req.params.type;
+      const type = String(
+        req.params.type || ""
+      );
 
       if (!BUILDINGS[type]) {
 
@@ -1951,10 +2159,10 @@ app.post(
           success: false,
           message: "المبنى غير موجود"
         });
-
       }
 
       await client.query("BEGIN");
+      transactionStarted = true;
 
       const playerResult = await client.query(
         `
@@ -1969,12 +2177,12 @@ app.post(
       if (playerResult.rows.length === 0) {
 
         await client.query("ROLLBACK");
+        transactionStarted = false;
 
         return res.status(404).json({
           success: false,
           message: "المملكة غير موجودة"
         });
-
       }
 
       const buildingResult = await client.query(
@@ -1986,123 +2194,141 @@ app.post(
         LIMIT 1
         FOR UPDATE
         `,
-        [id, type]
+        [
+          id,
+          type
+        ]
       );
 
       if (buildingResult.rows.length === 0) {
 
         await client.query("ROLLBACK");
+        transactionStarted = false;
 
         return res.status(404).json({
           success: false,
           message: "المبنى غير موجود"
         });
-
       }
 
-      const player = playerResult.rows[0];
-      const building = buildingResult.rows[0];
+      const player =
+        playerResult.rows[0];
 
-      const level = Number(building.level);
-      const castleLevel = Number(player.castle_level);
+      const building =
+        buildingResult.rows[0];
+
+      const level = Number(
+        building.level
+      );
+
+      const castleLevel = Number(
+        player.castle_level
+      );
 
       if (level >= 30) {
 
         await client.query("ROLLBACK");
+        transactionStarted = false;
 
         return res.status(400).json({
           success: false,
           message: "وصل المبنى إلى المستوى الأقصى"
         });
-
       }
 
       if (level >= castleLevel) {
 
         await client.query("ROLLBACK");
+        transactionStarted = false;
 
         return res.status(400).json({
           success: false,
-          message: "يجب تطوير القلعة أولًا"
+          message:
+            "يجب أن تكون القلعة أعلى من مستوى المبنى"
         });
-
       }
 
-      const foodCost = level * 1200;
-      const woodCost = level * 1200;
-      const ironCost = level * 300;
-      const goldCost = Math.floor(level * 120);
+      const cost =
+        getBuildingUpgradeCost(level);
 
       if (
-        Number(player.food) < foodCost ||
-        Number(player.wood) < woodCost ||
-        Number(player.iron) < ironCost ||
-        Number(player.gold) < goldCost
+        Number(player.food) < cost.food ||
+        Number(player.wood) < cost.wood ||
+        Number(player.iron) < cost.iron ||
+        Number(player.gold) < cost.gold
       ) {
 
         await client.query("ROLLBACK");
+        transactionStarted = false;
 
         return res.status(400).json({
           success: false,
-          message: "الموارد غير كافية"
+          message: "الموارد غير كافية",
+          cost
         });
-
       }
 
-      const powerGain = BUILDINGS[type].basePower;
+      const powerGain =
+        BUILDINGS[type].basePower;
 
-      const updated = await client.query(
-        `
-        UPDATE buildings
-        SET
-          level = level + 1,
-          power = power + $1,
-          name = $2
-        WHERE id = $3
-        RETURNING *
-        `,
-        [
-          powerGain,
-          BUILDINGS[type].name,
-          building.id
-        ]
-      );
+      const updatedBuilding =
+        await client.query(
+          `
+          UPDATE buildings
+          SET
+            level = level + 1,
+            power = power + $1,
+            name = $2
+          WHERE id = $3
+          RETURNING *
+          `,
+          [
+            powerGain,
+            BUILDINGS[type].name,
+            building.id
+          ]
+        );
 
-      const updatedPlayer = await client.query(
-        `
-        UPDATE players
-        SET
-          food = food - $1,
-          wood = wood - $2,
-          iron = iron - $3,
-          gold = gold - $4,
-          power = power + $5
-        WHERE id = $6
-        RETURNING *
-        `,
-        [
-          foodCost,
-          woodCost,
-          ironCost,
-          goldCost,
-          powerGain,
-          id
-        ]
-      );
+      const updatedPlayer =
+        await client.query(
+          `
+          UPDATE players
+          SET
+            food = food - $1,
+            wood = wood - $2,
+            iron = iron - $3,
+            gold = gold - $4,
+            power = power + $5
+          WHERE id = $6
+          RETURNING *
+          `,
+          [
+            cost.food,
+            cost.wood,
+            cost.iron,
+            cost.gold,
+            powerGain,
+            id
+          ]
+        );
 
       await client.query("COMMIT");
+      transactionStarted = false;
 
       res.json({
         success: true,
-        building: updated.rows[0],
+        building: updatedBuilding.rows[0],
         player: updatedPlayer.rows[0]
       });
 
     } catch (error) {
 
-      try {
-        await client.query("ROLLBACK");
-      } catch {}
+      if (transactionStarted) {
+
+        try {
+          await client.query("ROLLBACK");
+        } catch {}
+      }
 
       console.error(
         "Building upgrade error:",
@@ -2111,15 +2337,14 @@ app.post(
 
       res.status(500).json({
         success: false,
-        message: "فشل تطوير المبنى"
+        message: "فشل تطوير المبنى",
+        error: error.message
       });
 
     } finally {
 
       client.release();
-
     }
-
   }
 );
 
@@ -2127,342 +2352,385 @@ app.post(
    TRAIN TROOPS
 ========================================================= */
 
-app.post("/api/player/:id/train", async (req, res) => {
+app.post(
+  "/api/player/:id/train",
+  async (req, res) => {
 
-  const client = await pool.connect();
+    const client = await pool.connect();
 
-  try {
-
-    const id = Number(req.params.id);
-    const type = req.body.type || "مشاة";
-
-    await client.query("BEGIN");
-
-    const result = await client.query(
-      `
-      SELECT *
-      FROM players
-      WHERE id = $1
-      FOR UPDATE
-      `,
-      [id]
-    );
-
-    if (result.rows.length === 0) {
-
-      await client.query("ROLLBACK");
-
-      return res.status(404).json({
-        success: false,
-        message: "المملكة غير موجودة"
-      });
-
-    }
-
-    const player = result.rows[0];
-
-    const troopCount = 100;
-    const foodCost = 500;
-    const woodCost = 200;
-
-    if (
-      Number(player.food) < foodCost ||
-      Number(player.wood) < woodCost
-    ) {
-
-      await client.query("ROLLBACK");
-
-      return res.status(400).json({
-        success: false,
-        message: "الموارد غير كافية"
-      });
-
-    }
-
-    const updated = await client.query(
-      `
-      UPDATE players
-      SET
-        food = food - $1,
-        wood = wood - $2,
-        troops = troops + $3,
-        power = power + 200
-      WHERE id = $4
-      RETURNING *
-      `,
-      [
-        foodCost,
-        woodCost,
-        troopCount,
-        id
-      ]
-    );
-
-    await client.query("COMMIT");
-
-    res.json({
-      success: true,
-      type,
-      troopsTrained: troopCount,
-      player: updated.rows[0]
-    });
-
-  } catch (error) {
+    let transactionStarted = false;
 
     try {
-      await client.query("ROLLBACK");
-    } catch {}
 
-    console.error(
-      "Training error:",
-      error
-    );
+      const id = Number(req.params.id);
 
-    res.status(500).json({
-      success: false,
-      message: "فشل تدريب الجنود"
-    });
+      const type =
+        String(req.body.type || "مشاة");
 
-  } finally {
+      await client.query("BEGIN");
+      transactionStarted = true;
 
-    client.release();
+      const result = await client.query(
+        `
+        SELECT *
+        FROM players
+        WHERE id = $1
+        FOR UPDATE
+        `,
+        [id]
+      );
 
+      if (result.rows.length === 0) {
+
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+
+        return res.status(404).json({
+          success: false,
+          message: "المملكة غير موجودة"
+        });
+      }
+
+      const player = result.rows[0];
+
+      const troopCount = 100;
+      const foodCost = 500;
+      const woodCost = 200;
+
+      if (
+        Number(player.food) < foodCost ||
+        Number(player.wood) < woodCost
+      ) {
+
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+
+        return res.status(400).json({
+          success: false,
+          message: "الموارد غير كافية"
+        });
+      }
+
+      const updated =
+        await client.query(
+          `
+          UPDATE players
+          SET
+            food = food - $1,
+            wood = wood - $2,
+            troops = troops + $3,
+            power = power + 200
+          WHERE id = $4
+          RETURNING *
+          `,
+          [
+            foodCost,
+            woodCost,
+            troopCount,
+            id
+          ]
+        );
+
+      await client.query("COMMIT");
+      transactionStarted = false;
+
+      res.json({
+        success: true,
+        type,
+        troopsTrained: troopCount,
+        player: updated.rows[0]
+      });
+
+    } catch (error) {
+
+      if (transactionStarted) {
+
+        try {
+          await client.query("ROLLBACK");
+        } catch {}
+      }
+
+      console.error(
+        "Training error:",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message: "فشل تدريب الجنود"
+      });
+
+    } finally {
+
+      client.release();
+    }
   }
-
-});
+);
 
 /* =========================================================
    RESEARCH
 ========================================================= */
 
-app.get("/api/player/:id/research", async (req, res) => {
-
-  try {
-
-    const id = Number(req.params.id);
-
-    await ensurePlayerData(id);
-
-    const result = await pool.query(
-      `
-      SELECT *
-      FROM research
-      WHERE player_id = $1
-      ORDER BY id
-      `,
-      [id]
-    );
-
-    res.json({
-      success: true,
-      research: result.rows
-    });
-
-  } catch (error) {
-
-    console.error(
-      "Research GET error:",
-      error
-    );
-
-    res.status(500).json({
-      success: false,
-      message: "فشل تحميل الأبحاث"
-    });
-
-  }
-
-});
-
-app.post("/api/player/:id/research", async (req, res) => {
-
-  const client = await pool.connect();
-
-  try {
-
-    const id = Number(req.params.id);
-    const type = req.body.type;
-
-    if (!RESEARCH_TYPES.includes(type)) {
-
-      return res.status(400).json({
-        success: false,
-        message: "نوع البحث غير صحيح"
-      });
-
-    }
-
-    /* تجهيز البيانات قبل بدء المعاملة */
-
-    await ensurePlayerData(id);
-
-    await client.query("BEGIN");
-
-    const playerResult = await client.query(
-      `
-      SELECT *
-      FROM players
-      WHERE id = $1
-      FOR UPDATE
-      `,
-      [id]
-    );
-
-    if (playerResult.rows.length === 0) {
-
-      await client.query("ROLLBACK");
-
-      return res.status(404).json({
-        success: false,
-        message: "المملكة غير موجودة"
-      });
-
-    }
-
-    const researchResult = await client.query(
-      `
-      SELECT *
-      FROM research
-      WHERE player_id = $1
-      AND type = $2
-      LIMIT 1
-      FOR UPDATE
-      `,
-      [
-        id,
-        type
-      ]
-    );
-
-    if (researchResult.rows.length === 0) {
-
-      await client.query("ROLLBACK");
-
-      return res.status(404).json({
-        success: false,
-        message: "البحث غير موجود"
-      });
-
-    }
-
-    const research = researchResult.rows[0];
-    const level = Number(research.level);
-
-    if (level >= 30) {
-
-      await client.query("ROLLBACK");
-
-      return res.status(400).json({
-        success: false,
-        message: "وصل البحث إلى المستوى الأقصى"
-      });
-
-    }
-
-    const powerGain = 200;
-
-    const updatedResearch = await client.query(
-      `
-      UPDATE research
-      SET
-        level = level + 1,
-        power = power + $1
-      WHERE id = $2
-      RETURNING *
-      `,
-      [
-        powerGain,
-        research.id
-      ]
-    );
-
-    const updatedPlayer = await client.query(
-      `
-      UPDATE players
-      SET power = power + $1
-      WHERE id = $2
-      RETURNING *
-      `,
-      [
-        powerGain,
-        id
-      ]
-    );
-
-    await client.query("COMMIT");
-
-    res.json({
-      success: true,
-      research: updatedResearch.rows[0],
-      player: updatedPlayer.rows[0]
-    });
-
-  } catch (error) {
+app.get(
+  "/api/player/:id/research",
+  async (req, res) => {
 
     try {
-      await client.query("ROLLBACK");
-    } catch {}
 
-    console.error(
-      "Research error:",
-      error
-    );
+      const id = Number(req.params.id);
 
-    res.status(500).json({
-      success: false,
-      message: "فشل تطوير البحث"
-    });
+      const exists =
+        await ensurePlayerData(id);
 
-  } finally {
+      if (!exists) {
 
-    client.release();
+        return res.status(404).json({
+          success: false,
+          message: "المملكة غير موجودة"
+        });
+      }
 
+      const result = await pool.query(
+        `
+        SELECT *
+        FROM research
+        WHERE player_id = $1
+        ORDER BY id
+        `,
+        [id]
+      );
+
+      res.json({
+        success: true,
+        research: result.rows
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Research GET error:",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message: "فشل تحميل الأبحاث"
+      });
+    }
   }
+);
 
-});
+app.post(
+  "/api/player/:id/research",
+  async (req, res) => {
+
+    const client = await pool.connect();
+
+    let transactionStarted = false;
+
+    try {
+
+      const id = Number(req.params.id);
+      const type = req.body.type;
+
+      if (!RESEARCH_TYPES.includes(type)) {
+
+        return res.status(400).json({
+          success: false,
+          message: "نوع البحث غير صحيح"
+        });
+      }
+
+      const exists =
+        await ensurePlayerData(id);
+
+      if (!exists) {
+
+        return res.status(404).json({
+          success: false,
+          message: "المملكة غير موجودة"
+        });
+      }
+
+      await client.query("BEGIN");
+      transactionStarted = true;
+
+      const playerResult =
+        await client.query(
+          `
+          SELECT *
+          FROM players
+          WHERE id = $1
+          FOR UPDATE
+          `,
+          [id]
+        );
+
+      const researchResult =
+        await client.query(
+          `
+          SELECT *
+          FROM research
+          WHERE player_id = $1
+          AND type = $2
+          LIMIT 1
+          FOR UPDATE
+          `,
+          [
+            id,
+            type
+          ]
+        );
+
+      if (
+        playerResult.rows.length === 0 ||
+        researchResult.rows.length === 0
+      ) {
+
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+
+        return res.status(404).json({
+          success: false,
+          message: "البحث غير موجود"
+        });
+      }
+
+      const research =
+        researchResult.rows[0];
+
+      if (Number(research.level) >= 30) {
+
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+
+        return res.status(400).json({
+          success: false,
+          message: "وصل البحث إلى المستوى الأقصى"
+        });
+      }
+
+      const powerGain = 200;
+
+      const updatedResearch =
+        await client.query(
+          `
+          UPDATE research
+          SET
+            level = level + 1,
+            power = power + $1
+          WHERE id = $2
+          RETURNING *
+          `,
+          [
+            powerGain,
+            research.id
+          ]
+        );
+
+      const updatedPlayer =
+        await client.query(
+          `
+          UPDATE players
+          SET power = power + $1
+          WHERE id = $2
+          RETURNING *
+          `,
+          [
+            powerGain,
+            id
+          ]
+        );
+
+      await client.query("COMMIT");
+      transactionStarted = false;
+
+      res.json({
+        success: true,
+        research:
+          updatedResearch.rows[0],
+        player:
+          updatedPlayer.rows[0]
+      });
+
+    } catch (error) {
+
+      if (transactionStarted) {
+
+        try {
+          await client.query("ROLLBACK");
+        } catch {}
+      }
+
+      console.error(
+        "Research error:",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message: "فشل تطوير البحث"
+      });
+
+    } finally {
+
+      client.release();
+    }
+  }
+);
 
 /* =========================================================
    HEROES
 ========================================================= */
 
-app.get("/api/player/:id/heroes", async (req, res) => {
+app.get(
+  "/api/player/:id/heroes",
+  async (req, res) => {
 
-  try {
+    try {
 
-    const id = Number(req.params.id);
+      const id = Number(req.params.id);
 
-    await ensurePlayerData(id);
+      const exists =
+        await ensurePlayerData(id);
 
-    const result = await pool.query(
-      `
-      SELECT *
-      FROM heroes
-      WHERE player_id = $1
-      ORDER BY id
-      `,
-      [id]
-    );
+      if (!exists) {
 
-    res.json({
-      success: true,
-      heroes: result.rows
-    });
+        return res.status(404).json({
+          success: false,
+          message: "المملكة غير موجودة"
+        });
+      }
 
-  } catch (error) {
+      const result = await pool.query(
+        `
+        SELECT *
+        FROM heroes
+        WHERE player_id = $1
+        ORDER BY id
+        `,
+        [id]
+      );
 
-    console.error(
-      "Heroes error:",
-      error
-    );
+      res.json({
+        success: true,
+        heroes: result.rows
+      });
 
-    res.status(500).json({
-      success: false,
-      message: "فشل تحميل الأبطال"
-    });
+    } catch (error) {
 
+      console.error(
+        "Heroes error:",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message: "فشل تحميل الأبطال"
+      });
+    }
   }
-
-});
+);
 
 app.post(
   "/api/player/:id/heroes/:heroId/upgrade",
@@ -2470,24 +2738,39 @@ app.post(
 
     try {
 
-      const playerId = Number(req.params.id);
-      const heroId = Number(req.params.heroId);
+      const playerId =
+        Number(req.params.id);
 
-      const result = await pool.query(
-        `
-        UPDATE heroes
-        SET
-          level = level + 1,
-          power = power + 100
-        WHERE id = $1
-        AND player_id = $2
-        RETURNING *
-        `,
-        [
-          heroId,
-          playerId
-        ]
-      );
+      const heroId =
+        Number(req.params.heroId);
+
+      const exists =
+        await ensurePlayerData(playerId);
+
+      if (!exists) {
+
+        return res.status(404).json({
+          success: false,
+          message: "المملكة غير موجودة"
+        });
+      }
+
+      const result =
+        await pool.query(
+          `
+          UPDATE heroes
+          SET
+            level = level + 1,
+            power = power + 100
+          WHERE id = $1
+          AND player_id = $2
+          RETURNING *
+          `,
+          [
+            heroId,
+            playerId
+          ]
+        );
 
       if (result.rows.length === 0) {
 
@@ -2495,7 +2778,6 @@ app.post(
           success: false,
           message: "البطل غير موجود"
         });
-
       }
 
       await pool.query(
@@ -2523,9 +2805,7 @@ app.post(
         success: false,
         message: "فشل تطوير البطل"
       });
-
     }
-
   }
 );
 
@@ -2533,44 +2813,54 @@ app.post(
    BEHEMOTHS
 ========================================================= */
 
-app.get("/api/player/:id/behemoths", async (req, res) => {
+app.get(
+  "/api/player/:id/behemoths",
+  async (req, res) => {
 
-  try {
+    try {
 
-    const id = Number(req.params.id);
+      const id = Number(req.params.id);
 
-    await ensurePlayerData(id);
+      const exists =
+        await ensurePlayerData(id);
 
-    const result = await pool.query(
-      `
-      SELECT *
-      FROM behemoths
-      WHERE player_id = $1
-      ORDER BY id
-      `,
-      [id]
-    );
+      if (!exists) {
 
-    res.json({
-      success: true,
-      behemoths: result.rows
-    });
+        return res.status(404).json({
+          success: false,
+          message: "المملكة غير موجودة"
+        });
+      }
 
-  } catch (error) {
+      const result = await pool.query(
+        `
+        SELECT *
+        FROM behemoths
+        WHERE player_id = $1
+        ORDER BY id
+        `,
+        [id]
+      );
 
-    console.error(
-      "Behemoths error:",
-      error
-    );
+      res.json({
+        success: true,
+        behemoths: result.rows
+      });
 
-    res.status(500).json({
-      success: false,
-      message: "فشل تحميل البھيثومي"
-    });
+    } catch (error) {
 
+      console.error(
+        "Behemoths error:",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message: "فشل تحميل البيهيومي"
+      });
+    }
   }
-
-});
+);
 
 app.post(
   "/api/player/:id/behemoths/:behemothId/upgrade",
@@ -2578,34 +2868,46 @@ app.post(
 
     try {
 
-      const playerId = Number(req.params.id);
-      const behemothId = Number(
-        req.params.behemothId
-      );
+      const playerId =
+        Number(req.params.id);
 
-      const result = await pool.query(
-        `
-        UPDATE behemoths
-        SET
-          level = level + 1,
-          power = power + 250
-        WHERE id = $1
-        AND player_id = $2
-        RETURNING *
-        `,
-        [
-          behemothId,
-          playerId
-        ]
-      );
+      const behemothId =
+        Number(req.params.behemothId);
+
+      const exists =
+        await ensurePlayerData(playerId);
+
+      if (!exists) {
+
+        return res.status(404).json({
+          success: false,
+          message: "المملكة غير موجودة"
+        });
+      }
+
+      const result =
+        await pool.query(
+          `
+          UPDATE behemoths
+          SET
+            level = level + 1,
+            power = power + 250
+          WHERE id = $1
+          AND player_id = $2
+          RETURNING *
+          `,
+          [
+            behemothId,
+            playerId
+          ]
+        );
 
       if (result.rows.length === 0) {
 
         return res.status(404).json({
           success: false,
-          message: "البھيثومي غير موجود"
+          message: "البيهيومي غير موجود"
         });
-
       }
 
       await pool.query(
@@ -2631,11 +2933,9 @@ app.post(
 
       res.status(500).json({
         success: false,
-        message: "فشل تطوير البھيثومي"
+        message: "فشل تطوير البيهيومي"
       });
-
     }
-
   }
 );
 
@@ -2643,44 +2943,54 @@ app.post(
    TALENTS
 ========================================================= */
 
-app.get("/api/player/:id/talents", async (req, res) => {
+app.get(
+  "/api/player/:id/talents",
+  async (req, res) => {
 
-  try {
+    try {
 
-    const id = Number(req.params.id);
+      const id = Number(req.params.id);
 
-    await ensurePlayerData(id);
+      const exists =
+        await ensurePlayerData(id);
 
-    const result = await pool.query(
-      `
-      SELECT *
-      FROM talents
-      WHERE player_id = $1
-      ORDER BY id
-      `,
-      [id]
-    );
+      if (!exists) {
 
-    res.json({
-      success: true,
-      talents: result.rows
-    });
+        return res.status(404).json({
+          success: false,
+          message: "المملكة غير موجودة"
+        });
+      }
 
-  } catch (error) {
+      const result = await pool.query(
+        `
+        SELECT *
+        FROM talents
+        WHERE player_id = $1
+        ORDER BY id
+        `,
+        [id]
+      );
 
-    console.error(
-      "Talents error:",
-      error
-    );
+      res.json({
+        success: true,
+        talents: result.rows
+      });
 
-    res.status(500).json({
-      success: false,
-      message: "فشل تحميل المواهب"
-    });
+    } catch (error) {
 
+      console.error(
+        "Talents error:",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message: "فشل تحميل المواهب"
+      });
+    }
   }
-
-});
+);
 
 app.post(
   "/api/player/:id/talents/:type/upgrade",
@@ -2688,8 +2998,11 @@ app.post(
 
     try {
 
-      const playerId = Number(req.params.id);
-      const type = req.params.type;
+      const playerId =
+        Number(req.params.id);
+
+      const type =
+        req.params.type;
 
       if (!TALENT_TYPES.includes(type)) {
 
@@ -2697,24 +3010,33 @@ app.post(
           success: false,
           message: "نوع الموهبة غير صحيح"
         });
-
       }
 
-      await ensurePlayerData(playerId);
+      const exists =
+        await ensurePlayerData(playerId);
 
-      const result = await pool.query(
-        `
-        UPDATE talents
-        SET level = level + 1
-        WHERE player_id = $1
-        AND type = $2
-        RETURNING *
-        `,
-        [
-          playerId,
-          type
-        ]
-      );
+      if (!exists) {
+
+        return res.status(404).json({
+          success: false,
+          message: "المملكة غير موجودة"
+        });
+      }
+
+      const result =
+        await pool.query(
+          `
+          UPDATE talents
+          SET level = level + 1
+          WHERE player_id = $1
+          AND type = $2
+          RETURNING *
+          `,
+          [
+            playerId,
+            type
+          ]
+        );
 
       if (result.rows.length === 0) {
 
@@ -2722,7 +3044,6 @@ app.post(
           success: false,
           message: "الموهبة غير موجودة"
         });
-
       }
 
       res.json({
@@ -2741,9 +3062,7 @@ app.post(
         success: false,
         message: "فشل تطوير الموهبة"
       });
-
     }
-
   }
 );
 
@@ -2751,44 +3070,55 @@ app.post(
    AIRCRAFT
 ========================================================= */
 
-app.get("/api/player/:id/aircraft", async (req, res) => {
+app.get(
+  "/api/player/:id/aircraft",
+  async (req, res) => {
 
-  try {
+    try {
 
-    const id = Number(req.params.id);
+      const id = Number(req.params.id);
 
-    await ensurePlayerData(id);
+      const exists =
+        await ensurePlayerData(id);
 
-    const result = await pool.query(
-      `
-      SELECT *
-      FROM aircraft
-      WHERE player_id = $1
-      LIMIT 1
-      `,
-      [id]
-    );
+      if (!exists) {
 
-    res.json({
-      success: true,
-      aircraft: result.rows[0] || null
-    });
+        return res.status(404).json({
+          success: false,
+          message: "المملكة غير موجودة"
+        });
+      }
 
-  } catch (error) {
+      const result = await pool.query(
+        `
+        SELECT *
+        FROM aircraft
+        WHERE player_id = $1
+        LIMIT 1
+        `,
+        [id]
+      );
 
-    console.error(
-      "Aircraft error:",
-      error
-    );
+      res.json({
+        success: true,
+        aircraft:
+          result.rows[0] || null
+      });
 
-    res.status(500).json({
-      success: false,
-      message: "فشل تحميل الطائرة"
-    });
+    } catch (error) {
 
+      console.error(
+        "Aircraft error:",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message: "فشل تحميل الطائرة"
+      });
+    }
   }
-
-});
+);
 
 app.post(
   "/api/player/:id/aircraft/upgrade",
@@ -2798,19 +3128,29 @@ app.post(
 
       const id = Number(req.params.id);
 
-      await ensurePlayerData(id);
+      const exists =
+        await ensurePlayerData(id);
 
-      const result = await pool.query(
-        `
-        UPDATE aircraft
-        SET
-          level = level + 1,
-          power = power + 500
-        WHERE player_id = $1
-        RETURNING *
-        `,
-        [id]
-      );
+      if (!exists) {
+
+        return res.status(404).json({
+          success: false,
+          message: "المملكة غير موجودة"
+        });
+      }
+
+      const result =
+        await pool.query(
+          `
+          UPDATE aircraft
+          SET
+            level = level + 1,
+            power = power + 500
+          WHERE player_id = $1
+          RETURNING *
+          `,
+          [id]
+        );
 
       if (result.rows.length === 0) {
 
@@ -2818,7 +3158,6 @@ app.post(
           success: false,
           message: "الطائرة غير موجودة"
         });
-
       }
 
       await pool.query(
@@ -2846,9 +3185,7 @@ app.post(
         success: false,
         message: "فشل تطوير الطائرة"
       });
-
     }
-
   }
 );
 
@@ -2856,211 +3193,159 @@ app.post(
    ALLIANCES
 ========================================================= */
 
-app.get("/api/alliances", async (req, res) => {
-
-  try {
-
-    const result = await pool.query(
-      `
-      SELECT
-        a.*,
-        COUNT(am.player_id)::INTEGER AS members
-      FROM alliances a
-      LEFT JOIN alliance_members am
-        ON am.alliance_id = a.id
-      GROUP BY a.id
-      ORDER BY a.power DESC
-      `
-    );
-
-    res.json({
-      success: true,
-      alliances: result.rows
-    });
-
-  } catch (error) {
-
-    console.error(
-      "Alliances error:",
-      error
-    );
-
-    res.status(500).json({
-      success: false,
-      message: "فشل تحميل التحالفات"
-    });
-
-  }
-
-});
-
-app.post("/api/alliances", async (req, res) => {
-
-  try {
-
-    const name = String(
-      req.body.name || ""
-    ).trim();
-
-    const leaderId = Number(
-      req.body.leaderId
-    );
-
-    if (!name) {
-
-      return res.status(400).json({
-        success: false,
-        message: "اكتب اسم التحالف"
-      });
-
-    }
-
-    const existing = await pool.query(
-      `
-      SELECT id
-      FROM alliances
-      WHERE LOWER(name) = LOWER($1)
-      LIMIT 1
-      `,
-      [name]
-    );
-
-    if (existing.rows.length > 0) {
-
-      return res.status(409).json({
-        success: false,
-        message: "اسم التحالف مستخدم بالفعل"
-      });
-
-    }
-
-    const result = await pool.query(
-      `
-      INSERT INTO alliances
-      (name, leader_id, power)
-      VALUES ($1, $2, 0)
-      RETURNING *
-      `,
-      [
-        name,
-        leaderId
-      ]
-    );
-
-    await pool.query(
-      `
-      INSERT INTO alliance_members
-      (alliance_id, player_id, role)
-      VALUES ($1, $2, 'leader')
-      `,
-      [
-        result.rows[0].id,
-        leaderId
-      ]
-    );
-
-    res.json({
-      success: true,
-      alliance: result.rows[0]
-    });
-
-  } catch (error) {
-
-    console.error(
-      "Create alliance error:",
-      error
-    );
-
-    res.status(500).json({
-      success: false,
-      message: "فشل إنشاء التحالف"
-    });
-
-  }
-
-});
-
-app.get("/api/alliances/:id", async (req, res) => {
-
-  try {
-
-    const id = Number(req.params.id);
-
-    const alliance = await pool.query(
-      `
-      SELECT *
-      FROM alliances
-      WHERE id = $1
-      `,
-      [id]
-    );
-
-    if (alliance.rows.length === 0) {
-
-      return res.status(404).json({
-        success: false,
-        message: "التحالف غير موجود"
-      });
-
-    }
-
-    const members = await pool.query(
-      `
-      SELECT
-        p.id,
-        p.name,
-        p.power,
-        am.role
-      FROM alliance_members am
-      JOIN players p
-        ON p.id = am.player_id
-      WHERE am.alliance_id = $1
-      ORDER BY p.power DESC
-      `,
-      [id]
-    );
-
-    res.json({
-      success: true,
-      alliance: alliance.rows[0],
-      members: members.rows
-    });
-
-  } catch (error) {
-
-    console.error(
-      "Alliance detail error:",
-      error
-    );
-
-    res.status(500).json({
-      success: false,
-      message: "فشل تحميل التحالف"
-    });
-
-  }
-
-});
-
-app.post(
-  "/api/player/:id/alliance/join",
+app.get(
+  "/api/alliances",
   async (req, res) => {
 
     try {
 
-      const playerId = Number(req.params.id);
-      const allianceId = Number(
-        req.body.allianceId
+      const result = await pool.query(
+        `
+        SELECT
+          a.*,
+          COUNT(am.player_id)::INTEGER AS members
+        FROM alliances a
+        LEFT JOIN alliance_members am
+          ON am.alliance_id = a.id
+        GROUP BY a.id
+        ORDER BY a.power DESC
+        `
       );
 
-      const alliance = await pool.query(
-        `
-        SELECT *
-        FROM alliances
-        WHERE id = $1
-        `,
-        [allianceId]
+      res.json({
+        success: true,
+        alliances: result.rows
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Alliances error:",
+        error
       );
+
+      res.status(500).json({
+        success: false,
+        message: "فشل تحميل التحالفات"
+      });
+    }
+  }
+);
+
+app.post(
+  "/api/alliances",
+  async (req, res) => {
+
+    try {
+
+      const name =
+        String(req.body.name || "")
+          .trim();
+
+      const leaderId =
+        Number(req.body.leaderId);
+
+      if (!name) {
+
+        return res.status(400).json({
+          success: false,
+          message: "اكتب اسم التحالف"
+        });
+      }
+
+      const existing =
+        await pool.query(
+          `
+          SELECT id
+          FROM alliances
+          WHERE LOWER(name) = LOWER($1)
+          LIMIT 1
+          `,
+          [name]
+        );
+
+      if (existing.rows.length > 0) {
+
+        return res.status(409).json({
+          success: false,
+          message: "اسم التحالف مستخدم بالفعل"
+        });
+      }
+
+      const result =
+        await pool.query(
+          `
+          INSERT INTO alliances
+          (
+            name,
+            leader_id,
+            power
+          )
+          VALUES
+          ($1, $2, 0)
+          RETURNING *
+          `,
+          [
+            name,
+            leaderId
+          ]
+        );
+
+      await pool.query(
+        `
+        INSERT INTO alliance_members
+        (
+          alliance_id,
+          player_id,
+          role
+        )
+        VALUES
+        ($1, $2, 'leader')
+        `,
+        [
+          result.rows[0].id,
+          leaderId
+        ]
+      );
+
+      res.json({
+        success: true,
+        alliance: result.rows[0]
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Create alliance error:",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message: "فشل إنشاء التحالف"
+      });
+    }
+  }
+);
+
+app.get(
+  "/api/alliances/:id",
+  async (req, res) => {
+
+    try {
+
+      const id =
+        Number(req.params.id);
+
+      const alliance =
+        await pool.query(
+          `
+          SELECT *
+          FROM alliances
+          WHERE id = $1
+          `,
+          [id]
+        );
 
       if (alliance.rows.length === 0) {
 
@@ -3068,30 +3353,104 @@ app.post(
           success: false,
           message: "التحالف غير موجود"
         });
-
       }
 
-      const memberExists = await pool.query(
-        `
-        SELECT id
-        FROM alliance_members
-        WHERE alliance_id = $1
-        AND player_id = $2
-        LIMIT 1
-        `,
-        [
-          allianceId,
-          playerId
-        ]
-      );
-
-      if (memberExists.rows.length === 0) {
-
+      const members =
         await pool.query(
           `
-          INSERT INTO alliance_members
-          (alliance_id, player_id, role)
-          VALUES ($1, $2, 'member')
+          SELECT
+            p.id,
+            p.name,
+            p.power,
+            am.role
+          FROM alliance_members am
+          JOIN players p
+            ON p.id = am.player_id
+          WHERE am.alliance_id = $1
+          ORDER BY p.power DESC
+          `,
+          [id]
+        );
+
+      res.json({
+        success: true,
+        alliance:
+          alliance.rows[0],
+        members:
+          members.rows
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Alliance detail error:",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message: "فشل تحميل التحالف"
+      });
+    }
+  }
+);
+
+app.post(
+  "/api/player/:id/alliance/join",
+  async (req, res) => {
+
+    try {
+
+      const playerId =
+        Number(req.params.id);
+
+      const allianceId =
+        Number(req.body.allianceId);
+
+      const player =
+        await pool.query(
+          `
+          SELECT id
+          FROM players
+          WHERE id = $1
+          `,
+          [playerId]
+        );
+
+      if (player.rows.length === 0) {
+
+        return res.status(404).json({
+          success: false,
+          message: "المملكة غير موجودة"
+        });
+      }
+
+      const alliance =
+        await pool.query(
+          `
+          SELECT *
+          FROM alliances
+          WHERE id = $1
+          `,
+          [allianceId]
+        );
+
+      if (alliance.rows.length === 0) {
+
+        return res.status(404).json({
+          success: false,
+          message: "التحالف غير موجود"
+        });
+      }
+
+      const memberExists =
+        await pool.query(
+          `
+          SELECT id
+          FROM alliance_members
+          WHERE alliance_id = $1
+          AND player_id = $2
+          LIMIT 1
           `,
           [
             allianceId,
@@ -3099,6 +3458,24 @@ app.post(
           ]
         );
 
+      if (memberExists.rows.length === 0) {
+
+        await pool.query(
+          `
+          INSERT INTO alliance_members
+          (
+            alliance_id,
+            player_id,
+            role
+          )
+          VALUES
+          ($1, $2, 'member')
+          `,
+          [
+            allianceId,
+            playerId
+          ]
+        );
       }
 
       await pool.query(
@@ -3135,9 +3512,7 @@ app.post(
         success: false,
         message: "فشل الانضمام إلى التحالف"
       });
-
     }
-
   }
 );
 
@@ -3145,464 +3520,527 @@ app.post(
    RANKINGS
 ========================================================= */
 
-app.get("/api/rankings/all", async (req, res) => {
+app.get(
+  "/api/rankings/all",
+  async (req, res) => {
 
-  try {
+    try {
 
-    const result = await pool.query(
-      `
-      SELECT
-        id,
-        name,
-        power,
-        castle_level,
-        castle_stars
-      FROM players
-      ORDER BY power DESC
-      LIMIT 100
-      `
-    );
+      const result =
+        await pool.query(
+          `
+          SELECT
+            id,
+            name,
+            power,
+            castle_level,
+            castle_stars
+          FROM players
+          ORDER BY power DESC
+          LIMIT 100
+          `
+        );
 
-    res.json({
-      success: true,
-      rankings: result.rows
-    });
+      res.json({
+        success: true,
+        rankings:
+          result.rows
+      });
 
-  } catch (error) {
+    } catch (error) {
 
-    console.error(
-      "Rankings error:",
-      error
-    );
+      console.error(
+        "Rankings error:",
+        error
+      );
 
-    res.status(500).json({
-      success: false,
-      message: "فشل تحميل التصنيف"
-    });
-
+      res.status(500).json({
+        success: false,
+        message: "فشل تحميل التصنيف"
+      });
+    }
   }
-
-});
+);
 
 /* =========================================================
    PROFILE
 ========================================================= */
 
-app.get("/api/player/:id/profile", async (req, res) => {
+app.get(
+  "/api/player/:id/profile",
+  async (req, res) => {
 
-  try {
+    try {
 
-    const id = Number(req.params.id);
+      const id =
+        Number(req.params.id);
 
-    const result = await pool.query(
-      `
-      SELECT
-        id,
-        name,
-        power,
-        castle_level,
-        castle_stars,
-        commander_level,
-        commander_xp,
-        x,
-        y,
-        created_at
-      FROM players
-      WHERE id = $1
-      `,
-      [id]
-    );
+      const result =
+        await pool.query(
+          `
+          SELECT
+            id,
+            name,
+            power,
+            castle_level,
+            castle_stars,
+            commander_level,
+            commander_xp,
+            x,
+            y,
+            created_at
+          FROM players
+          WHERE id = $1
+          `,
+          [id]
+        );
 
-    if (result.rows.length === 0) {
+      if (result.rows.length === 0) {
 
-      return res.status(404).json({
-        success: false,
-        message: "اللاعب غير موجود"
+        return res.status(404).json({
+          success: false,
+          message: "اللاعب غير موجود"
+        });
+      }
+
+      res.json({
+        success: true,
+        profile:
+          result.rows[0]
       });
 
+    } catch (error) {
+
+      console.error(
+        "Profile error:",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message: "فشل تحميل الملف الشخصي"
+      });
     }
-
-    res.json({
-      success: true,
-      profile: result.rows[0]
-    });
-
-  } catch (error) {
-
-    console.error(
-      "Profile error:",
-      error
-    );
-
-    res.status(500).json({
-      success: false,
-      message: "فشل تحميل الملف الشخصي"
-    });
-
   }
-
-});
+);
 
 /* =========================================================
    WORLD MAP
 ========================================================= */
 
-app.get("/api/world", async (req, res) => {
+app.get(
+  "/api/world",
+  async (req, res) => {
 
-  try {
+    try {
 
-    const players = await pool.query(
-      `
-      SELECT
-        id,
-        name,
-        power,
-        castle_level,
-        x,
-        y
-      FROM players
-      ORDER BY id
-      `
-    );
+      const players =
+        await pool.query(
+          `
+          SELECT
+            id,
+            name,
+            power,
+            castle_level,
+            castle_stars,
+            x,
+            y
+          FROM players
+          ORDER BY id
+          `
+        );
 
-    const zombies = await pool.query(
-      `
-      SELECT *
-      FROM zombies
-      ORDER BY id
-      `
-    );
+      const zombies =
+        await pool.query(
+          `
+          SELECT *
+          FROM zombies
+          ORDER BY id
+          `
+        );
 
-    const forts = await pool.query(
-      `
-      SELECT *
-      FROM forts
-      ORDER BY id
-      `
-    );
+      const forts =
+        await pool.query(
+          `
+          SELECT *
+          FROM forts
+          ORDER BY id
+          `
+        );
 
-    res.json({
-      success: true,
-      players: players.rows,
-      zombies: zombies.rows,
-      forts: forts.rows
-    });
+      res.json({
+        success: true,
+        players:
+          players.rows,
+        zombies:
+          zombies.rows,
+        forts:
+          forts.rows
+      });
 
-  } catch (error) {
+    } catch (error) {
 
-    console.error(
-      "World error:",
-      error
-    );
+      console.error(
+        "World error:",
+        error
+      );
 
-    res.status(500).json({
-      success: false,
-      message: "فشل تحميل الخريطة"
-    });
-
+      res.status(500).json({
+        success: false,
+        message: "فشل تحميل الخريطة"
+      });
+    }
   }
-
-});
+);
 
 /* =========================================================
    MOVE PLAYER
 ========================================================= */
 
-app.post("/api/player/:id/move", async (req, res) => {
+app.post(
+  "/api/player/:id/move",
+  async (req, res) => {
 
-  try {
+    try {
 
-    const id = Number(req.params.id);
-    const x = Number(req.body.x);
-    const y = Number(req.body.y);
+      const id =
+        Number(req.params.id);
 
-    if (
-      !Number.isFinite(x) ||
-      !Number.isFinite(y)
-    ) {
+      const x =
+        Number(req.body.x);
 
-      return res.status(400).json({
-        success: false,
-        message: "الإحداثيات غير صحيحة"
+      const y =
+        Number(req.body.y);
+
+      if (
+        !Number.isFinite(x) ||
+        !Number.isFinite(y)
+      ) {
+
+        return res.status(400).json({
+          success: false,
+          message: "الإحداثيات غير صحيحة"
+        });
+      }
+
+      const result =
+        await pool.query(
+          `
+          UPDATE players
+          SET
+            x = $1,
+            y = $2
+          WHERE id = $3
+          RETURNING *
+          `,
+          [
+            Math.round(x),
+            Math.round(y),
+            id
+          ]
+        );
+
+      if (result.rows.length === 0) {
+
+        return res.status(404).json({
+          success: false,
+          message: "المملكة غير موجودة"
+        });
+      }
+
+      io.emit(
+        "playerMoved",
+        {
+          player:
+            result.rows[0]
+        }
+      );
+
+      res.json({
+        success: true,
+        player:
+          result.rows[0]
       });
 
-    }
+    } catch (error) {
 
-    const result = await pool.query(
-      `
-      UPDATE players
-      SET
-        x = $1,
-        y = $2
-      WHERE id = $3
-      RETURNING *
-      `,
-      [
-        Math.round(x),
-        Math.round(y),
-        id
-      ]
-    );
+      console.error(
+        "Move error:",
+        error
+      );
 
-    if (result.rows.length === 0) {
-
-      return res.status(404).json({
+      res.status(500).json({
         success: false,
-        message: "المملكة غير موجودة"
+        message: "فشل تحريك المملكة"
       });
-
     }
-
-    io.emit("playerMoved", {
-      player: result.rows[0]
-    });
-
-    res.json({
-      success: true,
-      player: result.rows[0]
-    });
-
-  } catch (error) {
-
-    console.error(
-      "Move error:",
-      error
-    );
-
-    res.status(500).json({
-      success: false,
-      message: "فشل تحريك المملكة"
-    });
-
   }
-
-});
+);
 
 /* =========================================================
    MARCH
 ========================================================= */
 
-app.post("/api/player/:id/march", async (req, res) => {
+app.post(
+  "/api/player/:id/march",
+  async (req, res) => {
 
-  const client = await pool.connect();
+    const client =
+      await pool.connect();
 
-  try {
-
-    const playerId = Number(req.params.id);
-    const targetType =
-      req.body.targetType || "zombie";
-
-    const targetId = Number(
-      req.body.targetId
-    );
-
-    const troops = Number(
-      req.body.troops
-    );
-
-    if (
-      !Number.isInteger(troops) ||
-      troops <= 0
-    ) {
-
-      return res.status(400).json({
-        success: false,
-        message: "عدد الجنود غير صحيح"
-      });
-
-    }
-
-    await client.query("BEGIN");
-
-    const playerResult = await client.query(
-      `
-      SELECT *
-      FROM players
-      WHERE id = $1
-      FOR UPDATE
-      `,
-      [playerId]
-    );
-
-    if (playerResult.rows.length === 0) {
-
-      await client.query("ROLLBACK");
-
-      return res.status(404).json({
-        success: false,
-        message: "المملكة غير موجودة"
-      });
-
-    }
-
-    const player = playerResult.rows[0];
-
-    if (Number(player.troops) < troops) {
-
-      await client.query("ROLLBACK");
-
-      return res.status(400).json({
-        success: false,
-        message: "عدد الجنود غير كافٍ"
-      });
-
-    }
-
-    const updatedPlayer = await client.query(
-      `
-      UPDATE players
-      SET troops = troops - $1
-      WHERE id = $2
-      RETURNING *
-      `,
-      [
-        troops,
-        playerId
-      ]
-    );
-
-    const march = await client.query(
-      `
-      INSERT INTO marches
-      (
-        player_id,
-        target_type,
-        target_id,
-        troops,
-        started_at,
-        status
-      )
-      VALUES
-      (
-        $1,
-        $2,
-        $3,
-        $4,
-        CURRENT_TIMESTAMP,
-        'marching'
-      )
-      RETURNING *
-      `,
-      [
-        playerId,
-        targetType,
-        targetId,
-        troops
-      ]
-    );
-
-    await client.query("COMMIT");
-
-    io.emit("marchStarted", {
-      march: march.rows[0]
-    });
-
-    res.json({
-      success: true,
-      march: march.rows[0],
-      player: updatedPlayer.rows[0]
-    });
-
-  } catch (error) {
+    let transactionStarted = false;
 
     try {
-      await client.query("ROLLBACK");
-    } catch {}
 
-    console.error(
-      "March error:",
-      error
-    );
+      const playerId =
+        Number(req.params.id);
 
-    res.status(500).json({
-      success: false,
-      message: "فشل إرسال المسيرة"
-    });
+      const targetType =
+        String(
+          req.body.targetType ||
+          "zombie"
+        );
 
-  } finally {
+      const targetId =
+        Number(req.body.targetId);
 
-    client.release();
+      const troops =
+        Number(req.body.troops);
 
+      if (
+        !Number.isInteger(troops) ||
+        troops <= 0
+      ) {
+
+        return res.status(400).json({
+          success: false,
+          message: "عدد الجنود غير صحيح"
+        });
+      }
+
+      await client.query("BEGIN");
+      transactionStarted = true;
+
+      const playerResult =
+        await client.query(
+          `
+          SELECT *
+          FROM players
+          WHERE id = $1
+          FOR UPDATE
+          `,
+          [playerId]
+        );
+
+      if (playerResult.rows.length === 0) {
+
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+
+        return res.status(404).json({
+          success: false,
+          message: "المملكة غير موجودة"
+        });
+      }
+
+      const player =
+        playerResult.rows[0];
+
+      if (
+        Number(player.troops) <
+        troops
+      ) {
+
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+
+        return res.status(400).json({
+          success: false,
+          message: "عدد الجنود غير كافٍ"
+        });
+      }
+
+      const updatedPlayer =
+        await client.query(
+          `
+          UPDATE players
+          SET troops = troops - $1
+          WHERE id = $2
+          RETURNING *
+          `,
+          [
+            troops,
+            playerId
+          ]
+        );
+
+      const march =
+        await client.query(
+          `
+          INSERT INTO marches
+          (
+            player_id,
+            target_type,
+            target_id,
+            troops,
+            started_at,
+            status
+          )
+          VALUES
+          (
+            $1,
+            $2,
+            $3,
+            $4,
+            CURRENT_TIMESTAMP,
+            'marching'
+          )
+          RETURNING *
+          `,
+          [
+            playerId,
+            targetType,
+            targetId,
+            troops
+          ]
+        );
+
+      await client.query("COMMIT");
+      transactionStarted = false;
+
+      io.emit(
+        "marchStarted",
+        {
+          march:
+            march.rows[0]
+        }
+      );
+
+      res.json({
+        success: true,
+        march:
+          march.rows[0],
+        player:
+          updatedPlayer.rows[0]
+      });
+
+    } catch (error) {
+
+      if (transactionStarted) {
+
+        try {
+          await client.query("ROLLBACK");
+        } catch {}
+      }
+
+      console.error(
+        "March error:",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message: "فشل إرسال المسيرة"
+      });
+
+    } finally {
+
+      client.release();
+    }
   }
-
-});
+);
 
 /* =========================================================
    REPORTS
 ========================================================= */
 
-app.get("/api/reports/:id", async (req, res) => {
+app.get(
+  "/api/reports/:id",
+  async (req, res) => {
 
-  try {
+    try {
 
-    const id = Number(req.params.id);
+      const id =
+        Number(req.params.id);
 
-    const result = await pool.query(
-      `
-      SELECT *
-      FROM battle_reports
-      WHERE player_id = $1
-      ORDER BY created_at DESC
-      LIMIT 100
-      `,
-      [id]
-    );
+      const result =
+        await pool.query(
+          `
+          SELECT *
+          FROM battle_reports
+          WHERE player_id = $1
+          ORDER BY created_at DESC
+          LIMIT 100
+          `,
+          [id]
+        );
 
-    res.json({
-      success: true,
-      reports: result.rows
-    });
+      res.json({
+        success: true,
+        reports:
+          result.rows
+      });
 
-  } catch (error) {
+    } catch (error) {
 
-    console.error(
-      "Reports error:",
-      error
-    );
+      console.error(
+        "Reports error:",
+        error
+      );
 
-    res.status(500).json({
-      success: false,
-      message: "فشل تحميل التقارير"
-    });
-
+      res.status(500).json({
+        success: false,
+        message: "فشل تحميل التقارير"
+      });
+    }
   }
-
-});
+);
 
 /* =========================================================
    SOCKET.IO
 ========================================================= */
 
-io.on("connection", socket => {
-
-  console.log(
-    `Player connected: ${socket.id}`
-  );
-
-  socket.on("joinGame", data => {
+io.on(
+  "connection",
+  socket => {
 
     console.log(
-      "Player joined game:",
-      data
+      `Player connected: ${socket.id}`
     );
 
-    socket.emit("gameJoined", {
-      success: true,
-      playerId:
-        data && data.playerId
-    });
+    socket.on(
+      "joinGame",
+      data => {
 
-  });
+        console.log(
+          "Player joined game:",
+          data
+        );
 
-  socket.on("disconnect", () => {
+        socket.emit(
+          "gameJoined",
+          {
+            success: true,
 
-    console.log(
-      `Player disconnected: ${socket.id}`
+            playerId:
+              data &&
+              data.playerId
+          }
+        );
+      }
     );
 
-  });
+    socket.on(
+      "disconnect",
+      () => {
 
-});
+        console.log(
+          `Player disconnected: ${socket.id}`
+        );
+      }
+    );
+  }
+);
 
 /* =========================================================
    PROCESS MARCHES
@@ -3612,24 +4050,32 @@ async function processMarches() {
 
   try {
 
-    const result = await pool.query(
-      `
-      SELECT *
-      FROM marches
-      WHERE status = 'marching'
-      AND started_at <= NOW() - INTERVAL '10 seconds'
-      ORDER BY id
-      LIMIT 50
-      `
-    );
+    const result =
+      await pool.query(
+        `
+        SELECT *
+        FROM marches
+        WHERE status = 'marching'
+        AND started_at <=
+          NOW() - INTERVAL '10 seconds'
+        ORDER BY id
+        LIMIT 50
+        `
+      );
 
-    for (const march of result.rows) {
+    for (
+      const march of result.rows
+    ) {
 
-      const client = await pool.connect();
+      const client =
+        await pool.connect();
+
+      let transactionStarted = false;
 
       try {
 
         await client.query("BEGIN");
+        transactionStarted = true;
 
         const playerResult =
           await client.query(
@@ -3642,7 +4088,9 @@ async function processMarches() {
             [march.player_id]
           );
 
-        if (playerResult.rows.length === 0) {
+        if (
+          playerResult.rows.length === 0
+        ) {
 
           await client.query(
             `
@@ -3654,6 +4102,7 @@ async function processMarches() {
           );
 
           await client.query("COMMIT");
+          transactionStarted = false;
 
           continue;
         }
@@ -3676,12 +4125,15 @@ async function processMarches() {
         const victory =
           playerPower >= enemyPower;
 
-        let resultText;
+        let resultText =
+          "defeat";
+
         let powerChange = 0;
 
         if (victory) {
 
-          resultText = "victory";
+          resultText =
+            "victory";
 
           powerChange =
             troops * 3;
@@ -3697,11 +4149,6 @@ async function processMarches() {
               march.player_id
             ]
           );
-
-        } else {
-
-          resultText = "defeat";
-
         }
 
         await client.query(
@@ -3745,23 +4192,31 @@ async function processMarches() {
         );
 
         await client.query("COMMIT");
+        transactionStarted = false;
 
         io.emit(
           "battleFinished",
           {
             playerId:
               march.player_id,
+
             result:
               resultText,
+
             powerChange
           }
         );
 
       } catch (error) {
 
-        try {
-          await client.query("ROLLBACK");
-        } catch {}
+        if (transactionStarted) {
+
+          try {
+            await client.query(
+              "ROLLBACK"
+            );
+          } catch {}
+        }
 
         console.error(
           "March processing error:",
@@ -3771,9 +4226,7 @@ async function processMarches() {
       } finally {
 
         client.release();
-
       }
-
     }
 
   } catch (error) {
@@ -3782,9 +4235,7 @@ async function processMarches() {
       "Process marches error:",
       error
     );
-
   }
-
 }
 
 /* =========================================================
@@ -3793,15 +4244,15 @@ async function processMarches() {
 
 async function testDatabase() {
 
-  const result = await pool.query(
-    "SELECT NOW() AS time"
-  );
+  const result =
+    await pool.query(
+      "SELECT NOW() AS time"
+    );
 
   console.log(
     "PostgreSQL connected:",
     result.rows[0].time
   );
-
 }
 
 /* =========================================================
@@ -3824,13 +4275,25 @@ async function startServer() {
       () => {
 
         console.log(
-          `🏰 Kardous Survival running on port ${PORT}`
+          "======================================"
         );
 
         console.log(
-          `Version: 16.0`
+          "🏰 Kardous Survival ONLINE"
         );
 
+        console.log(
+          "Version:",
+          GAME_VERSION
+        );
+
+        console.log(
+          "Castle: Level 1 → 30 → ⭐⭐⭐⭐⭐"
+        );
+
+        console.log(
+          "======================================"
+        );
       }
     );
 
@@ -3847,9 +4310,7 @@ async function startServer() {
     );
 
     process.exit(1);
-
   }
-
 }
 
 startServer();
