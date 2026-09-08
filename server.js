@@ -1,14 +1,12 @@
 const express = require("express");
 const http = require("http");
+const path = require("path");
 const { Server } = require("socket.io");
 const { Pool } = require("pg");
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
-
-app.use(express.json());
-app.use(express.static("public"));
 
 const PORT = process.env.PORT || 3000;
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -25,12 +23,24 @@ const pool = new Pool({
   }
 });
 
+app.use(express.json());
+
+// =====================================================
+// FRONTEND
+// =====================================================
+
+app.use(express.static(__dirname));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
 
 // =====================================================
 // DATABASE
 // =====================================================
 
 async function initDatabase() {
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS players (
       id SERIAL PRIMARY KEY,
@@ -140,10 +150,6 @@ async function initDatabase() {
     )
   `);
 
-  // ===================================================
-  // BUILDINGS
-  // ===================================================
-
   await pool.query(`
     CREATE TABLE IF NOT EXISTS buildings (
       id SERIAL PRIMARY KEY,
@@ -157,10 +163,6 @@ async function initDatabase() {
     )
   `);
 
-  // ===================================================
-  // RESEARCH
-  // ===================================================
-
   await pool.query(`
     CREATE TABLE IF NOT EXISTS research (
       id SERIAL PRIMARY KEY,
@@ -172,10 +174,6 @@ async function initDatabase() {
     )
   `);
 
-  // ===================================================
-  // TALENTS
-  // ===================================================
-
   await pool.query(`
     CREATE TABLE IF NOT EXISTS talents (
       id SERIAL PRIMARY KEY,
@@ -185,10 +183,6 @@ async function initDatabase() {
       UNIQUE(player_id, type)
     )
   `);
-
-  // ===================================================
-  // AIRCRAFT
-  // ===================================================
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS aircraft (
@@ -202,168 +196,168 @@ async function initDatabase() {
     )
   `);
 
-  console.log("Database initialized");
+  console.log("Database initialized successfully");
 }
 
-
 // =====================================================
-// BUILDING CONFIG
+// BUILDINGS
 // =====================================================
 
 const BUILDINGS = {
+
   farm: {
-    name: "Farm",
-    arabic: "المزرعة",
+    name: "المزرعة",
     basePower: 100
   },
 
   lumber_mill: {
-    name: "Lumber Mill",
-    arabic: "منشرة الخشب",
+    name: "منشرة الخشب",
     basePower: 100
   },
 
   iron_mine: {
-    name: "Iron Mine",
-    arabic: "منجم الحديد",
+    name: "منجم الحديد",
     basePower: 150
   },
 
   gold_mine: {
-    name: "Gold Mine",
-    arabic: "منجم الذهب",
+    name: "منجم الذهب",
     basePower: 200
   },
 
   barracks: {
-    name: "Barracks",
-    arabic: "الثكنة",
+    name: "الثكنة",
     basePower: 250
   },
 
   hospital: {
-    name: "Hospital",
-    arabic: "المستشفى",
+    name: "المستشفى",
     basePower: 250
   },
 
   research_center: {
-    name: "Research Center",
-    arabic: "مركز الأبحاث",
+    name: "مركز الأبحاث",
     basePower: 300
   },
 
   warehouse: {
-    name: "Warehouse",
-    arabic: "المخزن",
+    name: "المخزن",
     basePower: 200
   },
 
   watchtower: {
-    name: "Watchtower",
-    arabic: "برج المراقبة",
+    name: "برج المراقبة",
     basePower: 300
   },
 
   alliance_center: {
-    name: "Alliance Center",
-    arabic: "مركز التحالف",
+    name: "مركز التحالف",
     basePower: 300
   },
 
   airfield: {
-    name: "Airfield",
-    arabic: "المطار",
+    name: "المطار",
     basePower: 500
   }
+
 };
 
-
 function getBuildingCost(level) {
+
   return {
     food: level * 1200,
     wood: level * 1200,
     iron: level * 300,
     gold: Math.floor(level * 120)
   };
+
 }
 
-
 function getBuildingPower(type, level) {
-  const building = BUILDINGS[type];
 
-  if (!building) {
+  if (!BUILDINGS[type]) {
     return level * 100;
   }
 
-  return building.basePower * level;
+  return BUILDINGS[type].basePower * level;
+
 }
 
-
 // =====================================================
-// CASTLE CONFIG
+// CASTLE
 // =====================================================
 
 function getCastleLevelCost(level) {
+
   return {
     food: level * 1000,
     wood: level * 1000,
     iron: level * 250,
     gold: Math.floor(level * 100)
   };
-}
 
+}
 
 function getCastleLevelPower(level) {
+
   return 500 + level * 100;
+
 }
 
-
 function getStarCost(star) {
+
   return {
     food: 30000 + star * 15000,
     wood: 30000 + star * 15000,
     iron: 10000 + star * 7500,
     gold: 5000 + star * 2500
   };
-}
 
+}
 
 function getStarPower(star) {
+
   return 5000 + star * 1000;
+
 }
 
-
 // =====================================================
-// HEALTH
+// STATUS
 // =====================================================
 
-app.get("/api/status", async (req, res) => {
+app.get("/api/status", (req, res) => {
+
   res.json({
     ok: true,
     game: "Kardous Survival",
-    version: "14.0",
+    version: "14.1",
     server: "online"
   });
-});
 
+});
 
 // =====================================================
 // REGISTER
 // =====================================================
 
 app.post("/api/register", async (req, res) => {
+
   try {
-    const name = String(req.body.name || "Kardous").trim();
+
+    const name = String(
+      req.body.name || "Kardous"
+    ).trim();
 
     if (!name) {
+
       return res.status(400).json({
         ok: false,
         error: "Name is required"
       });
+
     }
 
-    const playerResult = await pool.query(
+    const result = await pool.query(
       `
       INSERT INTO players (name)
       VALUES ($1)
@@ -372,9 +366,8 @@ app.post("/api/register", async (req, res) => {
       [name]
     );
 
-    const player = playerResult.rows[0];
+    const player = result.rows[0];
 
-    // Heroes
     const heroNames = [
       "Kardous",
       "Luna",
@@ -399,6 +392,7 @@ app.post("/api/register", async (req, res) => {
     ];
 
     for (let i = 0; i < heroNames.length; i++) {
+
       await pool.query(
         `
         INSERT INTO heroes
@@ -412,9 +406,9 @@ app.post("/api/register", async (req, res) => {
           i === 0 ? "legendary" : "common"
         ]
       );
+
     }
 
-    // Behemoths
     const behemothNames = [
       "البھيثومي الأول",
       "البھيثومي الثاني",
@@ -423,6 +417,7 @@ app.post("/api/register", async (req, res) => {
     ];
 
     for (let i = 0; i < behemothNames.length; i++) {
+
       await pool.query(
         `
         INSERT INTO behemoths
@@ -435,27 +430,29 @@ app.post("/api/register", async (req, res) => {
           500 + i * 200
         ]
       );
+
     }
 
-    // Buildings
     for (const [type, data] of Object.entries(BUILDINGS)) {
+
       await pool.query(
         `
         INSERT INTO buildings
         (player_id, type, name, level, power)
         VALUES ($1, $2, $3, 1, $4)
-        ON CONFLICT (player_id, type) DO NOTHING
+        ON CONFLICT (player_id, type)
+        DO NOTHING
         `,
         [
           player.id,
           type,
-          data.arabic,
+          data.name,
           data.basePower
         ]
       );
+
     }
 
-    // Research
     const researchTypes = [
       "economy",
       "construction",
@@ -466,18 +463,20 @@ app.post("/api/register", async (req, res) => {
     ];
 
     for (const type of researchTypes) {
+
       await pool.query(
         `
         INSERT INTO research
         (player_id, type, level, power)
         VALUES ($1, $2, 1, 200)
-        ON CONFLICT (player_id, type) DO NOTHING
+        ON CONFLICT (player_id, type)
+        DO NOTHING
         `,
         [player.id, type]
       );
+
     }
 
-    // Talents
     const talentTypes = [
       "war",
       "economy",
@@ -485,24 +484,28 @@ app.post("/api/register", async (req, res) => {
     ];
 
     for (const type of talentTypes) {
+
       await pool.query(
         `
         INSERT INTO talents
         (player_id, type, level)
         VALUES ($1, $2, 0)
-        ON CONFLICT (player_id, type) DO NOTHING
+        ON CONFLICT (player_id, type)
+        DO NOTHING
         `,
         [player.id, type]
       );
+
     }
 
-    // Aircraft
     await pool.query(
       `
       INSERT INTO aircraft
       (player_id, name, level, power, fuel)
-      VALUES ($1, 'Kardous Airship', 1, 500, 100)
-      ON CONFLICT (player_id) DO NOTHING
+      VALUES
+      ($1, 'Kardous Airship', 1, 500, 100)
+      ON CONFLICT (player_id)
+      DO NOTHING
       `,
       [player.id]
     );
@@ -513,34 +516,44 @@ app.post("/api/register", async (req, res) => {
     });
 
   } catch (error) {
+
     console.error("Register error:", error);
 
     res.status(500).json({
       ok: false,
       error: "Registration failed"
     });
-  }
-});
 
+  }
+
+});
 
 // =====================================================
 // PLAYER
 // =====================================================
 
 app.get("/api/player/:id", async (req, res) => {
+
   try {
+
     const id = Number(req.params.id);
 
     const result = await pool.query(
-      `SELECT * FROM players WHERE id = $1`,
+      `
+      SELECT *
+      FROM players
+      WHERE id = $1
+      `,
       [id]
     );
 
     if (!result.rows.length) {
+
       return res.status(404).json({
         ok: false,
         error: "Player not found"
       });
+
     }
 
     res.json({
@@ -549,25 +562,29 @@ app.get("/api/player/:id", async (req, res) => {
     });
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
       ok: false,
       error: "Failed to load player"
     });
+
   }
+
 });
 
-
 // =====================================================
-// COLLECT RESOURCES
+// COLLECT
 // =====================================================
 
 app.post("/api/player/:id/collect", async (req, res) => {
+
   try {
+
     const id = Number(req.params.id);
 
-    const buildingResult = await pool.query(
+    const buildings = await pool.query(
       `
       SELECT type, level
       FROM buildings
@@ -581,7 +598,8 @@ app.post("/api/player/:id/collect", async (req, res) => {
     let iron = 100;
     let gold = 50;
 
-    for (const building of buildingResult.rows) {
+    for (const building of buildings.rows) {
+
       const level = Number(building.level);
 
       if (building.type === "farm") {
@@ -599,6 +617,7 @@ app.post("/api/player/:id/collect", async (req, res) => {
       if (building.type === "gold_mine") {
         gold += level * 10;
       }
+
     }
 
     const result = await pool.query(
@@ -612,14 +631,22 @@ app.post("/api/player/:id/collect", async (req, res) => {
       WHERE id = $5
       RETURNING *
       `,
-      [food, wood, iron, gold, id]
+      [
+        food,
+        wood,
+        iron,
+        gold,
+        id
+      ]
     );
 
     if (!result.rows.length) {
+
       return res.status(404).json({
         ok: false,
         error: "Player not found"
       });
+
     }
 
     res.json({
@@ -634,22 +661,26 @@ app.post("/api/player/:id/collect", async (req, res) => {
     });
 
   } catch (error) {
+
     console.error("Collect error:", error);
 
     res.status(500).json({
       ok: false,
       error: "Collection failed"
     });
-  }
-});
 
+  }
+
+});
 
 // =====================================================
 // CASTLE INFO
 // =====================================================
 
 app.get("/api/player/:id/castle", async (req, res) => {
+
   try {
+
     const id = Number(req.params.id);
 
     const result = await pool.query(
@@ -665,10 +696,12 @@ app.get("/api/player/:id/castle", async (req, res) => {
     );
 
     if (!result.rows.length) {
+
       return res.status(404).json({
         ok: false,
         error: "Player not found"
       });
+
     }
 
     const player = result.rows[0];
@@ -676,34 +709,44 @@ app.get("/api/player/:id/castle", async (req, res) => {
     let next = null;
 
     if (player.castle_level < 30) {
-      const nextLevel = player.castle_level + 1;
+
+      const nextLevel =
+        Number(player.castle_level) + 1;
 
       next = {
         type: "level",
         level: nextLevel,
-        stars: player.castle_stars,
-        cost: getCastleLevelCost(player.castle_level),
+        stars: Number(player.castle_stars),
+        cost: getCastleLevelCost(
+          Number(player.castle_level)
+        ),
         power: getCastleLevelPower(nextLevel)
       };
+
     } else if (player.castle_stars < 5) {
-      const nextStar = player.castle_stars + 1;
+
+      const nextStar =
+        Number(player.castle_stars) + 1;
 
       next = {
         type: "star",
         level: 30,
         stars: nextStar,
-        cost: getStarCost(player.castle_stars),
+        cost: getStarCost(
+          Number(player.castle_stars)
+        ),
         power: getStarPower(nextStar)
       };
+
     }
 
     res.json({
+
       ok: true,
 
-      // Nested version
       current: {
-        level: player.castle_level,
-        stars: player.castle_stars,
+        level: Number(player.castle_level),
+        stars: Number(player.castle_stars),
         power: Number(player.power)
       },
 
@@ -714,31 +757,35 @@ app.get("/api/player/:id/castle", async (req, res) => {
         stars: 5
       },
 
-      // Flat compatibility fields
-      level: player.castle_level,
-      stars: player.castle_stars,
+      level: Number(player.castle_level),
+      stars: Number(player.castle_stars),
       power: Number(player.power)
+
     });
 
   } catch (error) {
+
     console.error("Castle info error:", error);
 
     res.status(500).json({
       ok: false,
       error: "Failed to load castle"
     });
-  }
-});
 
+  }
+
+});
 
 // =====================================================
 // UPGRADE CASTLE
 // =====================================================
 
 app.post("/api/player/:id/upgrade-castle", async (req, res) => {
+
   const client = await pool.connect();
 
   try {
+
     const id = Number(req.params.id);
 
     await client.query("BEGIN");
@@ -754,20 +801,25 @@ app.post("/api/player/:id/upgrade-castle", async (req, res) => {
     );
 
     if (!result.rows.length) {
+
       await client.query("ROLLBACK");
 
       return res.status(404).json({
         ok: false,
         error: "Player not found"
       });
+
     }
 
     const player = result.rows[0];
 
-    // Level 1 -> 30
-    if (player.castle_level < 30) {
-      const currentLevel = player.castle_level;
-      const cost = getCastleLevelCost(currentLevel);
+    if (Number(player.castle_level) < 30) {
+
+      const currentLevel =
+        Number(player.castle_level);
+
+      const cost =
+        getCastleLevelCost(currentLevel);
 
       if (
         Number(player.food) < cost.food ||
@@ -775,6 +827,7 @@ app.post("/api/player/:id/upgrade-castle", async (req, res) => {
         Number(player.iron) < cost.iron ||
         Number(player.gold) < cost.gold
       ) {
+
         await client.query("ROLLBACK");
 
         return res.status(400).json({
@@ -782,10 +835,13 @@ app.post("/api/player/:id/upgrade-castle", async (req, res) => {
           error: "Not enough resources",
           cost
         });
+
       }
 
       const newLevel = currentLevel + 1;
-      const powerGain = getCastleLevelPower(newLevel);
+
+      const powerGain =
+        getCastleLevelPower(newLevel);
 
       const updated = await client.query(
         `
@@ -818,14 +874,22 @@ app.post("/api/player/:id/upgrade-castle", async (req, res) => {
         type: "level",
         player: updated.rows[0]
       });
+
     }
 
-    // Level 30 -> stars 1 -> 5
-    if (player.castle_stars < 5) {
-      const currentStar = player.castle_stars;
-      const cost = getStarCost(currentStar);
-      const newStar = currentStar + 1;
-      const powerGain = getStarPower(newStar);
+    if (Number(player.castle_stars) < 5) {
+
+      const currentStar =
+        Number(player.castle_stars);
+
+      const cost =
+        getStarCost(currentStar);
+
+      const newStar =
+        currentStar + 1;
+
+      const powerGain =
+        getStarPower(newStar);
 
       if (
         Number(player.food) < cost.food ||
@@ -833,6 +897,7 @@ app.post("/api/player/:id/upgrade-castle", async (req, res) => {
         Number(player.iron) < cost.iron ||
         Number(player.gold) < cost.gold
       ) {
+
         await client.query("ROLLBACK");
 
         return res.status(400).json({
@@ -840,6 +905,7 @@ app.post("/api/player/:id/upgrade-castle", async (req, res) => {
           error: "Not enough resources",
           cost
         });
+
       }
 
       const updated = await client.query(
@@ -873,16 +939,18 @@ app.post("/api/player/:id/upgrade-castle", async (req, res) => {
         type: "star",
         player: updated.rows[0]
       });
+
     }
 
     await client.query("ROLLBACK");
 
     res.json({
       ok: false,
-      error: "Castle already at maximum level"
+      error: "Castle already at maximum"
     });
 
   } catch (error) {
+
     await client.query("ROLLBACK");
 
     console.error("Castle upgrade error:", error);
@@ -891,18 +959,23 @@ app.post("/api/player/:id/upgrade-castle", async (req, res) => {
       ok: false,
       error: "Castle upgrade failed"
     });
+
   } finally {
+
     client.release();
+
   }
+
 });
 
-
 // =====================================================
-// BUILDINGS LIST
+// BUILDINGS
 // =====================================================
 
 app.get("/api/player/:id/buildings", async (req, res) => {
+
   try {
+
     const id = Number(req.params.id);
 
     const result = await pool.query(
@@ -921,234 +994,306 @@ app.get("/api/player/:id/buildings", async (req, res) => {
     );
 
     res.json({
+
       ok: true,
+
       buildings: result.rows.map(building => {
+
+        const level =
+          Number(building.level);
+
         const nextLevel =
-          Number(building.level) < 30
-            ? Number(building.level) + 1
-            : null;
+          level < 30 ? level + 1 : null;
 
         return {
-          ...building,
-          level: Number(building.level),
+
+          id: building.id,
+
+          type: building.type,
+
+          name: building.name,
+
+          level,
+
           power: Number(building.power),
+
           maximumLevel: 30,
+
           next: nextLevel
             ? {
                 level: nextLevel,
-                cost: getBuildingCost(Number(building.level)),
+                cost: getBuildingCost(level),
                 power: getBuildingPower(
                   building.type,
                   nextLevel
                 )
               }
             : null
+
         };
+
       })
+
     });
 
   } catch (error) {
+
     console.error("Buildings error:", error);
 
     res.status(500).json({
       ok: false,
       error: "Failed to load buildings"
     });
-  }
-});
 
+  }
+
+});
 
 // =====================================================
 // UPGRADE BUILDING
 // =====================================================
 
-app.post("/api/player/:id/buildings/:type/upgrade", async (req, res) => {
-  const client = await pool.connect();
+app.post(
+  "/api/player/:id/buildings/:type/upgrade",
+  async (req, res) => {
 
-  try {
-    const playerId = Number(req.params.id);
-    const type = String(req.params.type);
+    const client = await pool.connect();
 
-    if (!BUILDINGS[type]) {
-      return res.status(400).json({
-        ok: false,
-        error: "Unknown building"
-      });
-    }
+    try {
 
-    await client.query("BEGIN");
+      const playerId =
+        Number(req.params.id);
 
-    const playerResult = await client.query(
-      `
-      SELECT *
-      FROM players
-      WHERE id = $1
-      FOR UPDATE
-      `,
-      [playerId]
-    );
+      const type =
+        String(req.params.type);
 
-    if (!playerResult.rows.length) {
-      await client.query("ROLLBACK");
+      if (!BUILDINGS[type]) {
 
-      return res.status(404).json({
-        ok: false,
-        error: "Player not found"
-      });
-    }
+        return res.status(400).json({
+          ok: false,
+          error: "Unknown building"
+        });
 
-    const buildingResult = await client.query(
-      `
-      SELECT *
-      FROM buildings
-      WHERE player_id = $1
+      }
+
+      await client.query("BEGIN");
+
+      const playerResult = await client.query(
+        `
+        SELECT *
+        FROM players
+        WHERE id = $1
+        FOR UPDATE
+        `,
+        [playerId]
+      );
+
+      if (!playerResult.rows.length) {
+
+        await client.query("ROLLBACK");
+
+        return res.status(404).json({
+          ok: false,
+          error: "Player not found"
+        });
+
+      }
+
+      const buildingResult = await client.query(
+        `
+        SELECT *
+        FROM buildings
+        WHERE player_id = $1
         AND type = $2
-      FOR UPDATE
-      `,
-      [playerId, type]
-    );
+        FOR UPDATE
+        `,
+        [
+          playerId,
+          type
+        ]
+      );
 
-    if (!buildingResult.rows.length) {
-      await client.query("ROLLBACK");
+      if (!buildingResult.rows.length) {
 
-      return res.status(404).json({
-        ok: false,
-        error: "Building not found"
-      });
-    }
+        await client.query("ROLLBACK");
 
-    const player = playerResult.rows[0];
-    const building = buildingResult.rows[0];
+        return res.status(404).json({
+          ok: false,
+          error: "Building not found"
+        });
 
-    const currentLevel = Number(building.level);
+      }
 
-    if (currentLevel >= 30) {
-      await client.query("ROLLBACK");
+      const player =
+        playerResult.rows[0];
 
-      return res.status(400).json({
-        ok: false,
-        error: "Building is already at maximum level"
-      });
-    }
+      const building =
+        buildingResult.rows[0];
 
-    // Building cannot exceed castle level
-    if (currentLevel >= Number(player.castle_level)) {
-      await client.query("ROLLBACK");
+      const currentLevel =
+        Number(building.level);
 
-      return res.status(400).json({
-        ok: false,
-        error: "Upgrade your castle first",
-        castleLevel: Number(player.castle_level),
-        buildingLevel: currentLevel
-      });
-    }
+      if (currentLevel >= 30) {
 
-    const cost = getBuildingCost(currentLevel);
+        await client.query("ROLLBACK");
 
-    if (
-      Number(player.food) < cost.food ||
-      Number(player.wood) < cost.wood ||
-      Number(player.iron) < cost.iron ||
-      Number(player.gold) < cost.gold
-    ) {
-      await client.query("ROLLBACK");
+        return res.status(400).json({
+          ok: false,
+          error: "Building is at maximum level"
+        });
 
-      return res.status(400).json({
-        ok: false,
-        error: "Not enough resources",
+      }
+
+      if (
+        currentLevel >=
+        Number(player.castle_level)
+      ) {
+
+        await client.query("ROLLBACK");
+
+        return res.status(400).json({
+          ok: false,
+          error: "Upgrade your castle first"
+        });
+
+      }
+
+      const cost =
+        getBuildingCost(currentLevel);
+
+      if (
+        Number(player.food) < cost.food ||
+        Number(player.wood) < cost.wood ||
+        Number(player.iron) < cost.iron ||
+        Number(player.gold) < cost.gold
+      ) {
+
+        await client.query("ROLLBACK");
+
+        return res.status(400).json({
+          ok: false,
+          error: "Not enough resources",
+          cost
+        });
+
+      }
+
+      const newLevel =
+        currentLevel + 1;
+
+      const newPower =
+        getBuildingPower(
+          type,
+          newLevel
+        );
+
+      await client.query(
+        `
+        UPDATE players
+        SET
+          food = food - $1,
+          wood = wood - $2,
+          iron = iron - $3,
+          gold = gold - $4,
+          power = power + $5
+        WHERE id = $6
+        `,
+        [
+          cost.food,
+          cost.wood,
+          cost.iron,
+          cost.gold,
+          BUILDINGS[type].basePower,
+          playerId
+        ]
+      );
+
+      const updated =
+        await client.query(
+          `
+          UPDATE buildings
+          SET
+            level = $1,
+            power = $2
+          WHERE player_id = $3
+          AND type = $4
+          RETURNING *
+          `,
+          [
+            newLevel,
+            newPower,
+            playerId,
+            type
+          ]
+        );
+
+      await client.query("COMMIT");
+
+      res.json({
+        ok: true,
+        building: updated.rows[0],
         cost
       });
+
+    } catch (error) {
+
+      await client.query("ROLLBACK");
+
+      console.error(
+        "Building upgrade error:",
+        error
+      );
+
+      res.status(500).json({
+        ok: false,
+        error: "Building upgrade failed"
+      });
+
+    } finally {
+
+      client.release();
+
     }
 
-    const newLevel = currentLevel + 1;
-    const newPower = getBuildingPower(type, newLevel);
-
-    await client.query(
-      `
-      UPDATE players
-      SET
-        food = food - $1,
-        wood = wood - $2,
-        iron = iron - $3,
-        gold = gold - $4,
-        power = power + $5
-      WHERE id = $6
-      `,
-      [
-        cost.food,
-        cost.wood,
-        cost.iron,
-        cost.gold,
-        BUILDINGS[type].basePower,
-        playerId
-      ]
-    );
-
-    const updated = await client.query(
-      `
-      UPDATE buildings
-      SET
-        level = $1,
-        power = $2
-      WHERE player_id = $3
-        AND type = $4
-      RETURNING *
-      `,
-      [
-        newLevel,
-        newPower,
-        playerId,
-        type
-      ]
-    );
-
-    await client.query("COMMIT");
-
-    res.json({
-      ok: true,
-      building: updated.rows[0],
-      cost
-    });
-
-  } catch (error) {
-    await client.query("ROLLBACK");
-
-    console.error("Building upgrade error:", error);
-
-    res.status(500).json({
-      ok: false,
-      error: "Building upgrade failed"
-    });
-  } finally {
-    client.release();
   }
-});
-
+);
 
 // =====================================================
 // SPEEDUP BUILDING
 // =====================================================
 
-app.post("/api/player/:id/speedup-building", async (req, res) => {
-  res.json({
-    ok: true,
-    message: "Building speedup system ready"
-  });
-});
+app.post(
+  "/api/player/:id/speedup-building",
+  async (req, res) => {
 
+    res.json({
+      ok: true,
+      message: "Building speedup ready"
+    });
+
+  }
+);
 
 // =====================================================
-// TRAIN TROOPS
+// TRAIN
 // =====================================================
 
 app.post("/api/player/:id/train", async (req, res) => {
+
   try {
-    const id = Number(req.params.id);
-    const type = String(req.body.type || "infantry");
+
+    const id =
+      Number(req.params.id);
+
+    const type =
+      String(
+        req.body.type || "infantry"
+      );
 
     const troopAmount = 100;
     const foodCost = 500;
     const woodCost = 200;
+    const powerGain = 200;
 
     const result = await pool.query(
       `
@@ -1159,24 +1304,26 @@ app.post("/api/player/:id/train", async (req, res) => {
         troops = troops + $3,
         power = power + $4
       WHERE id = $5
-        AND food >= $1
-        AND wood >= $2
+      AND food >= $1
+      AND wood >= $2
       RETURNING *
       `,
       [
         foodCost,
         woodCost,
         troopAmount,
-        troopAmount * 2,
+        powerGain,
         id
       ]
     );
 
     if (!result.rows.length) {
+
       return res.status(400).json({
         ok: false,
         error: "Not enough resources"
       });
+
     }
 
     res.json({
@@ -1187,36 +1334,49 @@ app.post("/api/player/:id/train", async (req, res) => {
     });
 
   } catch (error) {
+
     console.error("Train error:", error);
 
     res.status(500).json({
       ok: false,
       error: "Training failed"
     });
-  }
-});
 
+  }
+
+});
 
 // =====================================================
 // SPEEDUP TRAINING
 // =====================================================
 
-app.post("/api/player/:id/speedup-training", async (req, res) => {
-  res.json({
-    ok: true,
-    message: "Training speedup system ready"
-  });
-});
+app.post(
+  "/api/player/:id/speedup-training",
+  async (req, res) => {
 
+    res.json({
+      ok: true,
+      message: "Training speedup ready"
+    });
+
+  }
+);
 
 // =====================================================
 // RESEARCH
 // =====================================================
 
 app.post("/api/player/:id/research", async (req, res) => {
+
   try {
-    const id = Number(req.params.id);
-    const type = String(req.body.type || "technology");
+
+    const id =
+      Number(req.params.id);
+
+    const type =
+      String(
+        req.body.type || "technology"
+      );
 
     const result = await pool.query(
       `
@@ -1229,10 +1389,12 @@ app.post("/api/player/:id/research", async (req, res) => {
     );
 
     if (!result.rows.length) {
+
       return res.status(404).json({
         ok: false,
         error: "Player not found"
       });
+
     }
 
     res.json({
@@ -1242,23 +1404,28 @@ app.post("/api/player/:id/research", async (req, res) => {
     });
 
   } catch (error) {
+
     console.error("Research error:", error);
 
     res.status(500).json({
       ok: false,
       error: "Research failed"
     });
-  }
-});
 
+  }
+
+});
 
 // =====================================================
 // RESEARCH LIST
 // =====================================================
 
 app.get("/api/player/:id/research", async (req, res) => {
+
   try {
-    const id = Number(req.params.id);
+
+    const id =
+      Number(req.params.id);
 
     const result = await pool.query(
       `
@@ -1276,35 +1443,44 @@ app.get("/api/player/:id/research", async (req, res) => {
     });
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
       ok: false,
       error: "Failed to load research"
     });
-  }
-});
 
+  }
+
+});
 
 // =====================================================
 // SPEEDUP RESEARCH
 // =====================================================
 
-app.post("/api/player/:id/speedup-research", async (req, res) => {
-  res.json({
-    ok: true,
-    message: "Research speedup system ready"
-  });
-});
+app.post(
+  "/api/player/:id/speedup-research",
+  async (req, res) => {
 
+    res.json({
+      ok: true,
+      message: "Research speedup ready"
+    });
+
+  }
+);
 
 // =====================================================
 // PROFILE
 // =====================================================
 
 app.get("/api/player/:id/profile", async (req, res) => {
+
   try {
-    const id = Number(req.params.id);
+
+    const id =
+      Number(req.params.id);
 
     const result = await pool.query(
       `
@@ -1326,10 +1502,12 @@ app.get("/api/player/:id/profile", async (req, res) => {
     );
 
     if (!result.rows.length) {
+
       return res.status(404).json({
         ok: false,
         error: "Player not found"
       });
+
     }
 
     res.json({
@@ -1338,23 +1516,28 @@ app.get("/api/player/:id/profile", async (req, res) => {
     });
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
       ok: false,
       error: "Failed to load profile"
     });
-  }
-});
 
+  }
+
+});
 
 // =====================================================
 // HEROES
 // =====================================================
 
 app.get("/api/player/:id/heroes", async (req, res) => {
+
   try {
-    const id = Number(req.params.id);
+
+    const id =
+      Number(req.params.id);
 
     const result = await pool.query(
       `
@@ -1372,114 +1555,140 @@ app.get("/api/player/:id/heroes", async (req, res) => {
     });
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
       ok: false,
       error: "Failed to load heroes"
     });
+
   }
+
 });
 
-
 // =====================================================
-// UPGRADE HERO
+// HERO UPGRADE
 // =====================================================
 
-app.post("/api/player/:id/heroes/:heroId/upgrade", async (req, res) => {
-  try {
-    const playerId = Number(req.params.id);
-    const heroId = Number(req.params.heroId);
+app.post(
+  "/api/player/:id/heroes/:heroId/upgrade",
+  async (req, res) => {
 
-    const result = await pool.query(
-      `
-      UPDATE heroes
-      SET
-        level = level + 1,
-        power = power + 100
-      WHERE id = $1
+    try {
+
+      const playerId =
+        Number(req.params.id);
+
+      const heroId =
+        Number(req.params.heroId);
+
+      const result = await pool.query(
+        `
+        UPDATE heroes
+        SET
+          level = level + 1,
+          power = power + 100
+        WHERE id = $1
         AND player_id = $2
-      RETURNING *
-      `,
-      [heroId, playerId]
-    );
+        RETURNING *
+        `,
+        [
+          heroId,
+          playerId
+        ]
+      );
 
-    if (!result.rows.length) {
-      return res.status(404).json({
-        ok: false,
-        error: "Hero not found"
+      if (!result.rows.length) {
+
+        return res.status(404).json({
+          ok: false,
+          error: "Hero not found"
+        });
+
+      }
+
+      await pool.query(
+        `
+        UPDATE players
+        SET power = power + 100
+        WHERE id = $1
+        `,
+        [playerId]
+      );
+
+      res.json({
+        ok: true,
+        hero: result.rows[0]
       });
+
+    } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+        ok: false,
+        error: "Hero upgrade failed"
+      });
+
     }
 
-    await pool.query(
-      `
-      UPDATE players
-      SET power = power + 100
-      WHERE id = $1
-      `,
-      [playerId]
-    );
-
-    res.json({
-      ok: true,
-      hero: result.rows[0]
-    });
-
-  } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      ok: false,
-      error: "Hero upgrade failed"
-    });
   }
-});
-
+);
 
 // =====================================================
 // BEHEMOTHS - البھيثومي
 // =====================================================
 
-app.get("/api/player/:id/behemoths", async (req, res) => {
-  try {
-    const id = Number(req.params.id);
+app.get(
+  "/api/player/:id/behemoths",
+  async (req, res) => {
 
-    const result = await pool.query(
-      `
-      SELECT *
-      FROM behemoths
-      WHERE player_id = $1
-      ORDER BY id
-      `,
-      [id]
-    );
+    try {
 
-    res.json({
-      ok: true,
-      behemoths: result.rows
-    });
+      const id =
+        Number(req.params.id);
 
-  } catch (error) {
-    console.error(error);
+      const result = await pool.query(
+        `
+        SELECT *
+        FROM behemoths
+        WHERE player_id = $1
+        ORDER BY id
+        `,
+        [id]
+      );
 
-    res.status(500).json({
-      ok: false,
-      error: "Failed to load behemoths"
-    });
+      res.json({
+        ok: true,
+        behemoths: result.rows
+      });
+
+    } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+        ok: false,
+        error: "Failed to load behemoths"
+      });
+
+    }
+
   }
-});
-
-
-// =====================================================
-// UPGRADE BEHEMOTH
-// =====================================================
+);
 
 app.post(
   "/api/player/:id/behemoths/:behemothId/upgrade",
   async (req, res) => {
+
     try {
-      const playerId = Number(req.params.id);
-      const behemothId = Number(req.params.behemothId);
+
+      const playerId =
+        Number(req.params.id);
+
+      const behemothId =
+        Number(req.params.behemothId);
 
       const result = await pool.query(
         `
@@ -1488,17 +1697,22 @@ app.post(
           level = level + 1,
           power = power + 250
         WHERE id = $1
-          AND player_id = $2
+        AND player_id = $2
         RETURNING *
         `,
-        [behemothId, playerId]
+        [
+          behemothId,
+          playerId
+        ]
       );
 
       if (!result.rows.length) {
+
         return res.status(404).json({
           ok: false,
           error: "Behemoth not found"
         });
+
       }
 
       await pool.query(
@@ -1516,24 +1730,29 @@ app.post(
       });
 
     } catch (error) {
+
       console.error(error);
 
       res.status(500).json({
         ok: false,
         error: "Behemoth upgrade failed"
       });
+
     }
+
   }
 );
-
 
 // =====================================================
 // TALENTS
 // =====================================================
 
 app.get("/api/player/:id/talents", async (req, res) => {
+
   try {
-    const id = Number(req.params.id);
+
+    const id =
+      Number(req.params.id);
 
     const result = await pool.query(
       `
@@ -1551,149 +1770,188 @@ app.get("/api/player/:id/talents", async (req, res) => {
     });
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
       ok: false,
       error: "Failed to load talents"
     });
+
   }
+
 });
 
+app.post(
+  "/api/player/:id/talents/:type/upgrade",
+  async (req, res) => {
 
-app.post("/api/player/:id/talents/:type/upgrade", async (req, res) => {
-  try {
-    const playerId = Number(req.params.id);
-    const type = String(req.params.type);
+    try {
 
-    const result = await pool.query(
-      `
-      UPDATE talents
-      SET level = level + 1
-      WHERE player_id = $1
+      const playerId =
+        Number(req.params.id);
+
+      const type =
+        String(req.params.type);
+
+      const result = await pool.query(
+        `
+        UPDATE talents
+        SET level = level + 1
+        WHERE player_id = $1
         AND type = $2
-      RETURNING *
-      `,
-      [playerId, type]
-    );
+        RETURNING *
+        `,
+        [
+          playerId,
+          type
+        ]
+      );
 
-    if (!result.rows.length) {
-      return res.status(404).json({
-        ok: false,
-        error: "Talent not found"
+      if (!result.rows.length) {
+
+        return res.status(404).json({
+          ok: false,
+          error: "Talent not found"
+        });
+
+      }
+
+      res.json({
+        ok: true,
+        talent: result.rows[0]
       });
+
+    } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+        ok: false,
+        error: "Talent upgrade failed"
+      });
+
     }
 
-    res.json({
-      ok: true,
-      talent: result.rows[0]
-    });
-
-  } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      ok: false,
-      error: "Talent upgrade failed"
-    });
   }
-});
-
+);
 
 // =====================================================
 // AIRCRAFT
 // =====================================================
 
-app.get("/api/player/:id/aircraft", async (req, res) => {
-  try {
-    const id = Number(req.params.id);
+app.get(
+  "/api/player/:id/aircraft",
+  async (req, res) => {
 
-    const result = await pool.query(
-      `
-      SELECT *
-      FROM aircraft
-      WHERE player_id = $1
-      `,
-      [id]
-    );
+    try {
 
-    if (!result.rows.length) {
-      return res.status(404).json({
-        ok: false,
-        error: "Aircraft not found"
+      const id =
+        Number(req.params.id);
+
+      const result = await pool.query(
+        `
+        SELECT *
+        FROM aircraft
+        WHERE player_id = $1
+        `,
+        [id]
+      );
+
+      if (!result.rows.length) {
+
+        return res.status(404).json({
+          ok: false,
+          error: "Aircraft not found"
+        });
+
+      }
+
+      res.json({
+        ok: true,
+        aircraft: result.rows[0]
       });
+
+    } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+        ok: false,
+        error: "Failed to load aircraft"
+      });
+
     }
 
-    res.json({
-      ok: true,
-      aircraft: result.rows[0]
-    });
-
-  } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      ok: false,
-      error: "Failed to load aircraft"
-    });
   }
-});
+);
 
+app.post(
+  "/api/player/:id/aircraft/upgrade",
+  async (req, res) => {
 
-app.post("/api/player/:id/aircraft/upgrade", async (req, res) => {
-  try {
-    const id = Number(req.params.id);
+    try {
 
-    const result = await pool.query(
-      `
-      UPDATE aircraft
-      SET
-        level = level + 1,
-        power = power + 500
-      WHERE player_id = $1
-      RETURNING *
-      `,
-      [id]
-    );
+      const id =
+        Number(req.params.id);
 
-    if (!result.rows.length) {
-      return res.status(404).json({
-        ok: false,
-        error: "Aircraft not found"
+      const result = await pool.query(
+        `
+        UPDATE aircraft
+        SET
+          level = level + 1,
+          power = power + 500
+        WHERE player_id = $1
+        RETURNING *
+        `,
+        [id]
+      );
+
+      if (!result.rows.length) {
+
+        return res.status(404).json({
+          ok: false,
+          error: "Aircraft not found"
+        });
+
+      }
+
+      await pool.query(
+        `
+        UPDATE players
+        SET power = power + 500
+        WHERE id = $1
+        `,
+        [id]
+      );
+
+      res.json({
+        ok: true,
+        aircraft: result.rows[0]
       });
+
+    } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+        ok: false,
+        error: "Aircraft upgrade failed"
+      });
+
     }
 
-    await pool.query(
-      `
-      UPDATE players
-      SET power = power + 500
-      WHERE id = $1
-      `,
-      [id]
-    );
-
-    res.json({
-      ok: true,
-      aircraft: result.rows[0]
-    });
-
-  } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      ok: false,
-      error: "Aircraft upgrade failed"
-    });
   }
-});
-
+);
 
 // =====================================================
 // ALLIANCES
 // =====================================================
 
 app.get("/api/alliances", async (req, res) => {
+
   try {
+
     const result = await pool.query(
       `
       SELECT
@@ -1701,7 +1959,7 @@ app.get("/api/alliances", async (req, res) => {
         COUNT(am.player_id)::INTEGER AS members
       FROM alliances a
       LEFT JOIN alliance_members am
-        ON a.id = am.alliance_id
+      ON a.id = am.alliance_id
       GROUP BY a.id
       ORDER BY a.power DESC
       `
@@ -1713,30 +1971,39 @@ app.get("/api/alliances", async (req, res) => {
     });
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
       ok: false,
       error: "Failed to load alliances"
     });
-  }
-});
 
+  }
+
+});
 
 // =====================================================
 // CREATE ALLIANCE
 // =====================================================
 
 app.post("/api/alliances", async (req, res) => {
+
   try {
-    const name = String(req.body.name || "").trim();
-    const leaderId = Number(req.body.leaderId);
+
+    const name =
+      String(req.body.name || "").trim();
+
+    const leaderId =
+      Number(req.body.leaderId);
 
     if (!name || !leaderId) {
+
       return res.status(400).json({
         ok: false,
         error: "Alliance name and leader are required"
       });
+
     }
 
     const result = await pool.query(
@@ -1746,7 +2013,10 @@ app.post("/api/alliances", async (req, res) => {
       VALUES ($1, $2, 1000)
       RETURNING *
       `,
-      [name, leaderId]
+      [
+        name,
+        leaderId
+      ]
     );
 
     await pool.query(
@@ -1768,56 +2038,65 @@ app.post("/api/alliances", async (req, res) => {
     });
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
       ok: false,
       error: "Alliance creation failed"
     });
-  }
-});
 
+  }
+
+});
 
 // =====================================================
 // ALLIANCE DETAIL
 // =====================================================
 
 app.get("/api/alliances/:id", async (req, res) => {
-  try {
-    const allianceId = Number(req.params.id);
 
-    const alliance = await pool.query(
-      `
-      SELECT *
-      FROM alliances
-      WHERE id = $1
-      `,
-      [allianceId]
-    );
+  try {
+
+    const allianceId =
+      Number(req.params.id);
+
+    const alliance =
+      await pool.query(
+        `
+        SELECT *
+        FROM alliances
+        WHERE id = $1
+        `,
+        [allianceId]
+      );
 
     if (!alliance.rows.length) {
+
       return res.status(404).json({
         ok: false,
         error: "Alliance not found"
       });
+
     }
 
-    const members = await pool.query(
-      `
-      SELECT
-        p.id,
-        p.name,
-        p.power,
-        p.castle_level,
-        p.castle_stars
-      FROM alliance_members am
-      JOIN players p
+    const members =
+      await pool.query(
+        `
+        SELECT
+          p.id,
+          p.name,
+          p.power,
+          p.castle_level,
+          p.castle_stars
+        FROM alliance_members am
+        JOIN players p
         ON p.id = am.player_id
-      WHERE am.alliance_id = $1
-      ORDER BY p.power DESC
-      `,
-      [allianceId]
-    );
+        WHERE am.alliance_id = $1
+        ORDER BY p.power DESC
+        `,
+        [allianceId]
+      );
 
     res.json({
       ok: true,
@@ -1826,80 +2105,102 @@ app.get("/api/alliances/:id", async (req, res) => {
     });
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
       ok: false,
       error: "Failed to load alliance"
     });
-  }
-});
 
+  }
+
+});
 
 // =====================================================
 // JOIN ALLIANCE
 // =====================================================
 
-app.post("/api/player/:id/alliance/join", async (req, res) => {
-  try {
-    const playerId = Number(req.params.id);
-    const allianceId = Number(req.body.allianceId);
+app.post(
+  "/api/player/:id/alliance/join",
+  async (req, res) => {
 
-    if (!allianceId) {
-      return res.status(400).json({
-        ok: false,
-        error: "Alliance ID required"
+    try {
+
+      const playerId =
+        Number(req.params.id);
+
+      const allianceId =
+        Number(req.body.allianceId);
+
+      if (!allianceId) {
+
+        return res.status(400).json({
+          ok: false,
+          error: "Alliance ID required"
+        });
+
+      }
+
+      const alliance =
+        await pool.query(
+          `
+          SELECT *
+          FROM alliances
+          WHERE id = $1
+          `,
+          [allianceId]
+        );
+
+      if (!alliance.rows.length) {
+
+        return res.status(404).json({
+          ok: false,
+          error: "Alliance not found"
+        });
+
+      }
+
+      await pool.query(
+        `
+        INSERT INTO alliance_members
+        (alliance_id, player_id)
+        VALUES ($1, $2)
+        ON CONFLICT DO NOTHING
+        `,
+        [
+          allianceId,
+          playerId
+        ]
+      );
+
+      res.json({
+        ok: true,
+        message: "Joined alliance"
       });
+
+    } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+        ok: false,
+        error: "Failed to join alliance"
+      });
+
     }
 
-    const alliance = await pool.query(
-      `
-      SELECT *
-      FROM alliances
-      WHERE id = $1
-      `,
-      [allianceId]
-    );
-
-    if (!alliance.rows.length) {
-      return res.status(404).json({
-        ok: false,
-        error: "Alliance not found"
-      });
-    }
-
-    await pool.query(
-      `
-      INSERT INTO alliance_members
-      (alliance_id, player_id)
-      VALUES ($1, $2)
-      ON CONFLICT DO NOTHING
-      `,
-      [allianceId, playerId]
-    );
-
-    res.json({
-      ok: true,
-      message: "Joined alliance"
-    });
-
-  } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      ok: false,
-      error: "Failed to join alliance"
-    });
   }
-});
-
+);
 
 // =====================================================
 // RANKINGS
 // =====================================================
 
 app.get("/api/rankings/all", async (req, res) => {
+
   try {
+
     const result = await pool.query(
       `
       SELECT
@@ -1921,49 +2222,56 @@ app.get("/api/rankings/all", async (req, res) => {
     });
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
       ok: false,
       error: "Failed to load rankings"
     });
-  }
-});
 
+  }
+
+});
 
 // =====================================================
 // WORLD
 // =====================================================
 
 app.get("/api/world", async (req, res) => {
+
   try {
-    const players = await pool.query(
-      `
-      SELECT
-        id,
-        name,
-        power,
-        castle_level,
-        castle_stars,
-        x,
-        y
-      FROM players
-      `
-    );
 
-    const zombies = await pool.query(
-      `
-      SELECT *
-      FROM zombies
-      `
-    );
+    const players =
+      await pool.query(
+        `
+        SELECT
+          id,
+          name,
+          power,
+          castle_level,
+          castle_stars,
+          x,
+          y
+        FROM players
+        `
+      );
 
-    const forts = await pool.query(
-      `
-      SELECT *
-      FROM forts
-      `
-    );
+    const zombies =
+      await pool.query(
+        `
+        SELECT *
+        FROM zombies
+        `
+      );
+
+    const forts =
+      await pool.query(
+        `
+        SELECT *
+        FROM forts
+        `
+      );
 
     res.json({
       ok: true,
@@ -1973,31 +2281,45 @@ app.get("/api/world", async (req, res) => {
     });
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
       ok: false,
       error: "Failed to load world"
     });
+
   }
+
 });
 
-
 // =====================================================
-// MOVE PLAYER
+// MOVE
 // =====================================================
 
 app.post("/api/player/:id/move", async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    const x = Number(req.body.x);
-    const y = Number(req.body.y);
 
-    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+  try {
+
+    const id =
+      Number(req.params.id);
+
+    const x =
+      Number(req.body.x);
+
+    const y =
+      Number(req.body.y);
+
+    if (
+      !Number.isFinite(x) ||
+      !Number.isFinite(y)
+    ) {
+
       return res.status(400).json({
         ok: false,
         error: "Invalid coordinates"
       });
+
     }
 
     const result = await pool.query(
@@ -2009,14 +2331,20 @@ app.post("/api/player/:id/move", async (req, res) => {
       WHERE id = $3
       RETURNING *
       `,
-      [x, y, id]
+      [
+        x,
+        y,
+        id
+      ]
     );
 
     if (!result.rows.length) {
+
       return res.status(404).json({
         ok: false,
         error: "Player not found"
       });
+
     }
 
     io.emit("playerMoved", {
@@ -2031,62 +2359,80 @@ app.post("/api/player/:id/move", async (req, res) => {
     });
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
       ok: false,
       error: "Move failed"
     });
-  }
-});
 
+  }
+
+});
 
 // =====================================================
 // MARCH
 // =====================================================
 
 app.post("/api/player/:id/march", async (req, res) => {
-  const client = await pool.connect();
+
+  const client =
+    await pool.connect();
 
   try {
-    const playerId = Number(req.params.id);
-    const targetX = Number(req.body.x);
-    const targetY = Number(req.body.y);
-    const troops = Math.max(
-      1,
-      Number(req.body.troops || 100)
-    );
+
+    const playerId =
+      Number(req.params.id);
+
+    const targetX =
+      Number(req.body.x);
+
+    const targetY =
+      Number(req.body.y);
+
+    const troops =
+      Math.max(
+        1,
+        Number(req.body.troops || 100)
+      );
 
     await client.query("BEGIN");
 
-    const playerResult = await client.query(
-      `
-      SELECT *
-      FROM players
-      WHERE id = $1
-      FOR UPDATE
-      `,
-      [playerId]
-    );
+    const playerResult =
+      await client.query(
+        `
+        SELECT *
+        FROM players
+        WHERE id = $1
+        FOR UPDATE
+        `,
+        [playerId]
+      );
 
     if (!playerResult.rows.length) {
+
       await client.query("ROLLBACK");
 
       return res.status(404).json({
         ok: false,
         error: "Player not found"
       });
+
     }
 
-    const player = playerResult.rows[0];
+    const player =
+      playerResult.rows[0];
 
     if (Number(player.troops) < troops) {
+
       await client.query("ROLLBACK");
 
       return res.status(400).json({
         ok: false,
         error: "Not enough troops"
       });
+
     }
 
     await client.query(
@@ -2095,27 +2441,39 @@ app.post("/api/player/:id/march", async (req, res) => {
       SET troops = troops - $1
       WHERE id = $2
       `,
-      [troops, playerId]
-    );
-
-    const marchResult = await client.query(
-      `
-      INSERT INTO marches
-      (player_id, target_x, target_y, troops, status)
-      VALUES ($1, $2, $3, $4, 'marching')
-      RETURNING *
-      `,
       [
-        playerId,
-        targetX,
-        targetY,
-        troops
+        troops,
+        playerId
       ]
     );
 
+    const marchResult =
+      await client.query(
+        `
+        INSERT INTO marches
+        (
+          player_id,
+          target_x,
+          target_y,
+          troops,
+          status
+        )
+        VALUES
+        ($1, $2, $3, $4, 'marching')
+        RETURNING *
+        `,
+        [
+          playerId,
+          targetX,
+          targetY,
+          troops
+        ]
+      );
+
     await client.query("COMMIT");
 
-    const march = marchResult.rows[0];
+    const march =
+      marchResult.rows[0];
 
     io.emit("marchStarted", {
       id: march.id,
@@ -2131,27 +2489,37 @@ app.post("/api/player/:id/march", async (req, res) => {
     });
 
   } catch (error) {
+
     await client.query("ROLLBACK");
 
-    console.error("March error:", error);
+    console.error(
+      "March error:",
+      error
+    );
 
     res.status(500).json({
       ok: false,
       error: "March failed"
     });
-  } finally {
-    client.release();
-  }
-});
 
+  } finally {
+
+    client.release();
+
+  }
+
+});
 
 // =====================================================
 // REPORTS
 // =====================================================
 
 app.get("/api/reports/:id", async (req, res) => {
+
   try {
-    const playerId = Number(req.params.id);
+
+    const playerId =
+      Number(req.params.id);
 
     const result = await pool.query(
       `
@@ -2170,105 +2538,150 @@ app.get("/api/reports/:id", async (req, res) => {
     });
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
       ok: false,
       error: "Failed to load reports"
     });
-  }
-});
 
+  }
+
+});
 
 // =====================================================
 // SOCKET.IO
 // =====================================================
 
 io.on("connection", socket => {
-  console.log("Player connected:", socket.id);
+
+  console.log(
+    "Player connected:",
+    socket.id
+  );
 
   socket.on("joinGame", data => {
-    console.log("Player joined game:", data);
+
+    console.log(
+      "Player joined game:",
+      data
+    );
 
     socket.join("game");
 
     socket.emit("gameJoined", {
       ok: true
     });
+
   });
 
   socket.on("disconnect", () => {
-    console.log("Player disconnected:", socket.id);
-  });
-});
 
+    console.log(
+      "Player disconnected:",
+      socket.id
+    );
+
+  });
+
+});
 
 // =====================================================
 // PROCESS MARCHES
 // =====================================================
 
 async function processMarches() {
+
   try {
-    const result = await pool.query(
-      `
-      SELECT *
-      FROM marches
-      WHERE status = 'marching'
+
+    const result =
+      await pool.query(
+        `
+        SELECT *
+        FROM marches
+        WHERE status = 'marching'
         AND started_at <= NOW() - INTERVAL '10 seconds'
-      `
-    );
+        `
+      );
 
     for (const march of result.rows) {
-      const playerId = march.player_id;
 
-      const enemyPower = Math.max(
-        100,
-        Number(march.troops) * 2
-      );
+      const playerId =
+        march.player_id;
 
-      const playerResult = await pool.query(
-        `
-        SELECT power
-        FROM players
-        WHERE id = $1
-        `,
-        [playerId]
-      );
+      const enemyPower =
+        Math.max(
+          100,
+          Number(march.troops) * 2
+        );
+
+      const playerResult =
+        await pool.query(
+          `
+          SELECT power
+          FROM players
+          WHERE id = $1
+          `,
+          [playerId]
+        );
 
       if (!playerResult.rows.length) {
         continue;
       }
 
-      const playerPower = Number(
-        playerResult.rows[0].power
-      );
+      const playerPower =
+        Number(
+          playerResult.rows[0].power
+        );
 
-      const won = playerPower >= enemyPower;
+      const won =
+        playerPower >= enemyPower;
 
-      const resultText = won
-        ? "Victory"
-        : "Defeat";
+      const resultText =
+        won ? "Victory" : "Defeat";
 
-      const powerChange = won
-        ? Math.floor(Number(march.troops) * 3)
-        : -Math.floor(Number(march.troops));
+      const powerChange =
+        won
+          ? Math.floor(
+              Number(march.troops) * 3
+            )
+          : -Math.floor(
+              Number(march.troops)
+            );
 
       if (won) {
+
         await pool.query(
           `
           UPDATE players
-          SET power = GREATEST(0, power + $1)
+          SET
+            power =
+            GREATEST(
+              0,
+              power + $1
+            )
           WHERE id = $2
           `,
-          [powerChange, playerId]
+          [
+            powerChange,
+            playerId
+          ]
         );
+
       }
 
       await pool.query(
         `
         INSERT INTO battle_reports
-        (player_id, result, enemy, power_change)
-        VALUES ($1, $2, $3, $4)
+        (
+          player_id,
+          result,
+          enemy,
+          power_change
+        )
+        VALUES
+        ($1, $2, $3, $4)
         `,
         [
           playerId,
@@ -2295,34 +2708,58 @@ async function processMarches() {
         result: resultText,
         powerChange
       });
+
     }
 
   } catch (error) {
-    console.error("Process marches error:", error);
+
+    console.error(
+      "Process marches error:",
+      error
+    );
+
   }
+
 }
 
-
 // =====================================================
-// START SERVER
+// START
 // =====================================================
 
 async function start() {
+
   try {
+
     await initDatabase();
 
-    server.listen(PORT, () => {
-      console.log(
-        `Kardous Survival server running on port ${PORT}`
-      );
-    });
+    server.listen(
+      PORT,
+      "0.0.0.0",
+      () => {
 
-    setInterval(processMarches, 5000);
+        console.log(
+          `Kardous Survival running on port ${PORT}`
+        );
+
+      }
+    );
+
+    setInterval(
+      processMarches,
+      5000
+    );
 
   } catch (error) {
-    console.error("Server startup error:", error);
+
+    console.error(
+      "Server startup error:",
+      error
+    );
+
     process.exit(1);
+
   }
+
 }
 
 start();
